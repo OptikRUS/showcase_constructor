@@ -181,11 +181,11 @@ durability и custom code permissions. Бизнес-код, runtime-конфиг
 
 **Actions:**
 
-- [ ] Add a "Public Data And Identifiers" section.
-- [ ] Classify public showcase identifiers, internal IDs, owner/admin identifiers and domain names.
-- [ ] Record the exposure rationale for each approved field, or mark it `product decision required`.
-- [ ] Run `rtk rg -n "Public Data And Identifiers|Internal database IDs|identifier|product decision required" docs/decisions/mvp-boundaries.md`.
-- [ ] Run `rtk make quality`, fix documentation-related failures if any, and repeat until successful.
+- [x] Add a "Public Data And Identifiers" section.
+- [x] Classify public showcase identifiers, internal IDs, owner/admin identifiers and domain names.
+- [x] Record the exposure rationale for each approved field, or mark it `product decision required`.
+- [x] Run `rtk rg -n "Public Data And Identifiers|Internal database IDs|identifier|product decision required" docs/decisions/mvp-boundaries.md`.
+- [x] Run `rtk make quality`, fix documentation-related failures if any, and repeat until successful.
 
 ### Task 4: Record persistence and migration boundary decisions
 

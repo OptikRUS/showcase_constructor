@@ -64,12 +64,34 @@ rationale.
 | Admin partial updates | `PATCH` | Not approved | product decision required | Blocked until mutation permissions and audit requirements are approved. |
 | Admin deletion | `DELETE` | Not approved | product decision required | Blocked until deletion permissions, recovery needs, and audit requirements are approved. |
 
+## Public Data And Identifiers
+
+The only confirmed public data surface remains the existing `GET /health`
+response. No showcase, owner, domain, theme, page, asset, custom-code, analytics,
+billing, or verification-status field is approved for public storefront exposure
+by this record.
+
+No public identifier scheme is selected yet. Future feature plans must not
+assume public slugs, opaque public IDs, custom domains, stable aliases, or
+internal database IDs until the identifier model is explicitly approved.
+
+| Field class | Public exposure | Rationale |
+| --- | --- | --- |
+| Public showcase identifier | product decision required | Blocked until the product chooses public slugs, opaque IDs, custom domains, another identifier scheme, or no public identifier. |
+| Internal database IDs | Not approved | Persistence identifiers must stay private unless a later decision approves a specific field and reason. |
+| Owner/admin identifiers | Not approved | Admin emails, usernames, profile identifiers, and account owner identifiers must not be exposed publicly without explicit approval. |
+| Tenant/account identifiers | Not approved | Tenant and account identifiers must not be exposed publicly before the isolation and discovery model is approved. |
+| Domain names and custom domains | product decision required | Blocked until domain ownership verification, display rules, and response-field exposure are approved. |
+| Showcase content fields | product decision required | Blocked until approved public fields for title, description, theme, pages, assets, metadata, and publication state are defined. |
+| Custom code metadata | product decision required | Blocked until custom-code permissions, review status, sanitization, and sandboxing decisions are approved. |
+| Domain verification status | product decision required | Blocked until verification method and public/admin visibility are approved. |
+
 ## Blocking Decisions
 
 - Product decision required: choose the admin API auth model and per-method
   permissions before adding management routes.
-- Product decision required: choose the public identifier model before adding
-  storefront routes or schemas.
+- Product decision required: choose the public identifier model and public data
+  exposure rules before adding storefront routes or schemas.
 - Product decision required: choose the persistence backend and migration
   boundary before adding `src/config`, `src/storages`, `src/core/storages.py`, or
   `migrations`.
