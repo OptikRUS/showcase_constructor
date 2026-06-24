@@ -48,6 +48,18 @@ class AdminShowcaseDraftBlock:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class AdminShowcaseDraftBlockCreateParams:
+    type: str
+    order: int
+    visible: bool
+    title: str | None
+    subtitle: str | None
+    desktop_settings: JsonObject
+    mobile_settings: JsonObject
+    data: JsonObject
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class AdminShowcaseDraftOffer:
     id: str
     showcase_id: str

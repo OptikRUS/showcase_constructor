@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from sqlalchemy import insert, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.showcases.schemas import AdminShowcaseDraft, JsonObject
-from src.storages.models import AdminShowcaseModel
+from src.core.showcases.schemas import AdminShowcaseDraft, AdminShowcaseDraftBlock, JsonObject
+from src.storages.models import AdminShowcaseDraftBlockModel, AdminShowcaseModel
 
 
 @dataclass(kw_only=True, slots=True)
@@ -40,6 +40,48 @@ class StorageHelper:
             raise RuntimeError(message)
 
         return model.to_draft_domain()
+
+    async def create_admin_showcase_draft_block(
+        self,
+        *,
+        block: AdminShowcaseDraftBlock,
+    ) -> None:
+        showcase_internal_id = (
+            select(AdminShowcaseModel.internal_id)
+            .where(AdminShowcaseModel.id == block.showcase_id)
+            .scalar_subquery()
+        )
+        await self.session.execute(
+            insert(AdminShowcaseDraftBlockModel).values(
+                showcase_internal_id=showcase_internal_id,
+                showcase_id=block.showcase_id,
+                block_id=block.id,
+                type=block.type,
+                draft_order=block.order,
+                visible=block.visible,
+                title=block.title,
+                subtitle=block.subtitle,
+                desktop_settings=block.desktop_settings,
+                mobile_settings=block.mobile_settings,
+                data=block.data,
+            )
+        )
+
+    async def list_admin_showcase_draft_blocks(
+        self,
+        *,
+        showcase_id: str,
+    ) -> list[AdminShowcaseDraftBlock]:
+        result = await self.session.scalars(
+            select(AdminShowcaseDraftBlockModel)
+            .where(AdminShowcaseDraftBlockModel.showcase_id == showcase_id)
+            .order_by(
+                AdminShowcaseDraftBlockModel.draft_order,
+                AdminShowcaseDraftBlockModel.block_id,
+            )
+        )
+
+        return [model.to_domain() for model in result.all()]
 
     async def commit(self) -> None:
         await self.session.commit()

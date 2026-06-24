@@ -32,3 +32,14 @@ class APIHelper:
         json: Mapping[str, Any],
     ) -> Response:
         return self.client.patch(f"/api/v1/showcases/{showcase_id}", json=json)
+
+    def list_admin_showcase_blocks(self, *, showcase_id: str) -> Response:
+        return self.client.get(f"/api/v1/showcases/{showcase_id}/blocks")
+
+    def create_admin_showcase_block(
+        self,
+        *,
+        showcase_id: str,
+        json: Mapping[str, Any],
+    ) -> Response:
+        return self.client.post(f"/api/v1/showcases/{showcase_id}/blocks", json=json)

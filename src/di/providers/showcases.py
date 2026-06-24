@@ -1,7 +1,13 @@
+from uuid import UUID
+
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.showcases.use_cases import UpdateAdminShowcaseDraftSettingsUseCase
+from src.core.showcases.use_cases import (
+    CreateAdminShowcaseBlockUseCase,
+    ListAdminShowcaseBlocksUseCase,
+    UpdateAdminShowcaseDraftSettingsUseCase,
+)
 from src.core.storages import AdminShowcaseStorage
 from src.storages.showcases import DatabaseAdminShowcaseStorage
 
@@ -17,3 +23,18 @@ class ShowcaseProvider(Provider):
         storage: AdminShowcaseStorage,
     ) -> UpdateAdminShowcaseDraftSettingsUseCase:
         return UpdateAdminShowcaseDraftSettingsUseCase(storage=storage)
+
+    @provide(scope=Scope.REQUEST)
+    def get_list_admin_showcase_blocks_use_case(
+        self,
+        storage: AdminShowcaseStorage,
+    ) -> ListAdminShowcaseBlocksUseCase:
+        return ListAdminShowcaseBlocksUseCase(storage=storage)
+
+    @provide(scope=Scope.REQUEST)
+    def get_create_admin_showcase_block_use_case(
+        self,
+        storage: AdminShowcaseStorage,
+        block_id: UUID,
+    ) -> CreateAdminShowcaseBlockUseCase:
+        return CreateAdminShowcaseBlockUseCase(storage=storage, block_id=block_id)

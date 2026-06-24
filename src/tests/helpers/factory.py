@@ -1,3 +1,5 @@
+from typing import NotRequired, TypedDict, Unpack
+
 from src.core.public_config.schemas import (
     PublicBlock,
     PublicConfigSettings,
@@ -11,7 +13,37 @@ from src.core.public_config.schemas import (
     PublicWidgetInfo,
     PublishedPublicConfigSnapshot,
 )
-from src.core.showcases.schemas import AdminShowcase, AdminShowcaseUpdateParams
+from src.core.showcases.schemas import (
+    AdminShowcase,
+    AdminShowcaseDraftBlock,
+    AdminShowcaseDraftBlockCreateParams,
+    AdminShowcaseUpdateParams,
+    JsonObject,
+)
+
+
+class AdminShowcaseDraftBlockFactoryKwargs(TypedDict):
+    id: NotRequired[str]
+    showcase_id: NotRequired[str]
+    type: NotRequired[str]
+    order: NotRequired[int]
+    visible: NotRequired[bool]
+    title: NotRequired[str | None]
+    subtitle: NotRequired[str | None]
+    desktop_settings: NotRequired[JsonObject]
+    mobile_settings: NotRequired[JsonObject]
+    data: NotRequired[JsonObject]
+
+
+class AdminShowcaseDraftBlockCreateParamsFactoryKwargs(TypedDict):
+    type: NotRequired[str]
+    order: NotRequired[int]
+    visible: NotRequired[bool]
+    title: NotRequired[str | None]
+    subtitle: NotRequired[str | None]
+    desktop_settings: NotRequired[JsonObject]
+    mobile_settings: NotRequired[JsonObject]
+    data: NotRequired[JsonObject]
 
 
 class FactoryHelper:
@@ -36,6 +68,40 @@ class FactoryHelper:
         title: str = "Updated showcase",
     ) -> AdminShowcaseUpdateParams:
         return AdminShowcaseUpdateParams(title=title)
+
+    @classmethod
+    def admin_showcase_draft_block(
+        cls,
+        **kwargs: Unpack[AdminShowcaseDraftBlockFactoryKwargs],
+    ) -> AdminShowcaseDraftBlock:
+        return AdminShowcaseDraftBlock(
+            id=kwargs.get("id", "block-1"),
+            showcase_id=kwargs.get("showcase_id", "showcase-1"),
+            type=kwargs.get("type", "offers"),
+            order=kwargs.get("order", 10),
+            visible=kwargs.get("visible", True),
+            title=kwargs.get("title", "Offers"),
+            subtitle=kwargs.get("subtitle", "Choose an offer"),
+            desktop_settings=kwargs.get("desktop_settings", {}),
+            mobile_settings=kwargs.get("mobile_settings", {}),
+            data=kwargs.get("data", {}),
+        )
+
+    @classmethod
+    def admin_showcase_draft_block_create_params(
+        cls,
+        **kwargs: Unpack[AdminShowcaseDraftBlockCreateParamsFactoryKwargs],
+    ) -> AdminShowcaseDraftBlockCreateParams:
+        return AdminShowcaseDraftBlockCreateParams(
+            type=kwargs.get("type", "offers"),
+            order=kwargs.get("order", 10),
+            visible=kwargs.get("visible", True),
+            title=kwargs.get("title", "Offers"),
+            subtitle=kwargs.get("subtitle", "Choose an offer"),
+            desktop_settings=kwargs.get("desktop_settings", {}),
+            mobile_settings=kwargs.get("mobile_settings", {}),
+            data=kwargs.get("data", {}),
+        )
 
     @classmethod
     def published_public_config_snapshot(cls) -> PublishedPublicConfigSnapshot:

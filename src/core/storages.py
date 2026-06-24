@@ -3,6 +3,8 @@ from abc import ABCMeta, abstractmethod
 from src.core.showcases.schemas import (
     AdminShowcase,
     AdminShowcaseDraft,
+    AdminShowcaseDraftBlock,
+    AdminShowcaseDraftBlockCreateParams,
     AdminShowcaseDraftSettingsPatchParams,
     AdminShowcaseUpdateParams,
 )
@@ -30,3 +32,15 @@ class AdminShowcaseStorage(metaclass=ABCMeta):
         showcase_id: str,
         params: AdminShowcaseDraftSettingsPatchParams,
     ) -> AdminShowcaseDraft: ...
+
+    @abstractmethod
+    async def list_draft_blocks(self, *, showcase_id: str) -> list[AdminShowcaseDraftBlock]: ...
+
+    @abstractmethod
+    async def create_draft_block(
+        self,
+        *,
+        showcase_id: str,
+        block_id: str,
+        params: AdminShowcaseDraftBlockCreateParams,
+    ) -> AdminShowcaseDraftBlock: ...
