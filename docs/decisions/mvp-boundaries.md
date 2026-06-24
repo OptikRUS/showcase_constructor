@@ -34,12 +34,12 @@ runtime configuration, migrations, or custom rendering behavior.
 | Area | MVP boundary | Status |
 | --- | --- | --- |
 | Constructor editing | product decision required | Blocked until the editable entities, permissions, and publishing workflow are approved. |
-| Showcase publishing | product decision required | Blocked until publication states, public fields, and rollback needs are approved. |
+| Showcase publishing | Published snapshot response-field boundary approved; publication workflow product decision required | Future public exposure is approved only for the published snapshot field groups listed below. Publication states, publish/unpublish behavior, rollback, and durability remain blocked until focused decisions approve them. |
 | Custom domains | product decision required | Blocked until domain ownership verification and failure handling are approved. |
 | Analytics | product decision required | Blocked until event collection, retention, and public/admin visibility are approved. |
 | Billing | product decision required | Blocked until paid features, account ownership, and provider integration are approved. |
-| Admin API | MVP JWT bearer adapter plus approved admin showcase route boundary | `docs/decisions/admin-api-lifecycle.md` approves protected owner-scoped create, list own, get own, patch draft, clone, archive, and restore route boundaries; storage, lifecycle behavior, published-snapshot exposure, and audit durability still require their focused decisions. |
-| Public storefront | Opaque public showcase id approved; route and field exposure product decision required | Future public reads may address a published snapshot by opaque public showcase id only. Public route registration, methods, and response fields remain blocked until their focused decisions are approved. |
+| Admin API | MVP JWT bearer adapter plus approved admin showcase route boundary | `docs/decisions/admin-api-lifecycle.md` approves protected owner-scoped create, list own, get own, patch draft, clone, archive, and restore route boundaries; storage, lifecycle behavior, and audit durability still require their focused decisions. |
+| Public storefront | Opaque public showcase id and published snapshot response-field boundary approved; route methods product decision required | Future public reads may address a published snapshot by opaque public showcase id and may return only the approved published snapshot field groups below. Public route registration and methods remain blocked until a focused public-route decision approves them. |
 | Persistence | Approved in-memory MVP storage boundary; durable persistence product decision required | Future MVP implementation may add only process-local, non-durable `src/storages` storage for admin showcase flows. Database/file/external persistence, runtime config, migrations, and durability claims remain blocked until a durable backend decision is approved. |
 | Custom code | product decision required | Blocked until allowed code categories, sanitization, sandboxing, and review rules are approved. |
 
@@ -63,10 +63,10 @@ Admin showcase lifecycle method/auth boundaries are approved in
 `docs/decisions/admin-api-lifecycle.md` for protected owner-scoped create, list
 own, get own, patch draft, clone, archive, and restore routes. That focused
 record selects `POST /api/v1/showcases/{id}/restore` for recovery and keeps the
-`unarchive` alias blocked. Storage, lifecycle behavior, published-snapshot
-exposure, and audit durability remain governed by their focused decisions before
-implementation may go live. Public identifiers use the opaque public showcase id
-boundary below; slugs and custom-domain identifiers remain blocked.
+`unarchive` alias blocked. Storage, lifecycle behavior, and audit durability
+remain governed by their focused decisions before implementation may go live.
+Public identifiers use the opaque public showcase id boundary below; slugs and
+custom-domain identifiers remain blocked.
 
 The only confirmed public runtime route remains `GET /health`. No admin `GET`,
 `HEAD`, `OPTIONS`, `POST`, `PUT`, `PATCH`, or `DELETE` route is public in this
@@ -88,9 +88,9 @@ path, and rationale.
 ## Public Data And Identifiers
 
 The only confirmed public runtime surface remains the existing `GET /health`
-response. This record approves only the public identifier model for future
-published snapshot reads; it does not register a public storefront route and
-does not approve the public response-field set.
+response. This record approves the public identifier model and response-field
+boundary for future published snapshot reads; it does not register a public
+storefront route, approve public route methods, or implement a public endpoint.
 
 Future public reads use an opaque public showcase id, represented by the
 `public_id` route parameter in the existing test helper path
@@ -103,20 +103,41 @@ username, custom-domain value, or slug.
 
 Public slugs, custom domains as identifiers, domain plus path routing, stable
 aliases, and internal database IDs are not approved public identifier schemes in
-the MVP. Future feature plans may use the opaque public id only after a separate
-route decision approves the public method/path and a separate exposure decision
-approves the response fields.
+the MVP. Future feature plans may use the opaque public id and approved field
+groups below only after a separate public-route decision approves the method and
+path.
+
+Approved public fields must be read from the published snapshot shape currently
+represented by `src/core/public_config/schemas.py::PublishedPublicConfigSnapshot`
+and serialized by `src/api/public_config/schemas.py::PublicConfigResponse`.
+Draft data, admin-only data, and storage-private data must not be copied into
+that public payload.
 
 | Field class | Public exposure | Rationale |
 | --- | --- | --- |
-| Public showcase identifier | Approved MVP boundary: opaque public showcase id | Future public reads may use `public_id` in `/api/v1/public/showcases/{public_id}` and may expose the same opaque id as published snapshot `id` only after public route and response-field decisions are approved. |
+| Public showcase identifier | Approved MVP boundary: opaque public showcase id | Future public reads may use `public_id` in `/api/v1/public/showcases/{public_id}` and may expose the same opaque id as published snapshot `id` only after a public route method/path is approved. |
+| Published snapshot `id` | Approved public data | Exposes only the opaque public showcase id for the published snapshot; it is not an internal storage id. |
+| Published snapshot `affiliateId` | Approved public data | Existing candidate response exposes the affiliate-facing public value needed by the widget/showcase runtime. It must not be an owner, tenant, account, admin, or internal storage identifier. |
+| Published snapshot `type` | Approved public data | Existing candidate response exposes the public config type, such as widget or showcase rendering mode. |
+| Published snapshot `settings` | Approved public data | Existing candidate response exposes public presentation and routing settings only, such as colors, text, images, placement, alignment, and sort settings. Private service settings, credentials, moderation state, and draft-only settings remain blocked. |
+| Published snapshot `platform.id` | Approved public data | Existing candidate response exposes the public platform identifier needed by the client runtime, such as `widgetmarket`. It must not expose tenant/account ownership. |
+| Published snapshot URL params tools | Approved public data for `constantUrlParamsTool` and `transferredUrlParamsTool` | Existing candidate response exposes only enabled flags and public key/value mappings required by outbound URL behavior. Secrets, account ids, admin identifiers, and private tracking configuration remain blocked. |
+| Published snapshot `metricsTool` | Approved public data | Existing candidate response exposes only enabled flags and public metric handles needed by the client runtime. Private analytics credentials, admin-only stats, and billing data remain blocked. |
+| Published snapshot `blocks` | Approved public data | Existing candidate response exposes public block type, title, and nested `offers` content for published showcase rendering. Draft block ids, internal block ids, moderation state, and private layout metadata remain blocked. |
+| Published snapshot `widgetInfo` | Approved public data | Existing candidate response exposes public widget runtime metadata, nested `offers`, and `triggerGroups`. Private widget settings, admin preview state, and unpublished draft metadata remain blocked. |
+| Published snapshot `offers` | Approved public data | Existing candidate response exposes public offer id, categories, logo URLs, display names, target URL, and visible field key/value data under `blocks` or `widgetInfo`. Internal offer ids, source-system ids, private payout/billing fields, and hidden fields remain blocked. |
+| Published snapshot `triggerGroups` | Approved public data | Existing candidate response exposes public trigger type and delay values needed by widget runtime behavior. Internal rule ids, targeting segments, and unpublished experiment data remain blocked. |
+| Published snapshot `is_need_to_send_offers_display_and_positions` | Approved public data | Existing candidate response exposes this runtime compatibility flag as part of the published public config contract. It must not imply exposure of private analytics or admin stats. |
 | Internal database IDs | Not approved | Persistence identifiers must stay private unless a later decision approves a specific field and reason. |
 | Owner/admin identifiers | Not approved | Admin emails, usernames, profile identifiers, and account owner identifiers must not be exposed publicly without explicit approval. |
 | Tenant/account identifiers | Not approved | Tenant and account identifiers must not be exposed publicly before the isolation and discovery model is approved. |
+| Draft version ids and draft data | Not approved | Public responses may use only the published snapshot. Draft version ids, dirty state, unpublished draft fields, and admin preview data remain private. |
+| Private stats and service settings | Not approved | Private analytics, service credentials, payout/billing data, moderation state, and operational settings are not public snapshot data. |
+| Internal nested offer/block ids | Not approved | Public `offers` and `blocks` may include only approved public ids and display fields; internal offer ids, block ids, source ids, and storage ids remain private. |
 | Public slug | Not approved | Human-readable or SEO slugs are blocked until collision handling, ownership, rename/redirect behavior, and public display rules are approved. |
 | Domain names and custom domains | product decision required | Blocked as public identifiers until domain ownership verification, display rules, and response-field exposure are approved. |
 | Domain plus path routing | Not approved | Blocked until custom-domain verification and path ownership semantics are approved. |
-| Showcase content fields | product decision required | Blocked until approved public fields for title, description, theme, pages, assets, metadata, and publication state are defined. |
+| Showcase content fields outside the published public config snapshot | product decision required | Future title, description, theme, page, asset, SEO metadata, and publication-state fields remain blocked unless they are added to an approved published snapshot contract by a later decision. |
 | Custom code metadata | product decision required | Blocked until custom-code permissions, review status, sanitization, and sandboxing decisions are approved. |
 | Domain verification status | product decision required | Blocked until verification method and public/admin visibility are approved. |
 
@@ -214,10 +235,11 @@ capability and required control is explicitly approved.
   production replacement criteria, and still-unresolved lifecycle behavior
   details before adding management behavior beyond the owner-scoped route
   boundary approved in `docs/decisions/admin-api-lifecycle.md`.
-- Product decision required: choose public route methods and public data
-  exposure rules before adding storefront routes or schemas. The identifier
-  model is approved only as an opaque public showcase id and does not approve
-  route registration by itself.
+- Product decision required: choose public route methods before adding storefront
+  routes. The identifier model is approved only as an opaque public showcase id,
+  and the public response-field boundary is approved only for the published
+  snapshot groups listed above; neither decision approves route registration by
+  itself.
 - Product decision required: choose the durable persistence backend, migration
   boundary, runtime config boundary, ownership model, and transaction behavior
   before adding database/file/external-service persistence, persistence-specific
@@ -237,10 +259,11 @@ capability and required control is explicitly approved.
 
 - Admin API feature plans beyond the owner-scoped showcase route boundary must
   wait for the final auth provider and any still-unresolved behavior,
-  persistence, audit, and field-exposure decisions.
-- Public storefront feature plans may use the approved opaque public showcase id,
-  but must still wait for public route and field-exposure decisions before
-  registering storefront endpoints.
+  persistence, audit, and public route method/path decisions.
+- Public storefront feature plans may use the approved opaque public showcase id
+  and approved published snapshot response-field boundary, but must still wait
+  for a public route method/path decision before registering storefront
+  endpoints.
 - Durable persistence feature plans must wait for backend, migration, config,
   ownership, and transaction-boundary decisions. MVP admin showcase feature plans
   may use the approved process-local in-memory storage boundary only where

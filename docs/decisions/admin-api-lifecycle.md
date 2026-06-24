@@ -70,7 +70,7 @@ owner check succeeds. It does not approve public storefront exposure.
 | Title | Approved MVP boundary for create, list own, get own, patch draft, clone, archive, and restore responses. |
 | Status | Approved MVP boundary for admin-owned resources using `draft`, `published`, `unpublished`, and `archived`; transition rules remain behavior decisions. |
 | Draft snapshot metadata | Approved MVP boundary for metadata needed by the owner, such as draft version, update timestamp, and dirty/published comparison flags. Draft snapshot content fields remain tied to later constructor editing decisions. |
-| Published snapshot metadata | Approved MVP boundary for metadata needed by the owner, such as published version, publication timestamp, and whether a published snapshot exists. Public snapshot field exposure remains a separate public-data decision. |
+| Published snapshot metadata | Approved MVP boundary for metadata needed by the owner, such as published version, publication timestamp, and whether a published snapshot exists. Public snapshot field exposure is governed by the approved published snapshot response-field boundary in `docs/decisions/mvp-boundaries.md`; public route registration remains separate. |
 | Timestamps | `createdAt` and `updatedAt` are approved MVP response fields for authenticated owner-scoped admin routes. |
 | Archive metadata | `archivedAt` is approved when archive behavior is implemented. `archivedBy` actor identifiers and retention/recovery details remain blocked until audit and archive behavior decisions are approved. |
 | Restore metadata | `restoredAt` is approved when restore behavior is implemented. `restoredBy` actor identifiers and conflict-resolution details remain blocked until audit and restore behavior decisions are approved. |
@@ -81,8 +81,9 @@ owner check succeeds. It does not approve public storefront exposure.
 This record still does not directly implement or register routes. Future
 implementation plans may use the approved method/auth/response boundary above,
 but must also satisfy any still-unresolved persistence, lifecycle behavior,
-published-snapshot, and audit/event decisions before the corresponding behavior
-goes live. Public identifiers must follow the opaque public showcase id boundary
+public route method/path, and audit/event decisions before the corresponding
+behavior goes live. Public identifiers and public response fields must follow
+the opaque public showcase id and published snapshot response-field boundaries
 in `docs/decisions/mvp-boundaries.md`.
 
 This record does not allow:
@@ -90,9 +91,9 @@ This record does not allow:
 - adding persistence interfaces or implementations for lifecycle storage;
 - adding `src/storages`, persistence runtime settings, migrations, database
   dependencies, or audit/event dependencies;
-- exposing public slugs, public storefront data, foreign-owner data, internal
-  database ids, or admin identifiers beyond the authenticated admin response
-  contract above.
+- exposing public slugs, public storefront data outside the approved published
+  snapshot boundary, foreign-owner data, internal database ids, or admin
+  identifiers beyond the authenticated admin response contract above.
 
 Future implementation plans must keep endpoints thin: one endpoint delegates to
 one use case, business rules live in `src/core`, storage access goes through

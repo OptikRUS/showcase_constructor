@@ -278,15 +278,15 @@ business code.
 
 **Actions:**
 
-- [ ] Update the Public Data And Identifiers section with the published snapshot
+- [x] Update the Public Data And Identifiers section with the published snapshot
   exposure boundary.
-- [ ] Mark each field group as approved public data or blocked with a concrete
+- [x] Mark each field group as approved public data or blocked with a concrete
   reason.
-- [ ] State that route exposure remains a separate implementation decision unless
+- [x] State that route exposure remains a separate implementation decision unless
   the public route method is explicitly approved in the same record.
-- [ ] Confirm the diff contains only intended decision-record documentation
+- [x] Confirm the diff contains only intended decision-record documentation
   changes.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 5: Decide audit and event durability level
 
