@@ -327,12 +327,12 @@ business tables or business route implementations.
 
 **Actions:**
 
-- [ ] Add SQLAlchemy async support, asyncpg, and Alembic with `rtk uv add`.
-- [ ] Add the Ruff migration per-file ignore and mypy migration exclude from
+- [x] Add SQLAlchemy async support, asyncpg, and Alembic with `rtk uv add`.
+- [x] Add the Ruff migration per-file ignore and mypy migration exclude from
   the implementation sketch.
-- [ ] Run `rtk uv lock --check` after `uv add` completes.
-- [ ] Run `rtk make lint`, `rtk make types`, and `rtk make tests`.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Run `rtk uv lock --check` after `uv add` completes.
+- [x] Run `rtk make lint`, `rtk make types`, and `rtk make tests`.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 4: Add database settings and async session factory
 
