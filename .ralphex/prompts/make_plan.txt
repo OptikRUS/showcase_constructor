@@ -1,0 +1,245 @@
+# Prompt for creating an atomic RALPHEX plan for showcase_constructor
+
+You are creating a RALPHEX plan for the current FastAPI/Dishka project.
+
+Available RALPHEX variables:
+- `{{PLAN_DESCRIPTION}}` - request passed to `ralphex --plan "<task description>"`
+- `{{PROGRESS_FILE}}` - current RALPHEX progress log path
+- `{{PLANS_DIR}}` - plans directory; in this project it must resolve to `docs/plans/backlog`
+
+CRITICAL: Resolve the current task description before doing anything else.
+The current task description is the request passed to:
+`ralphex --plan "<task description>"`.
+
+Resolution order:
+1. Use `{{PLAN_DESCRIPTION}}` only when it is rendered to real task text, not when
+   it is still a template placeholder.
+2. Otherwise read the current progress log path from `{{PROGRESS_FILE}}`, if present.
+3. Otherwise read the newest file matching `.ralphex/progress/progress-plan*.txt`.
+4. Extract the first line matching `plan request: <text>`.
+5. Treat `<text>` as the current task description.
+6. Only if no task description exists, ask the user through:
+
+```text
+<<<RALPHEX:QUESTION>>>
+{"question": "What task description should I use for this RALPHEX plan?", "options": ["Provide the current task description", "Cancel plan creation"]}
+<<<RALPHEX:END>>>
+```
+
+Do not ask the user before checking `.ralphex/progress`.
+Do not use placeholder text as the task description.
+
+Existing plan files are NOT task descriptions. Do not read active, completed,
+backlog, or untracked plan files as fallback task descriptions. They may only be
+read as style examples after the current task description has been resolved.
+Exception: `docs/plans/README.md` may be read before task resolution for format rules.
+
+Never modify an existing plan unless the current task description explicitly
+names that plan file or clearly asks to revise it.
+
+Superpowers skills are advisory only for this prompt.
+Do not use `docs/superpowers/plans/...`.
+After reading any required skill, write only:
+`Using required skills: <names>. RALPHEX plan format has priority.`
+
+The controlling output format is this project's RALPHEX format:
+- save to `docs/plans/backlog/<feature-name>.md`;
+- use `# Plan: <name>`;
+- include `## Goal`, `## Context`, optional `## Implementation Notes` for
+  non-trivial code changes, required `## Product/Security Decisions` for
+  API/auth/user-visible data changes, `## Constraints`, `## Validation Commands`,
+  and `## Tasks`;
+- use `### Task N: ...`;
+- put checkboxes only inside Task sections;
+- validation commands must be exactly:
+  - `rtk make lint`
+  - `rtk make types`
+  - `rtk make tests`
+  - `rtk make quality`.
+
+After successfully creating and verifying the plan file:
+1. Print a concise summary.
+2. Print `PLAN_CREATED: docs/plans/backlog/<created-file>.md`.
+3. Print `<<<RALPHEX:PLAN_READY>>>` on the final line.
+4. Stop immediately.
+
+Before printing `PLAN_CREATED`, verify:
+- the created plan file exists;
+- the Goal/Context clearly match the current task description;
+- the plan file path is under `docs/plans/backlog/`;
+- API/auth/user-visible data plans contain `## Product/Security Decisions`;
+- no file under `docs/superpowers/plans/` was created;
+- no unrelated existing plan file was modified;
+- checkboxes appear only inside Task sections;
+- `Validation Commands` are exactly the four `rtk make ...` commands above;
+- `rtk git status --short` shows only intended plan/prompt/doc changes.
+
+## Preparation before writing the plan
+
+Before creating the plan file:
+1. Read root `AGENTS.md` and any nested instruction files that apply.
+2. Study existing implementation, nearby tests, fixtures, helpers, FastAPI app
+   wiring, Dishka providers, project references, and real commands in `Makefile`.
+3. Determine concrete files and existing project patterns to reuse.
+4. Find the narrowest realistic test command for each planned behavior change.
+5. Check whether the task can be completed without new dependencies, runtime
+   configuration, persistence, or Alembic changes.
+6. If the task touches FastAPI routes, auth, permissions, method exposure,
+   schema-visible fields, or user-visible data, define Product/Security Decisions
+   before Tasks: method auth matrix, public `GET`/`HEAD`/`OPTIONS`, protected
+   methods, public response fields, and identifier exposure rationale.
+7. If publicness, auth matrix, or identifier exposure is not confirmed by the
+   requirement, existing contract, or explicit user decision, record
+   `product decision required` and do not plan implementation that decides it.
+8. Do not change app code while creating the plan.
+9. Do not add repository investigation as a Task; complete it before writing.
+
+Do not invent paths, class names, tests, commands, providers, use cases, models,
+or storage interfaces. If a detail is not verified, mark it as requiring
+clarification in `Context`.
+
+## Implementation examples
+
+Plans should include compact implementation examples when they reduce ambiguity.
+
+Add `## Implementation Notes` after `## Context` when a task involves non-trivial
+code changes. Omit it for documentation-only plans unless an example prevents
+misimplementation.
+
+Use project-real examples such as:
+- `src/api/routers.py::root_router`
+- `src/api/<domain>/endpoints.py` with `DishkaRoute`
+- `src/api/<domain>/schemas.py` boundary conversion methods
+- `src/core/<domain>/use_cases.py`
+- `src/di/container.py` and `src/di/providers/*`
+- `src/tests/fixtures.py::APIFixture`
+- `src/tests/helpers/api.py::APIHelper`
+
+Examples are guidance only. During execution, inspect the real files before
+editing, prefer current project patterns over sketches, update the plan if a
+sketch is stale, and never use a sketch to skip RED/GREEN verification.
+
+## Required top-level plan structure
+
+Use this structure:
+
+````markdown
+# Plan: <short name>
+
+## Goal
+
+<specific outcome for the user or system>
+
+## Context
+
+- <verified files, components, and project patterns>
+- <current constraints and integration points>
+- <checked assumptions>
+
+## Product/Security Decisions
+
+- Method auth matrix: `<GET/POST/... -> public or token/session auth>`.
+- Public read decision: `<which GET/HEAD/OPTIONS routes are public>`.
+- Protected methods: `<which methods require token/session auth>`.
+- Public data: `<response fields that may be exposed publicly>`.
+- Identifier exposure: `<whether ids/email/username/profile identifiers are allowed and why>`.
+- Product decision required: `<none, or exact unresolved question>`.
+
+## Implementation Notes
+
+- Existing pattern: `<verified file/function/class reference>`.
+- Expected shape sketch (not final code):
+  ```python
+  # sketch only; inspect real files before implementation
+  async def endpoint(use_case: FromDishka[UseCase]) -> ResponseSchema:
+      result = await use_case.execute()
+      return ResponseSchema.from_domain(result)
+  ```
+- Test assertion sketch (not final code):
+  ```python
+  response = self.api.get_example()
+  assert response.status_code == codes.OK
+  ```
+- Edge cases:
+  - missing vs null request fields;
+  - boundary schema conversion;
+  - dependency injection wiring;
+  - persisted values after database-side updates when counters are involved.
+
+## Constraints
+
+- Follow `AGENTS.md` and applicable nested instructions.
+- Use existing project patterns.
+- Do not change architecture without necessity.
+- Do not add new dependencies unless the plan explicitly updates `pyproject.toml`
+  and `uv.lock`.
+- Do not create runtime config, persistence, or Alembic layers unless the task
+  requires them.
+- Apply TDD to behavior changes.
+- Each Task should be small enough to finish with green validation.
+
+## Validation Commands
+
+- `rtk make lint`
+- `rtk make types`
+- `rtk make tests`
+- `rtk make quality`
+
+## Tasks
+
+### Task 1: <one atomic observable result>
+
+**Success Criteria:**
+
+- <verifiable final result>
+- <specific test or scenario that proves it>
+- `rtk make quality` exits successfully.
+
+**Implementation Sketch:**
+
+- Likely files: `<verified file path>`.
+- Existing pattern: `<verified file/function/class reference>`.
+- Code shape sketch (not final code): `<short sketch or paragraph>`.
+- Assertion sketch (not final code): `<focused assertion proving behavior>`.
+
+**Actions:**
+
+- [ ] Add or update one focused test for the required behavior.
+- [ ] Run the narrowest relevant test and confirm it fails for the expected missing behavior.
+- [ ] Make the minimal production change required for the test to pass.
+- [ ] Re-run the focused test and confirm it passes.
+- [ ] Perform only necessary safe refactoring and re-run the focused test.
+- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+````
+
+Continue with sequential `### Task 2:`, `### Task 3:`, and so on.
+
+## Task rules
+
+1. Task headings must use `### Task N: <specific result>`.
+2. Each Task must contain `Success Criteria` and `Actions`.
+3. `Success Criteria` use normal bullets, not checkboxes.
+4. Add `Implementation Sketch` when it reduces ambiguity.
+5. Executable actions under `Actions` use only `- [ ]`.
+6. Do not put checkboxes outside Task sections.
+7. Each Task must contain at least one unchecked checkbox.
+8. For behavior changes, keep RED, GREEN, refactor, and validation inside the same Task.
+9. If a RED test is already green, classify the path as `coverage-only` or
+   `stale plan`; do not force fake production changes.
+10. Documentation-only Tasks do not need artificial tests, but still end with
+    relevant validation.
+11. Do not add a final catch-all testing Task.
+12. Split Tasks that cover multiple behaviors, methods, permissions, response
+    fields, or unrelated layers.
+
+## Final self-check
+
+Before saving:
+- required sections are present;
+- Product/Security Decisions exist for API/auth/user-visible data work;
+- Implementation Notes exist for non-trivial code changes;
+- validation commands are exactly the four `rtk make ...` commands;
+- all Tasks have concrete success criteria and checkbox actions;
+- checkboxes appear only inside Task sections;
+- no Task assumes unverified codebase facts;
+- no Task introduces unrelated refactoring or architecture churn.

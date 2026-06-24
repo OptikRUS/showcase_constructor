@@ -1,0 +1,107 @@
+# first review prompt
+# comprehensive review pass
+#
+# available variables:
+#   {{PLAN_FILE}} - path to the plan file being executed
+#   {{PROGRESS_FILE}} - task execution and review progress log
+#   {{GOAL}} - human-readable goal description
+#   {{DEFAULT_BRANCH}} - default branch name
+#   {{agent:<name>}} - executor-specific reviewer invocation
+
+# Code review of: {{GOAL}}
+
+# Progress log: {{PROGRESS_FILE}}
+
+## Step 1: Get Branch Context
+
+# Run both commands:
+# - `rtk git log {{DEFAULT_BRANCH}}..HEAD --oneline`
+# - `rtk git diff {{DEFAULT_BRANCH}}...HEAD`
+
+## Architectural defenses / guardrails review
+
+Verify that the implementation preserves the project's existing architectural
+boundaries. Check only defenses stated in AGENTS.md, docs/references, the current
+plan, or established code patterns. Do not invent rules or expand branch scope.
+
+Specifically verify:
+- FastAPI endpoints remain thin and do not absorb business logic;
+- request/response boundary schemas own transport adaptation when the plan or
+  project rule requires it;
+- use cases receive domain-level inputs, not raw FastAPI requests, TestClient
+  responses, or persistence models;
+- routers are registered through `src/api/routers.py::root_router`;
+- endpoint DI uses `DishkaRoute` and `FromDishka[...]` where dependencies are managed;
+- auth, validation, exception mapping, and middleware paths are not bypassed;
+- persistence implementations live under `src/storages`, not `repositories`;
+- transactions remain provider-owned when a DB layer exists;
+- tests use centralized fixtures/helpers instead of local app/client/container setup;
+- no unrelated rule is changed to make the task easier.
+
+Report violations with severity:
+- critical/major if behavior, validation, security, permissions, exception
+  handling, persistence safety, or a declared architecture boundary is broken;
+- minor if only documentation/test clarity is missing;
+- false positive if the suggested simplification conflicts with explicit project rules.
+
+## Counter / metrics persistence-safety review
+
+For any branch that adds or changes counters, metrics, denormalized counters, or
+database-side updates, verify persisted-value safety:
+- updates are atomic or otherwise safe for the configured persistence layer;
+- same-response values are not computed from stale in-memory objects;
+- returned objects are refreshed or synchronized when needed;
+- tests cover persisted and response values separately when both matter;
+- `HEAD`, `OPTIONS`, failed lookups, validation errors, and auth failures do not
+  mutate counters unless explicitly required;
+- write logic stays in the declared write boundary.
+
+Severity:
+- critical/major if stale values, lost updates, or non-idempotent non-mutating
+  requests can affect user-visible data;
+- minor if only documentation or test clarity is missing;
+- false positive if the branch does not mutate counters/metrics.
+
+## Step 2: Launch Review Agents
+
+# Launch all available reviewer agents in parallel:
+# {{agent:quality}}
+# {{agent:implementation}}
+# {{agent:testing}}
+# {{agent:simplification}}
+# {{agent:documentation}}
+
+# Agents are read-only and finding-only. They must not edit files, create
+# Alembic changes, add indexes, change public fields, change auth/data contracts,
+# create commits, or introduce global architecture rules.
+
+## Step 3: Collect, Verify, and Fix Findings
+
+# Merge duplicate findings.
+# Verify every finding against the actual file and surrounding context.
+# Classify every finding as exactly one:
+# - correctness/security defect
+# - missing test coverage
+# - product decision required
+# - optional performance improvement
+# - simplification
+# - false positive
+
+# Action rules:
+# - Fix only confirmed, in-scope correctness/security defects and missing test coverage.
+# - Do not fix product decisions, optional performance improvements,
+#   simplifications, auth/data contract changes, public field changes, DB schema
+#   changes, or global architecture changes without a plan amendment.
+# - Pre-existing issues may be reported, but only fix them if they block current validation.
+# - Run required tests/lint after fixes.
+
+## Step 4: Signal Completion
+
+# If no confirmed in-scope issues were found, output exactly:
+# <<<RALPHEX:REVIEW_DONE>>>
+
+# If issues were found and fixed, stop without REVIEW_DONE so another review can run.
+# If issues cannot be fixed without user/product decisions, output exactly:
+# <<<RALPHEX:TASK_FAILED>>>
+
+# OUTPUT FORMAT: Plain text. No markdown formatting.

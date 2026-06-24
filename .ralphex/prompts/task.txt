@@ -1,0 +1,89 @@
+# task execution prompt
+# used for each task iteration in phase 1
+#
+# available variables:
+#   {{PLAN_FILE}} - path to the plan file being executed
+#   {{PROGRESS_FILE}} - path to the progress log
+#   {{GOAL}} - human-readable goal description
+#   {{DEFAULT_BRANCH}} - default branch name
+
+# Before selecting or announcing any Task:
+# - Read the full {{PLAN_FILE}}, including Goal, Context, Product/Security Decisions,
+#   Constraints, Validation Commands, and every Task section.
+# - Read {{PROGRESS_FILE}} to understand prior completed work and review history.
+# - Run `rtk git status --short` and note pre-existing changes.
+# - Only after that, run: rg -n -- "- \\[ \\]" {{PLAN_FILE}}
+# - Select the first unchecked checkbox from that scan.
+# - Determine its nearest preceding parent heading matching "### Task N:" or "### Iteration N:".
+# - Ignore completed sections even if their title appears in prior progress logs.
+# - If the first unchecked checkbox has no preceding Task/Iteration parent, output exactly: <<<RALPHEX:TASK_FAILED>>>
+# - If no unchecked checkboxes exist, output exactly: <<<RALPHEX:ALL_TASKS_DONE>>>
+
+# If a Task section has checkboxes you cannot complete (manual verification,
+# deployment, external checks), mark them complete with a note such as
+# "[x] manual check (skipped - not automatable)" and proceed.
+
+# Do not echo long skill, AGENTS.md, reference, plan, or source-file contents into
+# {{PROGRESS_FILE}}. Print only short status updates while working.
+
+# HARD WRITE BOUNDARIES:
+# - Do not modify .env* files.
+# - Do not modify global git, codex, or ralphex settings.
+# - Do not modify files outside the current git repository.
+# - Do not modify secrets or tokens.
+
+# CRITICAL CONSTRAINT:
+# Complete ONE Task section per iteration. Complete all checkboxes in that
+# section, then stop. Do not continue to the next section.
+
+# STEP 0 - ANNOUNCE:
+# Before starting work, output a brief overview explaining:
+# - Which task number and title you selected
+# - What the task will accomplish
+# - Key files or components involved
+
+# STEP 1 - IMPLEMENT:
+# - Read the plan's Goal and Context sections.
+# - Read Implementation Notes and the current Task's Implementation Sketch, but
+#   treat sketches as guidance only.
+# - Read root AGENTS.md.
+# - Search for and read nested instruction files that apply to files you touch.
+# - Read relevant docs/references/examples files named by the plan Context or
+#   matching the touched surface: api, core, storages, services, clients, di,
+#   config, migrations, tests, ralphex.
+# - Keep FastAPI endpoints thin: auth/validation/boundary conversion/use case call only.
+# - Keep one endpoint mapped to one use case. Do not branch between use cases inside an endpoint.
+# - Register routers through `src/api/routers.py::root_router`, not directly in `create_app()`.
+# - Use `DishkaRoute` and `FromDishka[...]` for DI-managed endpoints.
+# - Keep business rules in `src/core`, persistence in `src/storages`, external
+#   adapters in `src/clients`/`src/services`, and dependency assembly in `src/di`.
+# - Do not introduce `repositories` or `repos`.
+# - Do not add runtime config, persistence, or Alembic layers unless the plan
+#   explicitly requires them.
+# - For storage/persistence changes, keep transactions in the DI provider and
+#   do not call `session.commit()` or `session.begin()` from storages or use cases.
+# - If a Task touches counters, metrics, denormalized counters, or database-side
+#   updates, preserve persisted-value safety: write mutations in the declared
+#   write boundary, refresh or synchronize returned values when needed, and cover
+#   non-mutating/error paths when relevant.
+# - Implement all checkboxes under the current Task section.
+# - Write tests for behavior changes before production changes.
+# - Keep one commit per Task only when the active RALPHEX loop requires commits.
+# - If a focused RED test unexpectedly passes, classify the Task path as
+#   `coverage-only` or `stale plan` and do not force artificial production changes.
+
+# STEP 2 - VALIDATE:
+# - Run the validation commands specified in the plan.
+# - Fix failures and repeat until all required validation passes, or report a blocker.
+
+# STEP 3 - COMPLETE:
+# - Update {{PLAN_FILE}} by changing completed checkboxes in the current Task
+#   section from [ ] to [x].
+# - If the active RALPHEX loop requires commits, commit code plus the updated plan.
+# - Re-run the deterministic unchecked-checkbox scan.
+# - If no unchecked checkboxes remain, output exactly: <<<RALPHEX:ALL_TASKS_DONE>>>
+# - If unchecked checkboxes remain, stop here.
+
+# If any phase fails after reasonable fix attempts, output exactly: <<<RALPHEX:TASK_FAILED>>>
+
+# OUTPUT FORMAT: Plain text. No markdown formatting.

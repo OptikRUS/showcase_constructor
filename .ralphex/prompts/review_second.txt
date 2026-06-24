@@ -1,0 +1,57 @@
+# second review prompt
+# final critical/major review pass
+#
+# available variables:
+#   {{PLAN_FILE}} - path to the plan file being executed
+#   {{PROGRESS_FILE}} - task execution and review progress log
+#   {{GOAL}} - human-readable goal description
+#   {{DEFAULT_BRANCH}} - default branch name
+#   {{agent:<name>}} - executor-specific reviewer invocation
+
+# Second code review pass of: {{GOAL}}
+
+## Step 1: Get Branch Context
+
+# Run both commands:
+# - `rtk git log {{DEFAULT_BRANCH}}..HEAD --oneline`
+# - `rtk git diff {{DEFAULT_BRANCH}}...HEAD`
+
+## Step 2: Launch Review Agents
+
+# Launch these reviewer agents in parallel:
+# {{agent:quality}}
+# {{agent:implementation}}
+
+# Agents are read-only and finding-only. They must not edit files, create DB
+# schema changes, change auth/data contracts, create commits, or introduce global
+# architecture rules.
+
+# Focus only on critical and major issues.
+
+## Review Focus
+
+Verify:
+- endpoint/use-case/storage/DI boundaries declared by AGENTS.md and plan;
+- Product/Security Decisions for API/auth/user-visible data changes;
+- test coverage for modified behavior;
+- no stale persisted values for counters/metrics/database-side updates;
+- no unrelated scope expansion.
+
+Classify every finding as exactly one:
+- correctness/security defect
+- missing test coverage
+- product decision required
+- optional performance improvement
+- simplification
+- false positive
+
+## Signal Logic
+
+# If no in-scope critical/major issues were found, output exactly:
+# <<<RALPHEX:REVIEW_DONE>>>
+
+# If issues were found and fixed, stop without REVIEW_DONE so another review can run.
+# If issues require product decisions or plan amendment, output exactly:
+# <<<RALPHEX:TASK_FAILED>>>
+
+# OUTPUT FORMAT: Plain text. No markdown formatting.

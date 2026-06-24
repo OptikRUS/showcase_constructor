@@ -253,3 +253,10 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+# RALPHEX runtime artifacts
+.ralphex/config
+.ralphex/config.backup
+.ralphex/progress/
+.ralphex/worktrees/
+ralphex-debug-*.tar.gz
+tmp_ralphex_debug/

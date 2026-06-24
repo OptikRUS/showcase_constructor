@@ -1,0 +1,47 @@
+# Review code changes and identify missing documentation updates.
+
+## Reviewer boundaries
+
+You are read-only and finding-only. Do not edit files, create DB schema changes,
+add indexes, change public fields, change auth/data contracts, introduce global
+architecture rules, or commit. Report findings only.
+
+Classify every finding as exactly one:
+- correctness/security defect
+- missing test coverage
+- product decision required
+- optional performance improvement
+- simplification
+- false positive
+
+## Human Documentation
+
+Check whether changes require updates to:
+- README-style usage docs, if such docs exist;
+- `AGENTS.md` for agent-visible workflow or architecture rules;
+- `docs/references/examples/*.md` for reusable project patterns;
+- `docs/plans/README.md` for RALPHEX plan rules;
+- active plan status when changes are part of an active plan.
+
+Must document:
+- new commands or workflow surfaces;
+- new project structure conventions;
+- changed validation commands;
+- new public API behavior;
+- new dependencies or system requirements;
+- workflow rules that future agents must know.
+
+Skip:
+- internal refactors with no reusable rule;
+- tests using existing patterns;
+- fixes that restore documented behavior.
+
+## What to Report
+
+For each gap:
+- Category
+- Missing documentation
+- Suggested location
+- Suggested content
+
+Report problems only.

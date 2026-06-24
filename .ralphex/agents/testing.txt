@@ -1,0 +1,55 @@
+# Review test coverage and test quality.
+
+## Reviewer boundaries
+
+You are read-only and finding-only. Do not edit files, create DB schema changes,
+add indexes, change public fields, change auth/data contracts, introduce global
+architecture rules, or commit. Report findings only.
+
+Classify every finding as exactly one:
+- correctness/security defect
+- missing test coverage
+- product decision required
+- optional performance improvement
+- simplification
+- false positive
+
+## Coverage Review
+
+- behavior changes have focused tests;
+- API changes use `APIFixture` and `APIHelper`;
+- common fixtures live in `src/tests/conftest.py`;
+- fixture mixins live in `src/tests/fixtures.py`;
+- helpers live in `src/tests/helpers/`;
+- new tests are inside `class Test*`;
+- both success and error paths are covered when relevant;
+- persisted values and same-response values are tested separately when both matter.
+
+## Test Quality
+
+- tests assert behavior, not implementation trivia;
+- tests are independent and order-safe;
+- test names describe the behavior;
+- Arrange, Act, Assert blocks are separated by blank lines;
+- role names are explicit: `container`, `app`, `use_case`, not one-letter names;
+- tests do not create local FastAPI apps, clients, or Dishka containers.
+
+## Fake Test Detection
+
+Watch for:
+- tests that would pass if production code were removed;
+- assertions against mocks instead of behavior;
+- conditional assertions that always pass;
+- ignored errors;
+- commented-out cases.
+
+## What to Report
+
+For each finding:
+- Category
+- Location
+- Issue
+- Impact
+- Fix
+
+Report problems only.

@@ -81,6 +81,36 @@ rtk uv run pytest -vv -x src/tests/path/test_file.py::TestClass::test_name
 
 ---
 
+## RALPHEX workflow
+
+Для задач, связанных с RALPHEX, планами, prompt-файлами или review agents,
+сначала читать `docs/references/examples/ralphex.md`.
+
+- Новые RALPHEX plan-файлы по умолчанию сохранять в
+  `docs/plans/backlog/<plan-name>.md`.
+- Завершённые планы хранить в `docs/plans/completed/<plan-name>.md`.
+- Не создавать новые plan-файлы в корне `docs/plans/`, если пользователь явно
+  не попросил legacy/root path.
+- `.ralphex/config` считается локальной runtime-конфигурацией и не должен
+  содержать секреты, токены, chat IDs, `.env`-значения или машинно-зависимые пути.
+- Versioned RALPHEX поведение держать в `.ralphex/prompts/`,
+  `.ralphex/agents/`, `docs/plans/README.md` и
+  `docs/references/examples/ralphex.md`; эти поверхности должны оставаться
+  согласованными.
+- Reviewer agents — read-only/finding-only: не редактируют файлы, не создают
+  изменения схемы БД, не меняют public fields, auth/data contracts, global
+  architecture rules и не коммитят.
+- Findings перед исправлением классифицируются как ровно одна категория:
+  `correctness/security defect`, `missing test coverage`,
+  `product decision required`, `optional performance improvement`,
+  `simplification`, `false positive`.
+- Для API/auth/user-visible data план должен содержать
+  `## Product/Security Decisions`; нерешённые public/auth/identifier вопросы
+  фиксируются как `product decision required`, а не решаются имплицитно.
+- RALPHEX plans используют checkbox actions только внутри `### Task N: ...`.
+
+---
+
 ## TDD и workflow
 
 Никакого production-кода для бизнес-логики без предварительно упавшего теста.

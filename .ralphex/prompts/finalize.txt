@@ -1,0 +1,20 @@
+# finalize prompt
+# runs after successful reviews only when enabled by configuration
+#
+# available variables:
+#   {{DEFAULT_BRANCH}} - default branch name
+
+# Safe finalize policy for showcase_constructor.
+
+Do not rebase, squash, push, or otherwise rewrite git history unless the user or
+the active plan explicitly asks for that operation.
+
+Finalization steps:
+1. Run `rtk git status --short`.
+2. Run `rtk git log {{DEFAULT_BRANCH}}..HEAD --oneline` if the branch has commits.
+3. Report the branch state and whether validation has already passed in the
+   active progress log.
+4. If any history-changing operation is needed, stop and ask for explicit user
+   confirmation outside this finalize step.
+
+OUTPUT FORMAT: Plain text. No markdown formatting.
