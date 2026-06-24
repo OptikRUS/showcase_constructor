@@ -110,11 +110,11 @@ durability и custom code permissions. Бизнес-код, runtime-конфиг
 
 **Actions:**
 
-- [ ] Create `docs/decisions/mvp-boundaries.md` with a concise MVP scope section.
-- [ ] Mark unconfirmed scope points exactly as `product decision required`.
-- [ ] Add a short "Blocked Feature Plans" section listing which later feature plans must wait for the decisions.
-- [ ] Run `rtk rg -n "product decision required|Blocked Feature Plans|In scope|Out of scope" docs/decisions/mvp-boundaries.md`.
-- [ ] Run `rtk make quality`, fix documentation-related failures if any, and repeat until successful.
+- [x] Create `docs/decisions/mvp-boundaries.md` with a concise MVP scope section.
+- [x] Mark unconfirmed scope points exactly as `product decision required`.
+- [x] Add a short "Blocked Feature Plans" section listing which later feature plans must wait for the decisions.
+- [x] Run `rtk rg -n "product decision required|Blocked Feature Plans|In scope|Out of scope" docs/decisions/mvp-boundaries.md`.
+- [x] Run `rtk make quality`, fix documentation-related failures if any, and repeat until successful.
 
 ### Task 2: Record admin API auth and method exposure decisions
 
