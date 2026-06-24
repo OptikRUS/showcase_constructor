@@ -7,59 +7,91 @@ business implementation, persistence, runtime configuration, migrations, or
 dependency changes.
 
 It complements `docs/decisions/mvp-boundaries.md`, which remains the active MVP
-boundary. Any unresolved item in either decision record stays
+boundary. The admin showcase route/auth boundary below is approved for MVP
+planning, while any unresolved item in either decision record stays
 `product decision required`.
 
-## Requested Lifecycle Surface
+## Approved Lifecycle Surface
 
-The requested admin showcase lifecycle surface is blocked until the decisions in
-this record are approved:
+The requested admin showcase lifecycle surface is approved only as a protected,
+owner-scoped admin boundary. No admin showcase route is public. Every approved
+route must resolve the current `AdminActorContext` through the MVP JWT bearer
+adapter, and use cases must return or mutate only showcases whose
+`owner_partner_id` matches `context.partner_id`.
 
 | Operation | Candidate method and path | Public access | Status |
 | --- | --- | --- | --- |
-| Create showcase | `POST /api/v1/showcases` | Not approved | product decision required |
-| List own showcases | `GET /api/v1/showcases` | Not approved | product decision required |
-| Get own showcase | `GET /api/v1/showcases/{id}` | Not approved | product decision required |
-| Patch draft showcase | `PATCH /api/v1/showcases/{id}` | Not approved | product decision required |
-| Clone showcase | `POST /api/v1/showcases/{id}/clone` | Not approved | product decision required |
-| Archive showcase | `POST /api/v1/showcases/{id}/archive` | Not approved | product decision required |
-| Restore or unarchive showcase | Not selected | Not approved | product decision required |
+| Create showcase | `POST /api/v1/showcases` | Not approved | Approved MVP boundary: authenticated current admin context required; created showcase belongs to `context.partner_id`. |
+| List own showcases | `GET /api/v1/showcases` | Not approved | Approved MVP boundary: authenticated current admin context required; response is limited to showcases owned by `context.partner_id`. |
+| Get own showcase | `GET /api/v1/showcases/{id}` | Not approved | Approved MVP boundary: authenticated current admin context required; foreign-partner showcases must not be returned. |
+| Patch draft showcase | `PATCH /api/v1/showcases/{id}` | Not approved | Approved MVP boundary: authenticated current admin context required; only owned draft data may be patched. |
+| Clone showcase | `POST /api/v1/showcases/{id}/clone` | Not approved | Approved MVP boundary: authenticated current admin context required; source and clone must belong to `context.partner_id`. |
+| Archive showcase | `POST /api/v1/showcases/{id}/archive` | Not approved | Approved MVP boundary: authenticated current admin context required; only owned showcases may be archived. |
+| Restore showcase | `POST /api/v1/showcases/{id}/restore` | Not approved | Approved MVP boundary: authenticated current admin context required; only owned archived showcases may be restored. |
+| Unarchive showcase alias | `POST /api/v1/showcases/{id}/unarchive` | Not approved | Blocked: MVP selects `restore` as the single recovery verb to avoid duplicate route semantics. |
 
-No `HEAD`, `OPTIONS`, or CORS/preflight behavior for these admin routes is
-approved. Method parity, discovery behavior, and preflight handling for the
-admin lifecycle surface are `product decision required`.
+`HEAD` routes are intentionally not app-defined for the admin lifecycle MVP.
+They do not mirror admin `GET` responses, do not expose public metadata, and
+must remain unregistered unless a later decision approves explicit admin
+metadata behavior.
+
+`OPTIONS` routes are intentionally not app-defined as admin business routes for
+the MVP. If CORS/preflight support is introduced later, it must be handled as
+application middleware/infrastructure and must not make admin resources public.
 
 ## Required Product And Security Decisions
 
 | Decision area | Current boundary |
 | --- | --- |
 | Admin auth model | MVP JWT bearer adapter selected for current-context wiring; external auth-provider integration, refresh/session activation, production replacement criteria, and internal-admin override remain product decision required. |
-| Current owner context | JWT subject must provide `user_id` and `partner_id`; route-specific ownership propagation for lifecycle use cases remains product decision required. |
-| Per-method permissions | product decision required: approve create, list own, get own, patch draft, clone, archive, and restore/unarchive permissions separately. |
-| Admin `HEAD` and `OPTIONS` | product decision required: decide whether these methods exist, whether they mirror protected `GET` behavior, and how CORS/preflight should be handled. |
-| Admin response fields | product decision required: approve the authenticated admin response contract for ids, owner fields, public ids or slugs, titles, statuses, draft and published snapshots, timestamps, archive metadata, and restore metadata. |
-| Identifier exposure | product decision required: decide which internal ids, public ids, slugs, owner ids, tenant or partner ids, and profile identifiers may be returned to authenticated admin callers. Public exposure remains not approved. |
+| Current owner context | JWT subject must provide `user_id` and `partner_id`; approved lifecycle routes must pass the already-validated current admin context to one use case and enforce `context.partner_id` ownership before returning or mutating showcase data. |
+| Per-method permissions | Approved MVP boundary for create, list own, get own, patch draft, clone, archive, and restore through the method/path matrix above; `unarchive` alias remains blocked. |
+| Admin `HEAD` and `OPTIONS` | Approved MVP boundary: no app-defined admin lifecycle `HEAD` or `OPTIONS` routes. Future CORS middleware must not change admin resource visibility. |
+| Admin response fields | Approved and blocked field groups are defined in `Authenticated Admin Response Boundary` below. |
+| Identifier exposure | Authenticated admin `id` and `ownerPartnerId` may be returned only for owned admin resources. Public ids or slugs remain blocked until the public identifier model is approved. Public exposure remains not approved. |
 | Persistence backend | product decision required: choose backend storage, migration strategy, ownership model, transaction boundary, and whether any in-memory-only behavior is acceptable. |
-| Lifecycle statuses | product decision required: approve the status set and transition matrix for `draft`, `published`, `unpublished`, and `archived`. |
-| Draft patch behavior | product decision required: define which fields are patchable in draft state and whether a draft patch may affect any published snapshot. |
-| Clone behavior | product decision required: define copied fields, new status, ownership, public id or slug handling, draft and published snapshot handling, timestamps, and audit semantics. |
+| Lifecycle statuses | Approved response boundary may expose `draft`, `published`, `unpublished`, and `archived` status values; the full transition matrix remains product decision required for behavior implementation. |
+| Draft patch behavior | product decision required: define which fields beyond the current `title` draft update are patchable and whether a draft patch may affect any published snapshot. |
+| Clone behavior | product decision required: define copied fields, new status, public id or slug handling, draft and published snapshot handling, timestamps, and audit semantics. Ownership is approved as `context.partner_id`. |
 | Archive behavior | product decision required: define allowed source statuses, public-read consequences, snapshot retention, recovery window, and audit semantics. |
-| Restore or unarchive policy | product decision required: decide whether restore/unarchive is allowed, select the final method and path, define source and target statuses, and approve conflicts with current publication or slug state. |
+| Restore policy | product decision required: define source and target statuses, recovery window, conflicts with current publication or slug state, and audit semantics for `POST /api/v1/showcases/{id}/restore`. |
 | Audit and events | product decision required: choose durable audit/event requirements for create, patch, clone, archive, and restore/unarchive before mutations go live. |
+
+## Authenticated Admin Response Boundary
+
+This response boundary applies only to authenticated admin callers after the
+owner check succeeds. It does not approve public storefront exposure.
+
+| Field group | Authenticated admin response boundary |
+| --- | --- |
+| Showcase `id` | Approved MVP boundary as the admin resource identifier used in admin route paths and responses. It is not a public showcase identifier. Direct database primary-key shape remains tied to the later persistence decision. |
+| Owner and partner fields | `ownerPartnerId` is approved only when it equals the caller's `context.partner_id`. Owner/admin emails, usernames, profile identifiers, and cross-partner account identifiers are blocked. |
+| Public ids or slugs | Blocked until the public identifier model is approved in `docs/decisions/mvp-boundaries.md`. Admin routes must not invent or expose a public id or slug before that decision. |
+| Title | Approved MVP boundary for create, list own, get own, patch draft, clone, archive, and restore responses. |
+| Status | Approved MVP boundary for admin-owned resources using `draft`, `published`, `unpublished`, and `archived`; transition rules remain behavior decisions. |
+| Draft snapshot metadata | Approved MVP boundary for metadata needed by the owner, such as draft version, update timestamp, and dirty/published comparison flags. Draft snapshot content fields remain tied to later constructor editing decisions. |
+| Published snapshot metadata | Approved MVP boundary for metadata needed by the owner, such as published version, publication timestamp, and whether a published snapshot exists. Public snapshot field exposure remains a separate public-data decision. |
+| Timestamps | `createdAt` and `updatedAt` are approved MVP response fields for authenticated owner-scoped admin routes. |
+| Archive metadata | `archivedAt` is approved when archive behavior is implemented. `archivedBy` actor identifiers and retention/recovery details remain blocked until audit and archive behavior decisions are approved. |
+| Restore metadata | `restoredAt` is approved when restore behavior is implemented. `restoredBy` actor identifiers and conflict-resolution details remain blocked until audit and restore behavior decisions are approved. |
+| Private/internal fields | Draft-private settings, service credentials, audit internals, storage implementation details, tenant/account identifiers unrelated to the current owner boundary, and foreign-owner data are blocked. |
 
 ## Implementation Boundary
 
-Until these decisions are approved, this record does not allow:
+This record still does not directly implement or register routes. Future
+implementation plans may use the approved method/auth/response boundary above,
+but must also satisfy any still-unresolved persistence, lifecycle behavior,
+public identifier, published-snapshot, and audit/event decisions before the
+corresponding behavior goes live.
 
-- registering FastAPI admin lifecycle routes;
-- adding admin lifecycle endpoint schemas;
-- adding or expanding lifecycle use cases for create, list, get, patch, clone,
-  archive, restore, or unarchive;
+This record does not allow:
+
 - adding persistence interfaces or implementations for lifecycle storage;
 - adding `src/storages`, persistence runtime settings, migrations, database
   dependencies, or audit/event dependencies;
-- exposing public or admin identifiers beyond an explicitly approved response
-  contract.
+- exposing public identifiers, slugs, public storefront data, foreign-owner
+  data, or admin identifiers beyond the authenticated admin response contract
+  above.
 
 Future implementation plans must keep endpoints thin: one endpoint delegates to
 one use case, business rules live in `src/core`, storage access goes through

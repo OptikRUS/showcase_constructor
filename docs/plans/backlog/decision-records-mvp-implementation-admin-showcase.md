@@ -146,15 +146,15 @@ business code.
 
 **Actions:**
 
-- [ ] Update `docs/decisions/admin-api-lifecycle.md` with the admin showcase
+- [x] Update `docs/decisions/admin-api-lifecycle.md` with the admin showcase
   method auth matrix and route-specific approval/blocking status.
-- [ ] Update `docs/decisions/mvp-boundaries.md` so the Admin API section points
+- [x] Update `docs/decisions/mvp-boundaries.md` so the Admin API section points
   to the same admin showcase route boundary.
-- [ ] Verify the decision records do not approve public admin access or
+- [x] Verify the decision records do not approve public admin access or
   ambiguous identifier exposure.
-- [ ] Confirm the diff contains only intended decision-record documentation
+- [x] Confirm the diff contains only intended decision-record documentation
   changes.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 2: Decide MVP storage and persistence boundary
 

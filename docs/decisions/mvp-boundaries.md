@@ -21,7 +21,8 @@ configuration, migrations, or custom rendering behavior.
 - Implementing business code, FastAPI endpoints, DI providers, storages,
   settings, migrations, or external clients in this decision-first task.
 - Treating constructor editing, showcase publishing, custom domains, analytics,
-  billing, admin API, or public storefront behavior as approved MVP features.
+  billing, full admin API behavior, or public storefront behavior as approved
+  MVP features.
 - Exposing internal database IDs, admin emails, usernames, profile identifiers,
   tenant/account identifiers, custom code metadata, or verification status before
   a later decision explicitly approves each field.
@@ -37,7 +38,7 @@ configuration, migrations, or custom rendering behavior.
 | Custom domains | product decision required | Blocked until domain ownership verification and failure handling are approved. |
 | Analytics | product decision required | Blocked until event collection, retention, and public/admin visibility are approved. |
 | Billing | product decision required | Blocked until paid features, account ownership, and provider integration are approved. |
-| Admin API | MVP JWT bearer adapter | Only protected current-context wiring may use the JWT bearer adapter; route-specific permissions remain product decision required. |
+| Admin API | MVP JWT bearer adapter plus approved admin showcase route boundary | `docs/decisions/admin-api-lifecycle.md` approves protected owner-scoped create, list own, get own, patch draft, clone, archive, and restore route boundaries; storage, lifecycle behavior, public identifiers, and audit durability still require their focused decisions. |
 | Public storefront | product decision required | Blocked until public identifiers, routes, and response fields are approved. |
 | Persistence | product decision required | Blocked until backend, migration, and transaction boundaries are approved. |
 | Custom code | product decision required | Blocked until allowed code categories, sanitization, sandboxing, and review rules are approved. |
@@ -58,10 +59,13 @@ override.
 External auth-provider integration, refresh/session activation, internal-admin
 override, and production replacement criteria remain `product decision required`.
 
-Admin showcase lifecycle operations are additionally blocked by
-`docs/decisions/admin-api-lifecycle.md`; create, list own, get own, patch draft,
-clone, archive, and restore/unarchive remain unapproved until that focused
-record's required product and security decisions are resolved.
+Admin showcase lifecycle method/auth boundaries are approved in
+`docs/decisions/admin-api-lifecycle.md` for protected owner-scoped create, list
+own, get own, patch draft, clone, archive, and restore routes. That focused
+record selects `POST /api/v1/showcases/{id}/restore` for recovery and keeps the
+`unarchive` alias blocked. Storage, lifecycle behavior, public identifiers,
+published-snapshot exposure, and audit durability remain governed by their
+focused decisions before implementation may go live.
 
 The only confirmed public runtime route remains `GET /health`. No admin `GET`,
 `HEAD`, `OPTIONS`, `POST`, `PUT`, `PATCH`, or `DELETE` route is public in this
@@ -71,12 +75,13 @@ path, and rationale.
 | Surface | Method class | Public access | Required auth | Status |
 | --- | --- | --- | --- | --- |
 | Admin current context | `GET /api/v1/admin/auth/context` | Not approved | MVP JWT bearer adapter | Approved only for protected request-to-context wiring. |
-| Admin management reads | `GET` | Not approved | Current admin context required | Route-specific resources and response fields remain product decision required. |
-| Admin read metadata | `HEAD` | Not approved | product decision required | Blocked until parity with admin `GET` routes is approved. |
-| Admin preflight/discovery | `OPTIONS` | Not approved | product decision required | Blocked until CORS/preflight and discovery behavior are approved. |
-| Admin creation | `POST` | Not approved | Current admin context required | Mutation permissions and audit requirements remain product decision required. |
+| Admin management reads | `GET /api/v1/showcases`, `GET /api/v1/showcases/{id}` | Not approved | Current admin context required | Approved only for owner-scoped list/get boundaries in `docs/decisions/admin-api-lifecycle.md`. |
+| Admin read metadata | `HEAD` | Not approved | Not app-defined | Approved MVP boundary: no explicit admin lifecycle `HEAD` routes. |
+| Admin preflight/discovery | `OPTIONS` | Not approved | Not app-defined as admin business routes | Approved MVP boundary: no explicit admin lifecycle `OPTIONS` routes; future CORS middleware must not make admin resources public. |
+| Admin creation | `POST /api/v1/showcases` | Not approved | Current admin context required | Approved only for owner-scoped create boundary in `docs/decisions/admin-api-lifecycle.md`; storage and audit decisions still apply. |
+| Admin clone/archive/restore actions | `POST /api/v1/showcases/{id}/clone`, `POST /api/v1/showcases/{id}/archive`, `POST /api/v1/showcases/{id}/restore` | Not approved | Current admin context required | Approved only for owner-scoped action boundaries in `docs/decisions/admin-api-lifecycle.md`; behavior and audit decisions still apply. |
 | Admin replacement | `PUT` | Not approved | Current admin context required | Mutation permissions and audit requirements remain product decision required. |
-| Admin partial updates | `PATCH` | Not approved | Current admin context required | Mutation permissions and audit requirements remain product decision required. |
+| Admin partial updates | `PATCH /api/v1/showcases/{id}` | Not approved | Current admin context required | Approved only for owner-scoped draft patch boundary in `docs/decisions/admin-api-lifecycle.md`; patchable fields beyond the current title update remain product decision required. |
 | Admin deletion | `DELETE` | Not approved | Current admin context required | Deletion permissions, recovery needs, and audit requirements remain product decision required. |
 
 ## Public Data And Identifiers
@@ -180,8 +185,9 @@ capability and required control is explicitly approved.
 
 - Product decision required: choose the external admin API auth-provider
   integration, refresh/session activation model, internal-admin override,
-  production replacement criteria, and route-specific method permissions before
-  adding management routes beyond this MVP boundary.
+  production replacement criteria, and still-unresolved lifecycle behavior
+  details before adding management behavior beyond the owner-scoped route
+  boundary approved in `docs/decisions/admin-api-lifecycle.md`.
 - Product decision required: choose the public identifier model and public data
   exposure rules before adding storefront routes or schemas.
 - Product decision required: choose the persistence backend and migration
@@ -198,8 +204,9 @@ capability and required control is explicitly approved.
 
 ## Blocked Feature Plans
 
-- Admin API feature plans beyond this MVP boundary must wait for the final auth
-  provider, method matrix, and protected/public route decisions.
+- Admin API feature plans beyond the owner-scoped showcase route boundary must
+  wait for the final auth provider and any still-unresolved behavior,
+  persistence, audit, and field-exposure decisions.
 - Public storefront feature plans must wait for public route, field exposure, and
   identifier decisions.
 - Persistence feature plans must wait for backend, migration, config, and
