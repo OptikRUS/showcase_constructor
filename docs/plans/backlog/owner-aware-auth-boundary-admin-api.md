@@ -202,12 +202,12 @@ temporary auth adapter без привязки к внешнему auth provider
 
 **Actions:**
 
-- [ ] Add the focused RED core test for blank or missing admin context identifiers.
-- [ ] Run `rtk uv run pytest -vv -x src/tests/core/admin_auth/test_admin_context.py::TestAdminActorContext::test_rejects_blank_required_ids` and confirm it fails for the expected missing module/schema.
-- [ ] Implement the minimal core context schema and exceptions required for the test to pass.
-- [ ] Re-run the focused test and confirm it passes.
-- [ ] Perform only necessary safe refactoring and re-run the focused test.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Add the focused RED core test for blank or missing admin context identifiers.
+- [x] Run `rtk uv run pytest -vv -x src/tests/core/admin_auth/test_admin_context.py::TestAdminActorContext::test_rejects_blank_required_ids` and confirm it fails for the expected missing module/schema.
+- [x] Implement the minimal core context schema and exceptions required for the test to pass.
+- [x] Re-run the focused test and confirm it passes.
+- [x] Perform only necessary safe refactoring and re-run the focused test.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 3: Wire protected current admin context through API and DI
 
