@@ -544,12 +544,12 @@ explicit product decisions.
 
 **Actions:**
 
-- [ ] Add focused API/core/storage tests for offer patch, delete, enable/disable, owner checks, not-found, and published snapshot preservation.
-- [ ] Run the focused offer patch/delete test and confirm it fails for the missing behavior.
-- [ ] Add minimal domain params, use cases, storage methods, endpoint methods, boundary schemas, and helpers.
-- [ ] Re-run the focused offer patch/delete test and confirm it passes.
-- [ ] Perform only necessary safe refactoring and re-run the focused offer test.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Add focused API/core/storage tests for offer patch, delete, enable/disable, owner checks, not-found, and published snapshot preservation.
+- [x] Run the focused offer patch/delete test and confirm it fails for the missing behavior.
+- [x] Add minimal domain params, use cases, storage methods, endpoint methods, boundary schemas, and helpers.
+- [x] Re-run the focused offer patch/delete test and confirm it passes.
+- [x] Perform only necessary safe refactoring and re-run the focused offer test.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 9: Guard public snapshot separation and disabled-offer projection
 

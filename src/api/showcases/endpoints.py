@@ -8,6 +8,7 @@ from src.api.showcases.schemas import (
     AdminShowcaseDraftBlockPatchRequest,
     AdminShowcaseDraftBlockResponse,
     AdminShowcaseDraftOfferCreateRequest,
+    AdminShowcaseDraftOfferPatchRequest,
     AdminShowcaseDraftOfferResponse,
     AdminShowcaseDraftPatchRequest,
     AdminShowcaseDraftResponse,
@@ -17,9 +18,11 @@ from src.core.showcases.use_cases import (
     CreateAdminShowcaseBlockUseCase,
     CreateAdminShowcaseOfferUseCase,
     DeleteAdminShowcaseBlockUseCase,
+    DeleteAdminShowcaseOfferUseCase,
     ListAdminShowcaseBlocksUseCase,
     ListAdminShowcaseOffersUseCase,
     PatchAdminShowcaseBlockUseCase,
+    PatchAdminShowcaseOfferUseCase,
     UpdateAdminShowcaseDraftSettingsUseCase,
 )
 
@@ -129,3 +132,33 @@ async def create_showcase_draft_offer(
     )
 
     return AdminShowcaseDraftOfferResponse.from_domain(offer=offer)
+
+
+@router.patch(path="/{showcase_id}/offers/{offer_id}", status_code=status.HTTP_200_OK)
+async def patch_showcase_draft_offer(
+    showcase_id: str,
+    offer_id: str,
+    body: AdminShowcaseDraftOfferPatchRequest,
+    user: JwtUserDeps,
+    use_case: FromDishka[PatchAdminShowcaseOfferUseCase],
+) -> AdminShowcaseDraftOfferResponse:
+    context = AdminActorContext(user_id=user.user_id, partner_id=user.partner_id)
+    offer = await use_case.execute(
+        showcase_id=showcase_id,
+        offer_id=offer_id,
+        params=body.to_domain(),
+        context=context,
+    )
+
+    return AdminShowcaseDraftOfferResponse.from_domain(offer=offer)
+
+
+@router.delete(path="/{showcase_id}/offers/{offer_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_showcase_draft_offer(
+    showcase_id: str,
+    offer_id: str,
+    user: JwtUserDeps,
+    use_case: FromDishka[DeleteAdminShowcaseOfferUseCase],
+) -> None:
+    context = AdminActorContext(user_id=user.user_id, partner_id=user.partner_id)
+    await use_case.execute(showcase_id=showcase_id, offer_id=offer_id, context=context)

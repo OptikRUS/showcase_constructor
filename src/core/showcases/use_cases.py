@@ -14,6 +14,7 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraftBlockPatchParams,
     AdminShowcaseDraftOffer,
     AdminShowcaseDraftOfferCreateParams,
+    AdminShowcaseDraftOfferPatchParams,
     AdminShowcaseDraftSettingsPatchParams,
     AdminShowcaseUpdateParams,
 )
@@ -201,3 +202,55 @@ class CreateAdminShowcaseOfferUseCase:
             offer_id=str(self.offer_id),
             params=params,
         )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class PatchAdminShowcaseOfferUseCase:
+    storage: AdminShowcaseStorage
+
+    async def execute(
+        self,
+        *,
+        showcase_id: str,
+        offer_id: str,
+        params: AdminShowcaseDraftOfferPatchParams,
+        context: AdminActorContext,
+    ) -> AdminShowcaseDraftOffer:
+        showcase = await self.storage.get_by_id(showcase_id=showcase_id)
+
+        if showcase.owner_partner_id != context.partner_id:
+            raise ShowcaseAccessDeniedError
+
+        requested_block_id = params.values.get("block_id")
+        if requested_block_id is not None:
+            if not isinstance(requested_block_id, str):
+                raise AdminShowcaseDraftBlockNotFoundError
+
+            blocks = await self.storage.list_draft_blocks(showcase_id=showcase_id)
+            if requested_block_id not in {block.id for block in blocks}:
+                raise AdminShowcaseDraftBlockNotFoundError
+
+        return await self.storage.patch_draft_offer(
+            showcase_id=showcase_id,
+            offer_id=offer_id,
+            params=params,
+        )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class DeleteAdminShowcaseOfferUseCase:
+    storage: AdminShowcaseStorage
+
+    async def execute(
+        self,
+        *,
+        showcase_id: str,
+        offer_id: str,
+        context: AdminActorContext,
+    ) -> None:
+        showcase = await self.storage.get_by_id(showcase_id=showcase_id)
+
+        if showcase.owner_partner_id != context.partner_id:
+            raise ShowcaseAccessDeniedError
+
+        await self.storage.delete_draft_offer(showcase_id=showcase_id, offer_id=offer_id)

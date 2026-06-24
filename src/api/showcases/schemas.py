@@ -11,6 +11,7 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraftBlockPatchParams,
     AdminShowcaseDraftOffer,
     AdminShowcaseDraftOfferCreateParams,
+    AdminShowcaseDraftOfferPatchParams,
     AdminShowcaseDraftSettingsPatchParams,
     JsonObject,
     JsonValue,
@@ -202,6 +203,36 @@ class AdminShowcaseDraftOfferCreateRequest(BoundaryModel):
             erid=self.erid,
             data=self.data,
         )
+
+
+class AdminShowcaseDraftOfferPatchRequest(BoundaryModel):
+    model_config = ConfigDict(extra="forbid")
+
+    block_id: str | None = None
+    enabled: bool = True
+    manual_order: int = 0
+    cta_text: str | None = None
+    usp_text: str | None = None
+    fields: list[JsonValue] = Field(default_factory=list)
+    categories: list[JsonValue] = Field(default_factory=list)
+    logo_url: str | None = None
+    rounded_logo_url: str | None = None
+    display_name: str | None = None
+    site_name: str | None = None
+    cpa_url: str | None = None
+    legal_entity: str | None = None
+    inn: str | None = None
+    erid: str | None = None
+    data: JsonObject = Field(default_factory=dict)
+
+    def to_domain(self) -> AdminShowcaseDraftOfferPatchParams:
+        values = self.model_dump(
+            mode="json",
+            include=self.model_fields_set,
+            by_alias=False,
+        )
+
+        return AdminShowcaseDraftOfferPatchParams(values=cast("JsonObject", values))
 
 
 class AdminShowcaseDraftOfferResponse(BoundaryModel):

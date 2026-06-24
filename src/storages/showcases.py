@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.showcases.exceptions import (
     AdminShowcaseDraftBlockNotFoundError,
+    AdminShowcaseDraftOfferNotFoundError,
     AdminShowcaseNotFoundError,
 )
 from src.core.showcases.schemas import (
@@ -16,6 +17,7 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraftBlockPatchParams,
     AdminShowcaseDraftOffer,
     AdminShowcaseDraftOfferCreateParams,
+    AdminShowcaseDraftOfferPatchParams,
     AdminShowcaseDraftSettingsPatchParams,
     AdminShowcaseUpdateParams,
 )
@@ -24,6 +26,25 @@ from src.storages.models import (
     AdminShowcaseDraftBlockModel,
     AdminShowcaseDraftOfferModel,
     AdminShowcaseModel,
+)
+
+DRAFT_OFFER_UPDATE_FIELD_NAMES = (
+    "block_id",
+    "enabled",
+    "manual_order",
+    "cta_text",
+    "usp_text",
+    "fields",
+    "categories",
+    "logo_url",
+    "rounded_logo_url",
+    "display_name",
+    "site_name",
+    "cpa_url",
+    "legal_entity",
+    "inn",
+    "erid",
+    "data",
 )
 
 
@@ -220,6 +241,44 @@ class DatabaseAdminShowcaseStorage(AdminShowcaseStorage):
 
         return model.to_domain()
 
+    async def patch_draft_offer(
+        self,
+        *,
+        showcase_id: str,
+        offer_id: str,
+        params: AdminShowcaseDraftOfferPatchParams,
+    ) -> AdminShowcaseDraftOffer:
+        if not params.values:
+            return await self._get_draft_offer_by_id(showcase_id=showcase_id, offer_id=offer_id)
+
+        model = await self.session.scalar(
+            update(AdminShowcaseDraftOfferModel)
+            .where(
+                AdminShowcaseDraftOfferModel.showcase_id == showcase_id,
+                AdminShowcaseDraftOfferModel.offer_id == offer_id,
+            )
+            .values(_draft_offer_update_values(params=params))
+            .returning(AdminShowcaseDraftOfferModel)
+        )
+
+        if model is None:
+            raise AdminShowcaseDraftOfferNotFoundError
+
+        return model.to_domain()
+
+    async def delete_draft_offer(self, *, showcase_id: str, offer_id: str) -> None:
+        deleted_offer_id = await self.session.scalar(
+            delete(AdminShowcaseDraftOfferModel)
+            .where(
+                AdminShowcaseDraftOfferModel.showcase_id == showcase_id,
+                AdminShowcaseDraftOfferModel.offer_id == offer_id,
+            )
+            .returning(AdminShowcaseDraftOfferModel.offer_id)
+        )
+
+        if deleted_offer_id is None:
+            raise AdminShowcaseDraftOfferNotFoundError
+
     async def update_draft(
         self,
         *,
@@ -278,6 +337,24 @@ class DatabaseAdminShowcaseStorage(AdminShowcaseStorage):
 
         return model.to_domain()
 
+    async def _get_draft_offer_by_id(
+        self,
+        *,
+        showcase_id: str,
+        offer_id: str,
+    ) -> AdminShowcaseDraftOffer:
+        model = await self.session.scalar(
+            select(AdminShowcaseDraftOfferModel).where(
+                AdminShowcaseDraftOfferModel.showcase_id == showcase_id,
+                AdminShowcaseDraftOfferModel.offer_id == offer_id,
+            )
+        )
+
+        if model is None:
+            raise AdminShowcaseDraftOfferNotFoundError
+
+        return model.to_domain()
+
 
 def _draft_block_update_values(
     *,
@@ -298,5 +375,17 @@ def _draft_block_update_values(
         values["mobile_settings"] = params.values["mobile_settings"]
     if "data" in params.values:
         values["data"] = params.values["data"]
+
+    return values
+
+
+def _draft_offer_update_values(
+    *,
+    params: AdminShowcaseDraftOfferPatchParams,
+) -> dict[str, object]:
+    values: dict[str, object] = {}
+    for field_name in DRAFT_OFFER_UPDATE_FIELD_NAMES:
+        if field_name in params.values:
+            values[field_name] = params.values[field_name]
 
     return values

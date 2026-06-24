@@ -11,3 +11,7 @@ class AdminShowcaseNotFoundError(AdminResourceNotFoundError):
 
 class AdminShowcaseDraftBlockNotFoundError(AdminResourceNotFoundError):
     detail: str = "ADMIN_SHOWCASE_DRAFT_BLOCK_NOT_FOUND_ERROR"
+
+
+class AdminShowcaseDraftOfferNotFoundError(AdminResourceNotFoundError):
+    detail: str = "ADMIN_SHOWCASE_DRAFT_OFFER_NOT_FOUND_ERROR"

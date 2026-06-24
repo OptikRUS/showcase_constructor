@@ -2,12 +2,14 @@ import pytest
 
 from src.core.showcases.exceptions import (
     AdminShowcaseDraftBlockNotFoundError,
+    AdminShowcaseDraftOfferNotFoundError,
     AdminShowcaseNotFoundError,
 )
 from src.core.showcases.schemas import (
     AdminShowcaseDraftBlockCreateParams,
     AdminShowcaseDraftBlockPatchParams,
     AdminShowcaseDraftOfferCreateParams,
+    AdminShowcaseDraftOfferPatchParams,
     AdminShowcaseDraftSettingsPatchParams,
     JsonObject,
 )
@@ -312,3 +314,131 @@ class TestDatabaseAdminShowcaseStorage(FactoryFixture, StorageFixture):
             "offer-storage-created",
             "offer-storage-existing",
         ]
+
+    async def test_patches_and_deletes_draft_offer_without_changing_related_state(self) -> None:
+        published_snapshot: JsonObject = {
+            "id": "public-offers-storage-patch",
+            "blocks": [{"type": "offers", "offers": [{"id": "published-offer"}]}],
+        }
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-offers-storage-patch",
+            owner_partner_id="partner-1",
+            title="Offer patch showcase",
+            published_snapshot=published_snapshot,
+        )
+        await self.storage_helper.create_admin_showcase_draft_block(
+            block=self.factory.admin_showcase_draft_block(
+                id="block-storage-offers-preserved",
+                showcase_id="showcase-offers-storage-patch",
+                order=10,
+                data={"layout": "cards"},
+            )
+        )
+        await self.storage_helper.create_admin_showcase_draft_offer(
+            offer=self.factory.admin_showcase_draft_offer(
+                id="offer-storage-patch-target",
+                showcase_id="showcase-offers-storage-patch",
+                block_id="block-storage-offers-original",
+                enabled=True,
+                manual_order=20,
+                cta_text="Original CTA",
+                usp_text="Original USP",
+                fields=[{"key": "rate", "value": "12%", "visible": True}],
+                categories=["loans"],
+                display_name="Original offer",
+                data={"source": "manual"},
+            )
+        )
+        await self.storage_helper.create_admin_showcase_draft_offer(
+            offer=self.factory.admin_showcase_draft_offer(
+                id="offer-storage-delete-target",
+                showcase_id="showcase-offers-storage-patch",
+                block_id="block-storage-offers-preserved",
+                manual_order=30,
+                display_name="Delete me",
+            )
+        )
+        storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
+        params = AdminShowcaseDraftOfferPatchParams(
+            values={
+                "block_id": "block-storage-offers-preserved",
+                "enabled": False,
+                "manual_order": 5,
+                "cta_text": None,
+                "usp_text": "Updated USP",
+                "fields": [{"key": "internal_score", "value": "A", "visible": False}],
+                "categories": ["cash"],
+                "logo_url": "https://cdn.example.test/updated-logo.png",
+                "rounded_logo_url": None,
+                "display_name": "Updated storage offer",
+                "site_name": "Updated Bank",
+                "cpa_url": "https://cpa.example.test/updated",
+                "legal_entity": "Updated Bank LLC",
+                "inn": "2222222222",
+                "erid": "erid-updated",
+                "data": {"source": "manual", "tier": "draft"},
+            }
+        )
+
+        patched = await storage.patch_draft_offer(
+            showcase_id="showcase-offers-storage-patch",
+            offer_id="offer-storage-patch-target",
+            params=params,
+        )
+        await storage.delete_draft_offer(
+            showcase_id="showcase-offers-storage-patch",
+            offer_id="offer-storage-delete-target",
+        )
+
+        assert patched.id == "offer-storage-patch-target"
+        assert patched.showcase_id == "showcase-offers-storage-patch"
+        assert patched.block_id == "block-storage-offers-preserved"
+        assert patched.enabled is False
+        assert patched.manual_order == 5
+        assert patched.cta_text is None
+        assert patched.usp_text == "Updated USP"
+        assert patched.fields == [{"key": "internal_score", "value": "A", "visible": False}]
+        assert patched.categories == ["cash"]
+        assert patched.logo_url == "https://cdn.example.test/updated-logo.png"
+        assert patched.rounded_logo_url is None
+        assert patched.display_name == "Updated storage offer"
+        assert patched.site_name == "Updated Bank"
+        assert patched.cpa_url == "https://cpa.example.test/updated"
+        assert patched.legal_entity == "Updated Bank LLC"
+        assert patched.inn == "2222222222"
+        assert patched.erid == "erid-updated"
+        assert patched.data == {"source": "manual", "tier": "draft"}
+
+        offers = await storage.list_draft_offers(showcase_id="showcase-offers-storage-patch")
+        assert [offer.id for offer in offers] == ["offer-storage-patch-target"]
+        blocks = await self.storage_helper.list_admin_showcase_draft_blocks(
+            showcase_id="showcase-offers-storage-patch"
+        )
+        assert [block.id for block in blocks] == ["block-storage-offers-preserved"]
+        persisted = await storage.get_draft_by_id(showcase_id="showcase-offers-storage-patch")
+        assert persisted.published_snapshot == published_snapshot
+
+    async def test_raises_not_found_when_patching_or_deleting_missing_draft_offer(self) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-offers-storage-missing-offer",
+            owner_partner_id="partner-1",
+            title="Missing offer showcase",
+        )
+        storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
+        params = AdminShowcaseDraftOfferPatchParams(values={"enabled": False})
+
+        with pytest.raises(AdminShowcaseDraftOfferNotFoundError) as patch_error:
+            await storage.patch_draft_offer(
+                showcase_id="showcase-offers-storage-missing-offer",
+                offer_id="missing-offer",
+                params=params,
+            )
+
+        with pytest.raises(AdminShowcaseDraftOfferNotFoundError) as delete_error:
+            await storage.delete_draft_offer(
+                showcase_id="showcase-offers-storage-missing-offer",
+                offer_id="missing-offer",
+            )
+
+        assert patch_error.value.detail == "ADMIN_SHOWCASE_DRAFT_OFFER_NOT_FOUND_ERROR"
+        assert delete_error.value.detail == "ADMIN_SHOWCASE_DRAFT_OFFER_NOT_FOUND_ERROR"

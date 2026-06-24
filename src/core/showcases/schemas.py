@@ -104,3 +104,8 @@ class AdminShowcaseDraftOfferCreateParams:
     inn: str | None
     erid: str | None
     data: JsonObject
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AdminShowcaseDraftOfferPatchParams:
+    values: JsonObject

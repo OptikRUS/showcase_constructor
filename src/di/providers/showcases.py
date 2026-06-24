@@ -7,9 +7,11 @@ from src.core.showcases.use_cases import (
     CreateAdminShowcaseBlockUseCase,
     CreateAdminShowcaseOfferUseCase,
     DeleteAdminShowcaseBlockUseCase,
+    DeleteAdminShowcaseOfferUseCase,
     ListAdminShowcaseBlocksUseCase,
     ListAdminShowcaseOffersUseCase,
     PatchAdminShowcaseBlockUseCase,
+    PatchAdminShowcaseOfferUseCase,
     UpdateAdminShowcaseDraftSettingsUseCase,
 )
 from src.core.storages import AdminShowcaseStorage
@@ -71,3 +73,17 @@ class ShowcaseProvider(Provider):
         offer_id: UUID,
     ) -> CreateAdminShowcaseOfferUseCase:
         return CreateAdminShowcaseOfferUseCase(storage=storage, offer_id=offer_id)
+
+    @provide(scope=Scope.REQUEST)
+    def get_patch_admin_showcase_offer_use_case(
+        self,
+        storage: AdminShowcaseStorage,
+    ) -> PatchAdminShowcaseOfferUseCase:
+        return PatchAdminShowcaseOfferUseCase(storage=storage)
+
+    @provide(scope=Scope.REQUEST)
+    def get_delete_admin_showcase_offer_use_case(
+        self,
+        storage: AdminShowcaseStorage,
+    ) -> DeleteAdminShowcaseOfferUseCase:
+        return DeleteAdminShowcaseOfferUseCase(storage=storage)

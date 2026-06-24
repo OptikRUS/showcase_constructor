@@ -20,6 +20,7 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraftBlockPatchParams,
     AdminShowcaseDraftOffer,
     AdminShowcaseDraftOfferCreateParams,
+    AdminShowcaseDraftOfferPatchParams,
     AdminShowcaseUpdateParams,
     JsonObject,
     JsonValue,
@@ -92,6 +93,10 @@ class AdminShowcaseDraftOfferCreateParamsFactoryKwargs(TypedDict):
     inn: NotRequired[str | None]
     erid: NotRequired[str | None]
     data: NotRequired[JsonObject]
+
+
+class AdminShowcaseDraftOfferPatchParamsFactoryKwargs(TypedDict):
+    values: NotRequired[JsonObject]
 
 
 class FactoryHelper:
@@ -213,6 +218,13 @@ class FactoryHelper:
             erid=kwargs.get("erid"),
             data=kwargs.get("data", {}),
         )
+
+    @classmethod
+    def admin_showcase_draft_offer_patch_params(
+        cls,
+        **kwargs: Unpack[AdminShowcaseDraftOfferPatchParamsFactoryKwargs],
+    ) -> AdminShowcaseDraftOfferPatchParams:
+        return AdminShowcaseDraftOfferPatchParams(values=kwargs.get("values", {}))
 
     @classmethod
     def published_public_config_snapshot(cls) -> PublishedPublicConfigSnapshot:

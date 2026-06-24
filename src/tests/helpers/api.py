@@ -74,3 +74,23 @@ class APIHelper:
         json: Mapping[str, Any],
     ) -> Response:
         return self.client.post(f"/api/v1/showcases/{showcase_id}/offers", json=json)
+
+    def patch_admin_showcase_offer(
+        self,
+        *,
+        showcase_id: str,
+        offer_id: str,
+        json: Mapping[str, Any],
+    ) -> Response:
+        return self.client.patch(
+            f"/api/v1/showcases/{showcase_id}/offers/{offer_id}",
+            json=json,
+        )
+
+    def delete_admin_showcase_offer(
+        self,
+        *,
+        showcase_id: str,
+        offer_id: str,
+    ) -> Response:
+        return self.client.delete(f"/api/v1/showcases/{showcase_id}/offers/{offer_id}")
