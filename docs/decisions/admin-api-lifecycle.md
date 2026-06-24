@@ -19,6 +19,19 @@ route must resolve the current `AdminActorContext` through the MVP JWT bearer
 adapter, and use cases must return or mutate only showcases whose
 `owner_partner_id` matches `context.partner_id`.
 
+The admin trust boundary is the auth-layer-created `AdminActorContext`. Route
+payloads and path parameters may select the target resource or requested change,
+but they must not override `context.user_id`, `context.partner_id`, ownership,
+actor attribution, lifecycle status, or public-id ownership. Authorization is a
+core use-case responsibility after API validation and before storage mutation or
+audit append.
+
+Failure semantics are approved for future route implementation: missing or
+invalid bearer context returns `401`; authenticated access to an existing
+foreign-partner showcase returns `403`; absent showcase ids return `404`. List
+own responses omit foreign resources. Failed `401`, `403`, and `404` paths must
+not mutate storage and must not append audit records.
+
 | Operation | Candidate method and path | Public access | Status |
 | --- | --- | --- | --- |
 | Create showcase | `POST /api/v1/showcases` | Not approved | Approved MVP boundary: authenticated current admin context required; created showcase belongs to `context.partner_id`. |
@@ -45,6 +58,7 @@ application middleware/infrastructure and must not make admin resources public.
 | --- | --- |
 | Admin auth model | MVP JWT bearer adapter selected for current-context wiring; external auth-provider integration, refresh/session activation, production replacement criteria, and internal-admin override remain product decision required. |
 | Current owner context | JWT subject must provide `user_id` and `partner_id`; approved lifecycle routes must pass the already-validated current admin context to one use case and enforce `context.partner_id` ownership before returning or mutating showcase data. |
+| Foreign-resource semantics | Approved MVP boundary: authenticated foreign-owned resource access returns `403`, missing resources return `404`, and list-own omits foreign resources. |
 | Per-method permissions | Approved MVP boundary for create, list own, get own, patch draft, clone, archive, and restore through the method/path matrix above; `unarchive` alias remains blocked. |
 | Admin `HEAD` and `OPTIONS` | Approved MVP boundary: no app-defined admin lifecycle `HEAD` or `OPTIONS` routes. Future CORS middleware must not change admin resource visibility. |
 | Admin response fields | Approved and blocked field groups are defined in `Authenticated Admin Response Boundary` below. |
@@ -56,6 +70,7 @@ application middleware/infrastructure and must not make admin resources public.
 | Archive behavior | product decision required: define allowed source statuses, public-read consequences, snapshot retention, and recovery window. Audit emission follows the process-local in-memory boundary in `docs/decisions/mvp-boundaries.md`. |
 | Restore policy | product decision required: define source and target statuses, recovery window, and conflicts with current publication or slug state for `POST /api/v1/showcases/{id}/restore`. Audit emission follows the process-local in-memory boundary in `docs/decisions/mvp-boundaries.md`. |
 | Audit and events | Approved MVP boundary: owner-scoped create, patch draft, clone, archive, and restore mutations must emit process-local in-memory audit records as defined in `docs/decisions/mvp-boundaries.md`. Durable audit, outbox events, external streams, and the blocked `unarchive` alias remain product decision required. |
+| Atomic mutation boundary | Approved MVP boundary: owner/status validation, in-memory state mutation, public-id changes, and audit append must be one process-local lock-protected operation or leave state unchanged. |
 
 ## Authenticated Admin Response Boundary
 
@@ -102,3 +117,6 @@ Future implementation plans must keep endpoints thin: one endpoint delegates to
 one use case, business rules live in `src/core`, storage access goes through
 core-owned interfaces, and concrete durable persistence belongs under
 `src/storages` only after durable persistence decisions are approved.
+For the approved in-memory MVP path, a request-scoped storage adapter may wrap
+the app-scoped process-local state owner defined in `docs/decisions/mvp-boundaries.md`;
+it must not create isolated per-request mutable stores for lifecycle data.
