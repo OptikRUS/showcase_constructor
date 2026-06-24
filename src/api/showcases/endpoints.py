@@ -5,6 +5,7 @@ from fastapi import APIRouter, status
 from src.api.auth.deps import JwtUserDeps
 from src.api.showcases.schemas import (
     AdminShowcaseDraftBlockCreateRequest,
+    AdminShowcaseDraftBlockPatchRequest,
     AdminShowcaseDraftBlockResponse,
     AdminShowcaseDraftPatchRequest,
     AdminShowcaseDraftResponse,
@@ -12,7 +13,9 @@ from src.api.showcases.schemas import (
 from src.core.admin_auth.schemas import AdminActorContext
 from src.core.showcases.use_cases import (
     CreateAdminShowcaseBlockUseCase,
+    DeleteAdminShowcaseBlockUseCase,
     ListAdminShowcaseBlocksUseCase,
+    PatchAdminShowcaseBlockUseCase,
     UpdateAdminShowcaseDraftSettingsUseCase,
 )
 
@@ -63,3 +66,33 @@ async def create_showcase_draft_block(
     )
 
     return AdminShowcaseDraftBlockResponse.from_domain(block=block)
+
+
+@router.patch(path="/{showcase_id}/blocks/{block_id}", status_code=status.HTTP_200_OK)
+async def patch_showcase_draft_block(
+    showcase_id: str,
+    block_id: str,
+    body: AdminShowcaseDraftBlockPatchRequest,
+    user: JwtUserDeps,
+    use_case: FromDishka[PatchAdminShowcaseBlockUseCase],
+) -> AdminShowcaseDraftBlockResponse:
+    context = AdminActorContext(user_id=user.user_id, partner_id=user.partner_id)
+    block = await use_case.execute(
+        showcase_id=showcase_id,
+        block_id=block_id,
+        params=body.to_domain(),
+        context=context,
+    )
+
+    return AdminShowcaseDraftBlockResponse.from_domain(block=block)
+
+
+@router.delete(path="/{showcase_id}/blocks/{block_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_showcase_draft_block(
+    showcase_id: str,
+    block_id: str,
+    user: JwtUserDeps,
+    use_case: FromDishka[DeleteAdminShowcaseBlockUseCase],
+) -> None:
+    context = AdminActorContext(user_id=user.user_id, partner_id=user.partner_id)
+    await use_case.execute(showcase_id=showcase_id, block_id=block_id, context=context)

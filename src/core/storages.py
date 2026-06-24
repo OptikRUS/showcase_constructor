@@ -5,6 +5,7 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraft,
     AdminShowcaseDraftBlock,
     AdminShowcaseDraftBlockCreateParams,
+    AdminShowcaseDraftBlockPatchParams,
     AdminShowcaseDraftSettingsPatchParams,
     AdminShowcaseUpdateParams,
 )
@@ -44,3 +45,15 @@ class AdminShowcaseStorage(metaclass=ABCMeta):
         block_id: str,
         params: AdminShowcaseDraftBlockCreateParams,
     ) -> AdminShowcaseDraftBlock: ...
+
+    @abstractmethod
+    async def patch_draft_block(
+        self,
+        *,
+        showcase_id: str,
+        block_id: str,
+        params: AdminShowcaseDraftBlockPatchParams,
+    ) -> AdminShowcaseDraftBlock: ...
+
+    @abstractmethod
+    async def delete_draft_block(self, *, showcase_id: str, block_id: str) -> None: ...

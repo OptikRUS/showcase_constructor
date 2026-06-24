@@ -451,12 +451,12 @@ explicit product decisions.
 
 **Actions:**
 
-- [ ] Add focused API/core/storage tests for block patch, delete, owner checks, not-found, and published snapshot preservation.
-- [ ] Run the focused block patch/delete test and confirm it fails for the missing behavior.
-- [ ] Add minimal domain params, use cases, storage methods, endpoint methods, boundary schemas, and helpers.
-- [ ] Re-run the focused block patch/delete test and confirm it passes.
-- [ ] Perform only necessary safe refactoring and re-run the focused block test.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Add focused API/core/storage tests for block patch, delete, owner checks, not-found, and published snapshot preservation.
+- [x] Run the focused block patch/delete test and confirm it fails for the missing behavior.
+- [x] Add minimal domain params, use cases, storage methods, endpoint methods, boundary schemas, and helpers.
+- [x] Re-run the focused block patch/delete test and confirm it passes.
+- [x] Perform only necessary safe refactoring and re-run the focused block test.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 7: Implement offer list and create
 

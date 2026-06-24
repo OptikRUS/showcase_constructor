@@ -8,6 +8,7 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraft,
     AdminShowcaseDraftBlock,
     AdminShowcaseDraftBlockCreateParams,
+    AdminShowcaseDraftBlockPatchParams,
     AdminShowcaseDraftSettingsPatchParams,
     AdminShowcaseUpdateParams,
 )
@@ -105,3 +106,46 @@ class CreateAdminShowcaseBlockUseCase:
             block_id=str(self.block_id),
             params=params,
         )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class PatchAdminShowcaseBlockUseCase:
+    storage: AdminShowcaseStorage
+
+    async def execute(
+        self,
+        *,
+        showcase_id: str,
+        block_id: str,
+        params: AdminShowcaseDraftBlockPatchParams,
+        context: AdminActorContext,
+    ) -> AdminShowcaseDraftBlock:
+        showcase = await self.storage.get_by_id(showcase_id=showcase_id)
+
+        if showcase.owner_partner_id != context.partner_id:
+            raise ShowcaseAccessDeniedError
+
+        return await self.storage.patch_draft_block(
+            showcase_id=showcase_id,
+            block_id=block_id,
+            params=params,
+        )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class DeleteAdminShowcaseBlockUseCase:
+    storage: AdminShowcaseStorage
+
+    async def execute(
+        self,
+        *,
+        showcase_id: str,
+        block_id: str,
+        context: AdminActorContext,
+    ) -> None:
+        showcase = await self.storage.get_by_id(showcase_id=showcase_id)
+
+        if showcase.owner_partner_id != context.partner_id:
+            raise ShowcaseAccessDeniedError
+
+        await self.storage.delete_draft_block(showcase_id=showcase_id, block_id=block_id)

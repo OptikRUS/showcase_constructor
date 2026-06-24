@@ -8,6 +8,7 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraft,
     AdminShowcaseDraftBlock,
     AdminShowcaseDraftBlockCreateParams,
+    AdminShowcaseDraftBlockPatchParams,
     AdminShowcaseDraftSettingsPatchParams,
     JsonObject,
 )
@@ -110,6 +111,27 @@ class AdminShowcaseDraftBlockCreateRequest(BoundaryModel):
             mobile_settings=self.mobile_settings,
             data=self.data,
         )
+
+
+class AdminShowcaseDraftBlockPatchRequest(BoundaryModel):
+    model_config = ConfigDict(extra="forbid")
+
+    order: int = 0
+    visible: bool = True
+    title: str | None = None
+    subtitle: str | None = None
+    desktop_settings: JsonObject = Field(default_factory=dict)
+    mobile_settings: JsonObject = Field(default_factory=dict)
+    data: JsonObject = Field(default_factory=dict)
+
+    def to_domain(self) -> AdminShowcaseDraftBlockPatchParams:
+        values = self.model_dump(
+            mode="json",
+            include=self.model_fields_set,
+            by_alias=False,
+        )
+
+        return AdminShowcaseDraftBlockPatchParams(values=cast("JsonObject", values))
 
 
 class AdminShowcaseDraftBlockResponse(BoundaryModel):

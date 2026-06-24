@@ -3,8 +3,17 @@ from dataclasses import dataclass
 from sqlalchemy import insert, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.showcases.schemas import AdminShowcaseDraft, AdminShowcaseDraftBlock, JsonObject
-from src.storages.models import AdminShowcaseDraftBlockModel, AdminShowcaseModel
+from src.core.showcases.schemas import (
+    AdminShowcaseDraft,
+    AdminShowcaseDraftBlock,
+    AdminShowcaseDraftOffer,
+    JsonObject,
+)
+from src.storages.models import (
+    AdminShowcaseDraftBlockModel,
+    AdminShowcaseDraftOfferModel,
+    AdminShowcaseModel,
+)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -78,6 +87,57 @@ class StorageHelper:
             .order_by(
                 AdminShowcaseDraftBlockModel.draft_order,
                 AdminShowcaseDraftBlockModel.block_id,
+            )
+        )
+
+        return [model.to_domain() for model in result.all()]
+
+    async def create_admin_showcase_draft_offer(
+        self,
+        *,
+        offer: AdminShowcaseDraftOffer,
+    ) -> None:
+        showcase_internal_id = (
+            select(AdminShowcaseModel.internal_id)
+            .where(AdminShowcaseModel.id == offer.showcase_id)
+            .scalar_subquery()
+        )
+        await self.session.execute(
+            insert(AdminShowcaseDraftOfferModel).values(
+                showcase_internal_id=showcase_internal_id,
+                showcase_id=offer.showcase_id,
+                offer_id=offer.id,
+                block_id=offer.block_id,
+                enabled=offer.enabled,
+                manual_order=offer.manual_order,
+                cta_text=offer.cta_text,
+                usp_text=offer.usp_text,
+                fields=offer.fields,
+                categories=offer.categories,
+                logo_url=offer.logo_url,
+                rounded_logo_url=offer.rounded_logo_url,
+                display_name=offer.display_name,
+                site_name=offer.site_name,
+                cpa_url=offer.cpa_url,
+                legal_entity=offer.legal_entity,
+                inn=offer.inn,
+                erid=offer.erid,
+                data=offer.data,
+            )
+        )
+
+    async def list_admin_showcase_draft_offers(
+        self,
+        *,
+        showcase_id: str,
+    ) -> list[AdminShowcaseDraftOffer]:
+        result = await self.session.scalars(
+            select(AdminShowcaseDraftOfferModel)
+            .where(AdminShowcaseDraftOfferModel.showcase_id == showcase_id)
+            .order_by(
+                AdminShowcaseDraftOfferModel.block_id,
+                AdminShowcaseDraftOfferModel.manual_order,
+                AdminShowcaseDraftOfferModel.offer_id,
             )
         )
 

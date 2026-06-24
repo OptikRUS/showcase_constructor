@@ -60,6 +60,11 @@ class AdminShowcaseDraftBlockCreateParams:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class AdminShowcaseDraftBlockPatchParams:
+    values: JsonObject
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class AdminShowcaseDraftOffer:
     id: str
     showcase_id: str

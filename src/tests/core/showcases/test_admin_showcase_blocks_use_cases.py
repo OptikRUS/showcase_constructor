@@ -7,7 +7,9 @@ from src.core.admin_auth.schemas import AdminActorContext
 from src.core.showcases.exceptions import AdminShowcaseNotFoundError, ShowcaseAccessDeniedError
 from src.core.showcases.use_cases import (
     CreateAdminShowcaseBlockUseCase,
+    DeleteAdminShowcaseBlockUseCase,
     ListAdminShowcaseBlocksUseCase,
+    PatchAdminShowcaseBlockUseCase,
 )
 from src.core.storages import AdminShowcaseStorage
 from src.tests.fixtures import FactoryFixture
@@ -138,3 +140,121 @@ class TestCreateAdminShowcaseBlockUseCase(FactoryFixture):
             showcase_id="showcase-blocks-core-create-foreign"
         )
         storage.create_draft_block.assert_not_awaited()
+
+
+class TestPatchAdminShowcaseBlockUseCase(FactoryFixture):
+    async def test_patches_same_owner_draft_block(self) -> None:
+        storage = AsyncMock(spec=AdminShowcaseStorage)
+        storage.get_by_id.return_value = self.factory.admin_showcase(
+            id="showcase-blocks-core-patch",
+            owner_partner_id="partner-1",
+        )
+        params = self.factory.admin_showcase_draft_block_patch_params(
+            values={
+                "order": 30,
+                "visible": False,
+                "title": "Updated block",
+                "subtitle": None,
+                "desktop_settings": {"width": "full"},
+                "mobile_settings": {"width": "stacked"},
+                "data": {"html": "<section>Draft only</section>"},
+            }
+        )
+        patched_block = self.factory.admin_showcase_draft_block(
+            id="block-core-patch",
+            showcase_id="showcase-blocks-core-patch",
+            order=30,
+            visible=False,
+            title="Updated block",
+            subtitle=None,
+            desktop_settings={"width": "full"},
+            mobile_settings={"width": "stacked"},
+            data={"html": "<section>Draft only</section>"},
+        )
+        storage.patch_draft_block.return_value = patched_block
+        use_case = PatchAdminShowcaseBlockUseCase(storage=storage)
+        context = AdminActorContext(user_id="admin-user-1", partner_id="partner-1")
+
+        result = await use_case.execute(
+            showcase_id="showcase-blocks-core-patch",
+            block_id="block-core-patch",
+            params=params,
+            context=context,
+        )
+
+        assert result == patched_block
+        storage.get_by_id.assert_awaited_once_with(showcase_id="showcase-blocks-core-patch")
+        storage.patch_draft_block.assert_awaited_once_with(
+            showcase_id="showcase-blocks-core-patch",
+            block_id="block-core-patch",
+            params=params,
+        )
+
+    async def test_forbids_patching_foreign_draft_block(self) -> None:
+        storage = AsyncMock(spec=AdminShowcaseStorage)
+        storage.get_by_id.return_value = self.factory.admin_showcase(
+            id="showcase-blocks-core-patch-foreign",
+            owner_partner_id="partner-2",
+        )
+        params = self.factory.admin_showcase_draft_block_patch_params(values={"visible": False})
+        use_case = PatchAdminShowcaseBlockUseCase(storage=storage)
+        context = AdminActorContext(user_id="admin-user-1", partner_id="partner-1")
+
+        with pytest.raises(ShowcaseAccessDeniedError) as error:
+            await use_case.execute(
+                showcase_id="showcase-blocks-core-patch-foreign",
+                block_id="block-core-patch-foreign",
+                params=params,
+                context=context,
+            )
+
+        assert error.value.detail == "SHOWCASE_ACCESS_DENIED_ERROR"
+        storage.get_by_id.assert_awaited_once_with(
+            showcase_id="showcase-blocks-core-patch-foreign"
+        )
+        storage.patch_draft_block.assert_not_awaited()
+
+
+class TestDeleteAdminShowcaseBlockUseCase(FactoryFixture):
+    async def test_deletes_same_owner_draft_block(self) -> None:
+        storage = AsyncMock(spec=AdminShowcaseStorage)
+        storage.get_by_id.return_value = self.factory.admin_showcase(
+            id="showcase-blocks-core-delete",
+            owner_partner_id="partner-1",
+        )
+        use_case = DeleteAdminShowcaseBlockUseCase(storage=storage)
+        context = AdminActorContext(user_id="admin-user-1", partner_id="partner-1")
+
+        await use_case.execute(
+            showcase_id="showcase-blocks-core-delete",
+            block_id="block-core-delete",
+            context=context,
+        )
+
+        storage.get_by_id.assert_awaited_once_with(showcase_id="showcase-blocks-core-delete")
+        storage.delete_draft_block.assert_awaited_once_with(
+            showcase_id="showcase-blocks-core-delete",
+            block_id="block-core-delete",
+        )
+
+    async def test_forbids_deleting_foreign_draft_block(self) -> None:
+        storage = AsyncMock(spec=AdminShowcaseStorage)
+        storage.get_by_id.return_value = self.factory.admin_showcase(
+            id="showcase-blocks-core-delete-foreign",
+            owner_partner_id="partner-2",
+        )
+        use_case = DeleteAdminShowcaseBlockUseCase(storage=storage)
+        context = AdminActorContext(user_id="admin-user-1", partner_id="partner-1")
+
+        with pytest.raises(ShowcaseAccessDeniedError) as error:
+            await use_case.execute(
+                showcase_id="showcase-blocks-core-delete-foreign",
+                block_id="block-core-delete-foreign",
+                context=context,
+            )
+
+        assert error.value.detail == "SHOWCASE_ACCESS_DENIED_ERROR"
+        storage.get_by_id.assert_awaited_once_with(
+            showcase_id="showcase-blocks-core-delete-foreign"
+        )
+        storage.delete_draft_block.assert_not_awaited()

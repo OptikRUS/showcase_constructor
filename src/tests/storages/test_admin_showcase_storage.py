@@ -1,8 +1,12 @@
 import pytest
 
-from src.core.showcases.exceptions import AdminShowcaseNotFoundError
+from src.core.showcases.exceptions import (
+    AdminShowcaseDraftBlockNotFoundError,
+    AdminShowcaseNotFoundError,
+)
 from src.core.showcases.schemas import (
     AdminShowcaseDraftBlockCreateParams,
+    AdminShowcaseDraftBlockPatchParams,
     AdminShowcaseDraftSettingsPatchParams,
     JsonObject,
 )
@@ -116,3 +120,119 @@ class TestDatabaseAdminShowcaseStorage(FactoryFixture, StorageFixture):
             "block-storage-created",
             "block-storage-existing",
         ]
+
+    async def test_patches_and_deletes_draft_block_without_changing_related_state(self) -> None:
+        published_snapshot: JsonObject = {
+            "id": "public-blocks-storage-patch",
+            "blocks": [{"type": "offers", "title": "Published offers"}],
+        }
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-blocks-storage-patch",
+            owner_partner_id="partner-1",
+            title="Block patch showcase",
+            published_snapshot=published_snapshot,
+        )
+        await self.storage_helper.create_admin_showcase_draft_block(
+            block=self.factory.admin_showcase_draft_block(
+                id="block-storage-patch-target",
+                showcase_id="showcase-blocks-storage-patch",
+                type="custom_html",
+                order=10,
+                visible=True,
+                title="Original custom block",
+                subtitle="Original subtitle",
+                desktop_settings={"width": "narrow"},
+                mobile_settings={"width": "compact"},
+                data={"html": "<section>Original</section>"},
+            )
+        )
+        await self.storage_helper.create_admin_showcase_draft_block(
+            block=self.factory.admin_showcase_draft_block(
+                id="block-storage-delete-target",
+                showcase_id="showcase-blocks-storage-patch",
+                type="offers",
+                order=20,
+                visible=True,
+                title="Delete me",
+                subtitle="Delete subtitle",
+                desktop_settings={"columns": 3},
+                mobile_settings={"columns": 1},
+                data={"layout": "cards"},
+            )
+        )
+        await self.storage_helper.create_admin_showcase_draft_offer(
+            offer=self.factory.admin_showcase_draft_offer(
+                id="offer-storage-preserved",
+                showcase_id="showcase-blocks-storage-patch",
+                block_id="block-storage-delete-target",
+                manual_order=1,
+                data={"source": "manual"},
+            )
+        )
+        storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
+        params = AdminShowcaseDraftBlockPatchParams(
+            values={
+                "order": 30,
+                "visible": False,
+                "title": "Updated custom block",
+                "subtitle": None,
+                "desktop_settings": {"width": "full", "theme": "dark"},
+                "mobile_settings": {"width": "stacked"},
+                "data": {"html": "<script>window.ownerDraftOnly = true</script>"},
+            }
+        )
+
+        patched = await storage.patch_draft_block(
+            showcase_id="showcase-blocks-storage-patch",
+            block_id="block-storage-patch-target",
+            params=params,
+        )
+        await storage.delete_draft_block(
+            showcase_id="showcase-blocks-storage-patch",
+            block_id="block-storage-delete-target",
+        )
+
+        assert patched.id == "block-storage-patch-target"
+        assert patched.showcase_id == "showcase-blocks-storage-patch"
+        assert patched.type == "custom_html"
+        assert patched.order == 30
+        assert patched.visible is False
+        assert patched.title == "Updated custom block"
+        assert patched.subtitle is None
+        assert patched.desktop_settings == {"width": "full", "theme": "dark"}
+        assert patched.mobile_settings == {"width": "stacked"}
+        assert patched.data == {"html": "<script>window.ownerDraftOnly = true</script>"}
+
+        blocks = await storage.list_draft_blocks(showcase_id="showcase-blocks-storage-patch")
+        assert [block.id for block in blocks] == ["block-storage-patch-target"]
+        persisted = await storage.get_draft_by_id(showcase_id="showcase-blocks-storage-patch")
+        assert persisted.published_snapshot == published_snapshot
+        offers = await self.storage_helper.list_admin_showcase_draft_offers(
+            showcase_id="showcase-blocks-storage-patch"
+        )
+        assert [offer.id for offer in offers] == ["offer-storage-preserved"]
+
+    async def test_raises_not_found_when_patching_or_deleting_missing_draft_block(self) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-blocks-storage-missing-block",
+            owner_partner_id="partner-1",
+            title="Missing block showcase",
+        )
+        storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
+        params = AdminShowcaseDraftBlockPatchParams(values={"visible": False})
+
+        with pytest.raises(AdminShowcaseDraftBlockNotFoundError) as patch_error:
+            await storage.patch_draft_block(
+                showcase_id="showcase-blocks-storage-missing-block",
+                block_id="missing-block",
+                params=params,
+            )
+
+        with pytest.raises(AdminShowcaseDraftBlockNotFoundError) as delete_error:
+            await storage.delete_draft_block(
+                showcase_id="showcase-blocks-storage-missing-block",
+                block_id="missing-block",
+            )
+
+        assert patch_error.value.detail == "ADMIN_SHOWCASE_DRAFT_BLOCK_NOT_FOUND_ERROR"
+        assert delete_error.value.detail == "ADMIN_SHOWCASE_DRAFT_BLOCK_NOT_FOUND_ERROR"

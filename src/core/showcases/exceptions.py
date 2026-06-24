@@ -7,3 +7,7 @@ class ShowcaseAccessDeniedError(AdminPermissionDeniedError):
 
 class AdminShowcaseNotFoundError(AdminResourceNotFoundError):
     detail: str = "ADMIN_SHOWCASE_NOT_FOUND_ERROR"
+
+
+class AdminShowcaseDraftBlockNotFoundError(AdminResourceNotFoundError):
+    detail: str = "ADMIN_SHOWCASE_DRAFT_BLOCK_NOT_FOUND_ERROR"
