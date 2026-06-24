@@ -3,8 +3,8 @@
 ## Scope
 
 This record is the current decision boundary for the showcase constructor MVP. It
-does not approve business implementation, new routes, persistence, runtime
-configuration, migrations, or custom rendering behavior.
+does not approve business implementation, new routes, durable persistence,
+runtime configuration, migrations, or custom rendering behavior.
 
 ### In scope
 
@@ -40,7 +40,7 @@ configuration, migrations, or custom rendering behavior.
 | Billing | product decision required | Blocked until paid features, account ownership, and provider integration are approved. |
 | Admin API | MVP JWT bearer adapter plus approved admin showcase route boundary | `docs/decisions/admin-api-lifecycle.md` approves protected owner-scoped create, list own, get own, patch draft, clone, archive, and restore route boundaries; storage, lifecycle behavior, public identifiers, and audit durability still require their focused decisions. |
 | Public storefront | product decision required | Blocked until public identifiers, routes, and response fields are approved. |
-| Persistence | product decision required | Blocked until backend, migration, and transaction boundaries are approved. |
+| Persistence | Approved in-memory MVP storage boundary; durable persistence product decision required | Future MVP implementation may add only process-local, non-durable `src/storages` storage for admin showcase flows. Database/file/external persistence, runtime config, migrations, and durability claims remain blocked until a durable backend decision is approved. |
 | Custom code | product decision required | Blocked until allowed code categories, sanitization, sandboxing, and review rules are approved. |
 
 ## Admin API Auth
@@ -108,27 +108,39 @@ internal database IDs until the identifier model is explicitly approved.
 
 ## Persistence
 
-The MVP persistence backend is `product decision required`. This record does not
-choose PostgreSQL, SQLite, in-memory storage, file storage, an external service,
-or any other backend. No feature plan may add persistence runtime settings,
-storage implementations, storage interfaces, migrations, or database
-dependencies until the backend and migration boundary are explicitly approved.
+The MVP storage boundary approves process-local in-memory admin showcase storage
+for future MVP implementation. This boundary is non-durable, process-local, not
+shared across workers, lost on process restart, and scoped to local, test, and
+demo usage. It may support route and use-case wiring for MVP demonstration, but
+it is not a substitute for production persistence and must not be used to claim
+audit durability, publication durability, analytics retention, billing records,
+custom-domain ownership durability, or multi-process consistency.
 
-Future persistence plans may introduce persistence-specific `src/config`
-settings, `src/storages`, `src/core/storages.py`, and `migrations` only after the
-persistence backend, ownership model, migration strategy, and transaction
-boundary are approved. Until then, any persistence implementation remains
-blocked. Non-persistence runtime configuration still requires the relevant
-feature decision and the project config rules.
+The current core storage interface is
+`src/core/storages.py::AdminShowcaseStorage`, with `get_by_id()` and
+`update_draft()` methods. Future in-memory implementation may add concrete
+storage under `src/storages/` and DI provider wiring for that interface. This
+record does not implement that storage, register routes, add runtime settings,
+add dependencies, or create migrations.
+
+Durable persistence remains `product decision required`. No feature plan may add
+database, file, or external-service persistence; persistence runtime settings;
+database dependencies; ORM models; migrations; or durable transaction behavior
+until the backend, ownership model, migration strategy, runtime config boundary,
+and transaction boundary are explicitly approved. Non-persistence runtime
+configuration still requires the relevant feature decision and the project
+config rules.
 
 | Boundary | MVP decision | Required constraint |
 | --- | --- | --- |
-| Backend choice | product decision required | Blocked until the MVP chooses durable database storage, in-memory-only behavior, or another explicit backend. |
-| Persistence runtime config | product decision required | Persistence-specific `src/config` settings may be added only when database URLs, credentials, or paths are needed and approved. |
-| Storage layer | product decision required | Persistent implementations must live under `src/storages`; do not introduce `repositories` or `repos`. |
-| Core storage interfaces | product decision required | Add `src/core/storages.py` only when a use case needs an interface owned by `src/core`. |
-| Migrations | product decision required | Add `migrations` only when a database-backed model and migration policy are approved. |
-| Transaction boundary | Project constraint approved | DI providers own the Unit of Work; storage and use case code must not call `session.commit()` or `session.begin()`. |
+| Backend choice | Approved MVP boundary: process-local in-memory admin showcase storage | Storage is non-durable, test/demo scoped, lost on restart, not shared across workers, and not approved for production persistence. |
+| Durable persistence backend | product decision required | Blocked until PostgreSQL, SQLite, file storage, an external service, or another durable backend is explicitly selected with ownership and migration rules. |
+| Persistence runtime config | Not approved for in-memory MVP; product decision required for durable persistence | In-memory storage must not add database URLs, credentials, file paths, or persistence-specific settings. Durable settings may be added only when the backend needs and approves them. |
+| Storage layer | Approved only for future in-memory concrete storage under `src/storages/` | Implementations must use the `storages` layer name; do not introduce `repositories` or `repos`. |
+| Core storage interfaces | Existing interface acknowledged | `src/core/storages.py::AdminShowcaseStorage` already defines the admin showcase storage interface. Add or change core interfaces only when a use case requires them. |
+| Ownership model | Core/use-case owned | Storage preserves owner/partner fields, but access decisions remain in core use cases using the current admin context; storage must not become the permission layer. |
+| Migrations | Not approved for in-memory MVP; product decision required for durable persistence | Add `migrations` only when a database-backed model and migration policy are approved. |
+| Transaction boundary | Project constraint approved | In-memory MVP storage has no database transaction. When a durable database exists, DI providers own the Unit of Work; storage and use case code must not call `session.commit()` or `session.begin()`. |
 | Storage behavior | Project constraint approved | Storage methods perform persistence operations, avoid business logic, and return domain schemas rather than ORM models. |
 
 ## Domain Verification
@@ -190,9 +202,12 @@ capability and required control is explicitly approved.
   boundary approved in `docs/decisions/admin-api-lifecycle.md`.
 - Product decision required: choose the public identifier model and public data
   exposure rules before adding storefront routes or schemas.
-- Product decision required: choose the persistence backend and migration
-  boundary before adding persistence-specific `src/config` settings,
-  `src/storages`, `src/core/storages.py`, or `migrations`.
+- Product decision required: choose the durable persistence backend, migration
+  boundary, runtime config boundary, ownership model, and transaction behavior
+  before adding database/file/external-service persistence, persistence-specific
+  `src/config` settings, ORM models, database dependencies, or `migrations`.
+  Future MVP implementation may add only the approved process-local in-memory
+  `src/storages` implementation for `AdminShowcaseStorage`.
 - Product decision required: choose the domain verification method before adding
   custom-domain clients, services, storages, or API routes.
 - Product decision required: choose audit/event durability requirements before
@@ -209,8 +224,10 @@ capability and required control is explicitly approved.
   persistence, audit, and field-exposure decisions.
 - Public storefront feature plans must wait for public route, field exposure, and
   identifier decisions.
-- Persistence feature plans must wait for backend, migration, config, and
-  transaction-boundary decisions.
+- Durable persistence feature plans must wait for backend, migration, config,
+  ownership, and transaction-boundary decisions. MVP admin showcase feature plans
+  may use the approved process-local in-memory storage boundary only where
+  non-durable test/demo behavior is acceptable.
 - Custom domain feature plans must wait for verification-method and durability
   decisions.
 - Analytics and billing feature plans must wait for explicit MVP scope and data

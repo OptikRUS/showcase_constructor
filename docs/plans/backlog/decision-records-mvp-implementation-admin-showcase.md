@@ -192,14 +192,14 @@ business code.
 
 **Actions:**
 
-- [ ] Update the Persistence section with the selected MVP storage boundary or
+- [x] Update the Persistence section with the selected MVP storage boundary or
   an explicit blocked reason.
-- [ ] State whether future implementation may add `src/storages/`,
+- [x] State whether future implementation may add `src/storages/`,
   persistence-specific `src/config`, and migrations.
-- [ ] Preserve the DI-owned transaction boundary and `storages` naming rule.
-- [ ] Confirm the diff contains only intended decision-record documentation
+- [x] Preserve the DI-owned transaction boundary and `storages` naming rule.
+- [x] Confirm the diff contains only intended decision-record documentation
   changes.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 3: Decide public identifier model
 
