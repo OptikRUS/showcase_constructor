@@ -35,12 +35,12 @@ runtime configuration, migrations, or custom rendering behavior.
 | --- | --- | --- |
 | Constructor editing | product decision required | Blocked until the editable entities, permissions, and publishing workflow are approved. |
 | Showcase publishing | Published snapshot response-field boundary and in-memory audit/event boundary approved; publication workflow product decision required | Future public exposure is approved only for the published snapshot field groups listed below. Publication states, publish/unpublish behavior, and rollback remain blocked until focused decisions approve them; future publishing mutations must use the audit/event boundary below. |
-| Custom domains | product decision required | Blocked until domain ownership verification and failure handling are approved; future verification changes must use the audit/event boundary below. |
+| Custom domains | DNS TXT ownership-proof boundary approved; routing and production activation behavior product decision required | Future MVP planning may use the DNS TXT verification method defined below. Custom-domain routing, activation after verification, public route exposure, and public status visibility remain blocked until focused decisions approve them; future verification changes must use the audit/event boundary below. |
 | Analytics | product decision required | Blocked until event collection, retention, and public/admin visibility are approved. |
 | Billing | product decision required | Blocked until paid features, account ownership, and provider integration are approved. |
 | Admin API | MVP JWT bearer adapter plus approved admin showcase route and in-memory audit/event boundaries | `docs/decisions/admin-api-lifecycle.md` approves protected owner-scoped create, list own, get own, patch draft, clone, archive, and restore route boundaries; storage and lifecycle behavior still require their focused decisions, and approved mutations must use the audit/event boundary below. |
 | Public storefront | Opaque public showcase id and published snapshot response-field boundary approved; route methods product decision required | Future public reads may address a published snapshot by opaque public showcase id and may return only the approved published snapshot field groups below. Public route registration and methods remain blocked until a focused public-route decision approves them. |
-| Persistence | Approved in-memory MVP storage boundary; durable persistence product decision required | Future MVP implementation may add only process-local, non-durable `src/storages` storage for admin showcase flows. Database/file/external persistence, runtime config, migrations, and durability claims remain blocked until a durable backend decision is approved. |
+| Persistence | Approved in-memory MVP storage boundary; durable persistence product decision required | Future MVP implementation may add only process-local, non-durable `src/storages` storage for admin showcase flows and DNS TXT domain verification state. Database/file/external persistence, runtime config, migrations, and durability claims remain blocked until a durable backend decision is approved. |
 | Custom code | product decision required | Blocked until allowed code categories, sanitization, sandboxing, and review rules are approved; future permission or content changes must use the audit/event boundary below. |
 
 ## Admin API Auth
@@ -137,11 +137,11 @@ that public payload.
 | Private stats and service settings | Not approved | Private analytics, service credentials, payout/billing data, moderation state, and operational settings are not public snapshot data. |
 | Internal nested offer/block ids | Not approved | Public `offers` and `blocks` may include only approved public ids and display fields; internal offer ids, block ids, source ids, and storage ids remain private. |
 | Public slug | Not approved | Human-readable or SEO slugs are blocked until collision handling, ownership, rename/redirect behavior, and public display rules are approved. |
-| Domain names and custom domains | product decision required | Blocked as public identifiers until domain ownership verification, display rules, and response-field exposure are approved. |
-| Domain plus path routing | Not approved | Blocked until custom-domain verification and path ownership semantics are approved. |
+| Domain names and custom domains | Not approved as public identifiers | DNS TXT verification is approved below only as an ownership-proof method. Custom domains, domain plus path routing, display rules, and response-field exposure remain blocked as public identifier schemes until a focused routing/public-exposure decision approves them. |
+| Domain plus path routing | Not approved | DNS TXT verification does not approve Host-based routing, path ownership semantics, or public renderer domain lookup behavior. |
 | Showcase content fields outside the published public config snapshot | product decision required | Future title, description, theme, page, asset, SEO metadata, and publication-state fields remain blocked unless they are added to an approved published snapshot contract by a later decision. |
 | Custom code metadata | product decision required | Blocked until custom-code permissions, review status, sanitization, and sandboxing decisions are approved. |
-| Domain verification status | product decision required | Blocked until verification method and public/admin visibility are approved. |
+| Domain verification status | Not approved for public exposure; protected owner-admin visibility may be approved by a later route plan | DNS TXT verification status may be returned only through future authenticated owner-scoped admin domain management routes after those routes are approved. Public storefront responses must not expose verification status. |
 
 ## Persistence
 
@@ -156,9 +156,11 @@ custom-domain ownership durability, or multi-process consistency.
 The current core storage interface is
 `src/core/storages.py::AdminShowcaseStorage`, with `get_by_id()` and
 `update_draft()` methods. Future in-memory implementation may add concrete
-storage under `src/storages/` and DI provider wiring for that interface. This
-record does not implement that storage, register routes, add runtime settings,
-add dependencies, or create migrations.
+storage under `src/storages/` and DI provider wiring for that interface. A
+future DNS TXT domain verification plan may add a core-owned storage interface
+and process-local in-memory `src/storages/` implementation only for verification
+tokens and statuses. This record does not implement that storage, register
+routes, add runtime settings, add dependencies, or create migrations.
 
 Durable persistence remains `product decision required`. No feature plan may add
 database, file, or external-service persistence; persistence runtime settings;
@@ -170,7 +172,7 @@ config rules.
 
 | Boundary | MVP decision | Required constraint |
 | --- | --- | --- |
-| Backend choice | Approved MVP boundary: process-local in-memory admin showcase storage | Storage is non-durable, test/demo scoped, lost on restart, not shared across workers, and not approved for production persistence. |
+| Backend choice | Approved MVP boundary: process-local in-memory admin showcase storage and DNS TXT domain verification state | Storage is non-durable, test/demo scoped, lost on restart, not shared across workers, and not approved for production persistence. |
 | Durable persistence backend | product decision required | Blocked until PostgreSQL, SQLite, file storage, an external service, or another durable backend is explicitly selected with ownership and migration rules. |
 | Persistence runtime config | Not approved for in-memory MVP; product decision required for durable persistence | In-memory storage must not add database URLs, credentials, file paths, or persistence-specific settings. Durable settings may be added only when the backend needs and approves them. |
 | Storage layer | Approved only for future in-memory concrete storage under `src/storages/` | Implementations must use the `storages` layer name; do not introduce `repositories` or `repos`. |
@@ -182,20 +184,29 @@ config rules.
 
 ## Domain Verification
 
-The MVP domain verification method is `product decision required`. This record
-does not choose DNS TXT records, CNAME validation, HTTP file validation, email
-verification, provider API checks, manual review, or another ownership proof.
-No custom-domain feature plan may implement verification clients, services,
-storages, API routes, background jobs, or public verification fields until the
-method and failure handling are approved.
+The MVP domain verification method is DNS TXT ownership proof. A future
+custom-domain implementation may generate an opaque verification token, show the
+owner DNS instructions for a TXT record, check that TXT record for the requested
+host, and update process-local in-memory verification state for local/test/demo
+usage. This boundary does not approve CNAME validation, HTTP file validation,
+email verification, provider API checks, manual review, custom-domain routing,
+or production publication on a custom domain.
 
-| Verification question | MVP decision | Feature plan blocked |
+The verification token must be generated by the application as an opaque,
+unguessable value. It must not contain or derive from internal storage ids,
+owner/admin identifiers, partner ids, tenant/account ids, emails, usernames,
+profile identifiers, custom-code metadata, or public slugs. Token and status
+storage may use only the approved process-local, non-durable in-memory storage
+boundary; durable domain storage, file storage, external-provider state, runtime
+DNS provider settings, and migrations remain blocked.
+
+| Verification question | MVP decision | Feature plan boundary |
 | --- | --- | --- |
-| Ownership proof method | product decision required | Custom domain feature plan. |
-| Verification token format and storage | product decision required | Custom domain and persistence feature plans. |
-| Retry, expiration, and failure handling | product decision required | Custom domain and publishing feature plans. |
-| Activation after successful verification | product decision required | Public storefront and custom domain feature plans. |
-| Public/admin visibility of verification status | product decision required | Public data, admin API, and custom domain feature plans. |
+| Ownership proof method | Approved MVP boundary: DNS TXT record containing an opaque application-generated token for the requested host | Future custom-domain verification planning may implement TXT lookup/check behavior only; CNAME, HTTP file, email, provider API, and manual verification remain blocked. |
+| Verification token format and storage | Approved MVP boundary: opaque unguessable token stored only in process-local in-memory domain verification state | No durable persistence, config, migrations, external storage, or token values derived from private identifiers are approved. |
+| Retry, expiration, and failure handling | product decision required beyond safe recheck attempts | A future implementation may support explicit owner-triggered rechecks against the current TXT record. Automatic retry schedules, token expiration, background jobs, lockouts, and failure-state transition policy remain blocked until a focused custom-domain plan approves them. |
+| Activation after successful verification | product decision required | Verification may establish ownership state only. Custom-domain routing, production activation, Host-based public rendering, domain detachment, and publication behavior remain blocked for public storefront and custom-domain feature plans. |
+| Public/admin visibility of verification status | Public visibility not approved; authenticated owner-admin visibility product decision required by route | Verification status must not appear in public storefront responses. A future protected owner-scoped admin domain route may request approval to return status values such as pending, verified, failed, active, or disabled. |
 
 ## Audit And Events
 
@@ -227,7 +238,7 @@ into production.
 | Admin restore showcase | Approved MVP boundary: process-local in-memory audit record | Future owner-scoped restore implementation must record actor context, owned showcase id, action type, timestamp, and safe restore metadata. Restore behavior and durable audit remain blocked by their own decisions. |
 | Admin unarchive alias | Blocked | The admin lifecycle boundary selects `POST /api/v1/showcases/{id}/restore`; no separate unarchive audit event is approved unless the alias is later approved. |
 | Showcase publishing changes | Approved MVP boundary: process-local in-memory audit record | If a later publishing decision approves publish, unpublish, rollback, or republish behavior, each mutation must record actor context, showcase id, action type, timestamp, and safe snapshot metadata. Publishing behavior and durable audit remain blocked until separately approved. |
-| Domain verification changes | Approved MVP boundary: process-local in-memory audit record | If a later domain verification decision approves verification requests, attempts, activation, expiration, or failure handling, each change must record actor context when present, domain identifier, action type, timestamp, and safe verification metadata. Verification method, public/admin status visibility, and durable audit remain blocked. |
+| Domain verification changes | Approved MVP boundary: process-local in-memory audit record | Future DNS TXT verification requests, owner-triggered rechecks, and safe status updates must record actor context when present, domain identifier, action type, timestamp, and safe verification metadata. Activation, expiration, automatic retry policy, public/admin status visibility, and durable audit remain blocked. |
 | Custom code permission or content changes | Approved MVP boundary: process-local in-memory audit record | If a later custom-code decision approves CSS, HTML, JavaScript, embeds, or server-side code permissions, each permission or content change must record actor context, showcase id, capability, action type, timestamp, and safe metadata. Code content, secrets, and durable audit remain blocked. |
 | Analytics or billing-relevant events | product decision required | Analytics, billing, event collection, retention, and public/admin visibility remain blocked; the non-durable audit boundary must not be reused as analytics or billing event storage. |
 
@@ -266,8 +277,11 @@ capability and required control is explicitly approved.
   `src/config` settings, ORM models, database dependencies, or `migrations`.
   Future MVP implementation may add only the approved process-local in-memory
   `src/storages` implementation for `AdminShowcaseStorage`.
-- Product decision required: choose the domain verification method before adding
-  custom-domain clients, services, storages, or API routes.
+- Product decision required: choose custom-domain routing, activation after
+  verification, public/admin status visibility routes, automatic retry,
+  expiration, failure-state transition policy, and durable domain storage before
+  adding behavior beyond the approved DNS TXT ownership proof and process-local
+  verification state.
 - Approved MVP boundary: future test/demo admin mutations, publishing actions,
   domain verification changes, and custom-code changes may use process-local
   in-memory audit records as defined above. Product decision required: choose
@@ -292,9 +306,12 @@ capability and required control is explicitly approved.
   ownership, and transaction-boundary decisions. MVP admin showcase feature plans
   may use the approved process-local in-memory storage boundary only where
   non-durable test/demo behavior is acceptable.
-- Custom domain feature plans must wait for verification-method decisions;
-  approved verification changes must use the process-local in-memory audit
-  boundary above until durable audit is separately approved.
+- Custom domain feature plans may use the approved DNS TXT ownership-proof
+  method and process-local verification state for local/test/demo flows, but
+  must wait for routing, activation, status-visibility, retry/expiration/failure
+  policy, and durable storage decisions before production custom-domain
+  behavior; approved verification changes must use the process-local in-memory
+  audit boundary above until durable audit is separately approved.
 - Analytics and billing feature plans must wait for explicit MVP scope and data
   exposure decisions.
 - Custom code feature plans must wait for permission, sanitization, sandboxing,

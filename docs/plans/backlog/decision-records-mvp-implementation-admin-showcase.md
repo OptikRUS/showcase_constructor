@@ -360,14 +360,14 @@ business code.
 
 **Actions:**
 
-- [ ] Update the Domain Verification section with the approved MVP method or
+- [x] Update the Domain Verification section with the approved MVP method or
   concrete blocked reason.
-- [ ] State which dependent questions are resolved and which remain blocked.
-- [ ] Ensure public/admin visibility of verification status is not implicitly
+- [x] State which dependent questions are resolved and which remain blocked.
+- [x] Ensure public/admin visibility of verification status is not implicitly
   exposed.
-- [ ] Confirm the diff contains only intended decision-record documentation
+- [x] Confirm the diff contains only intended decision-record documentation
   changes.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 7: Decide custom code MVP permissions
 
