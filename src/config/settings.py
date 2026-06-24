@@ -17,12 +17,12 @@ class DatabaseSettings(BaseSettings):
     USER: str = "postgres"
     PASSWORD: SecretStr = SecretStr("postgres")
     NAME: str = "showcase_constructor"
-    URL: SecretStr = SecretStr("")
 
     model_config = SettingsConfigDict(env_prefix="DB_")
 
-    def model_post_init(self, __context: object, /) -> None:
-        self.URL = SecretStr(
+    @property
+    def URL(self) -> SecretStr:  # noqa: N802
+        return SecretStr(
             f"{self.PROTOCOL}://{self.USER}:{self.PASSWORD.get_secret_value()}"
             f"@{self.HOST}:{self.PORT}/{self.NAME}"
         )

@@ -61,6 +61,8 @@ Architecture rules:
 - transactions stay provider-owned when a DB layer exists;
 - tests use shared fixtures/helpers.
 - no-auth API tests use `self.no_auth_api` in a separate `Test*NoAuthAPI` class.
+- standalone `src/tests/config`, `src/tests/di`, and `src/tests/migrations`
+  infrastructure-mechanics tests are not part of this project's test shape.
 
 Report findings with category and file:line references. If no issues found,
 say `NO ISSUES FOUND`.

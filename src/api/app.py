@@ -12,12 +12,7 @@ Lifespan = Callable[[FastAPI], AbstractAsyncContextManager[None]]
 def create_app(
     lifespan: Lifespan | None = None,
 ) -> FastAPI:
-    app = FastAPI(
-        docs_url=None,
-        lifespan=lifespan,
-        openapi_url=None,
-        redoc_url=None,
-    )
+    app = FastAPI(lifespan=lifespan)
     app.include_router(root_router)
     setup_exception_handlers(app=app)
     return app

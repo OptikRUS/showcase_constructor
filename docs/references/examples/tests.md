@@ -13,6 +13,10 @@
   только для проверки низкоуровневого контракта, где helper скрыл бы проверяемое поведение.
 - Один test-файл слоя содержит тестовые классы и assertions; инфраструктура выносится в
   `conftest.py`, `fixtures.py`, `helpers/`, `mocks/`.
+- Не создавать `src/tests/config/`, `src/tests/di/` или `src/tests/migrations/` для
+  unit-тестов infrastructure mechanics. Settings, DI и Alembic wiring проверяются
+  через shared fixtures, API/storage integration tests и migration smoke в
+  `src/tests/storages/`.
 - Если нужного `conftest.py`, `fixtures.py` или helper ещё нет, сначала создать/расширить эту
   инфраструктуру по этому reference, затем писать API/Core/Storage tests.
 - Запрещено переносить fixtures в `src/tests/api/*`, `src/tests/core/*`, `src/tests/storages/*`
@@ -416,6 +420,19 @@ class TestDatabaseEntityStorage(FactoryFixture, StorageFixture):
     async def test_get_by_id_not_found(self) -> None:
         with pytest.raises(EntityNotFoundError):
             await self.storage.get_by_id(entity_id=999)
+```
+
+### Migration smoke test (src/tests/storages/test_database_migrations.py)
+
+```python
+from src.tests.fixtures import StorageFixture
+
+
+class TestDatabaseMigrations(StorageFixture):
+    async def test_upgrades_to_head_revision(self) -> None:
+        version = await self.storage_helper.get_current_alembic_version()
+
+        assert version == "0001"
 ```
 
 ### API test (src/tests/api/test_health.py)

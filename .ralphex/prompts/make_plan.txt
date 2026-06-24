@@ -105,8 +105,12 @@ Before creating the plan file:
    or normalization helpers unless the current repository already requires them.
 9. For protected API tests, plan `self.api` as the authenticated helper and
    no-auth scenarios as a separate `Test*NoAuthAPI` class using `self.no_auth_api`.
-10. Do not change app code while creating the plan.
-11. Do not add repository investigation as a Task; complete it before writing.
+10. Do not plan standalone `src/tests/config/`, `src/tests/di/`, or
+   `src/tests/migrations/` tests for settings, DI, Alembic commands, or other
+   infrastructure mechanics. Route that coverage through shared fixtures and
+   layer-level API/storage integration or migration smoke tests.
+11. Do not change app code while creating the plan.
+12. Do not add repository investigation as a Task; complete it before writing.
 
 Do not invent paths, class names, tests, commands, providers, use cases, models,
 or storage interfaces. If a detail is not verified, mark it as requiring
@@ -191,6 +195,8 @@ Use this structure:
   and `uv.lock`.
 - Do not create runtime config, persistence, or Alembic layers unless the task
   requires them.
+- Do not create standalone config/DI/migration unit-test directories for
+  infrastructure mechanics.
 - Apply TDD to behavior changes.
 - Each Task should be small enough to finish with green validation.
 

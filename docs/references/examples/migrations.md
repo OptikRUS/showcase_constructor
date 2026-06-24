@@ -31,6 +31,9 @@ def downgrade(revision: str, db_url: str) -> None:
     alembic_downgrade(config=config, revision=revision)
 ```
 
+Do not add unit tests for `commands.py` that mock Alembic internals. Migration command
+behavior is verified through shared test fixtures and a storage-layer migration smoke test.
+
 ## src/migrations/env.py
 
 ```python

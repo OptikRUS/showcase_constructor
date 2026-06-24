@@ -14,7 +14,7 @@ from src.storages import models
 RevisionType = str | Iterable[str | None] | Iterable[str]
 
 config = context.config
-config.set_main_option(name="sqlalchemy.url", value=settings.DATABASE.URL.get_secret_value())
+config.set_main_option("sqlalchemy.url", settings.DATABASE.URL.get_secret_value())
 target_metadata = models.Base.metadata
 
 
@@ -53,14 +53,16 @@ def do_run_migrations(connection: Connection) -> None:
 
 
 async def run_async_migrations() -> None:
-    connectable = async_engine_from_config(
+    engine = context.config.attributes.get("engine", None)
+    connectable = engine or async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
+        poolclass=pool.StaticPool,
     )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
-    await connectable.dispose()
+    if not engine:
+        await connectable.dispose()
 
 
 def run_migrations_online() -> None:

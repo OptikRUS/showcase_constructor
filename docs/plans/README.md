@@ -17,6 +17,9 @@ This directory contains executable RALPHEX plan files for `showcase_constructor`
 - Use `rtk` for shell commands.
 - Do not add dependencies unless the plan explicitly updates both `pyproject.toml`
   and `uv.lock`.
+- Do not plan standalone `src/tests/config/`, `src/tests/di/`, or
+  `src/tests/migrations/` tests for settings, DI, or Alembic mechanics. Use
+  shared fixtures/helpers and layer-level API/storage integration smoke tests.
 - Do not commit unless the user explicitly asks, except inside an active RALPHEX
   execution loop where the task prompt requires committing the completed Task.
 - Prefer `ralphex --worktree docs/plans/backlog/<feature-name>.md` for feature

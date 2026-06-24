@@ -27,6 +27,9 @@ Classify every finding as exactly one:
 - Auth boundary placement: raw credential parsing, JWT subject validation, and
   auth exceptions stay in `src/api/auth/*`; core context dataclasses remain plain
   already-validated values without invented `from_raw()` factories.
+- Settings, DI, and Alembic command mechanics should not introduce standalone
+  `src/tests/config`, `src/tests/di`, or `src/tests/migrations` unit-test trees;
+  use shared fixtures and layer-level integration or migration smoke coverage.
 - Edge cases: empty input, null values, errors, async behavior, and persistence
   safety when relevant.
 

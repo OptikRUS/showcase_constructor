@@ -17,21 +17,16 @@ from src.migrations.commands import downgrade, migrate
 from src.storages.database import async_session
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
 def setup_migrations() -> Generator[None]:
-    db_url = settings.DATABASE.URL.get_secret_value()
-    migrate(revision="heads", db_url=db_url)
+    migrate(revision="heads", db_url=settings.DATABASE.URL.get_secret_value())
     yield
-    downgrade(revision="base", db_url=db_url)
+    downgrade(revision="base", db_url=settings.DATABASE.URL.get_secret_value())
 
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
-async def engine(setup_migrations: None) -> AsyncGenerator[AsyncEngine]:
-    _ = setup_migrations
-    test_engine = create_async_engine(
-        url=settings.DATABASE.URL.get_secret_value(),
-        poolclass=NullPool,
-    )
+async def engine() -> AsyncGenerator[AsyncEngine]:
+    test_engine = create_async_engine(settings.DATABASE.URL.get_secret_value(), poolclass=NullPool)
     yield test_engine
     await test_engine.dispose()
 

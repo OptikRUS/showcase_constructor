@@ -37,6 +37,7 @@ Verify:
   `src/api/auth/*`, while core context dataclasses stay plain domain values;
 - test coverage for modified behavior;
 - no-auth API coverage uses `self.no_auth_api` in a separate `Test*NoAuthAPI` class;
+- no standalone config/DI/migration unit-test directories for infrastructure mechanics;
 - no stale persisted values for counters/metrics/database-side updates;
 - no unrelated scope expansion.
 

@@ -1,5 +1,15 @@
 # Plan: PostgreSQL MVP Infrastructure
 
+## Errata
+
+This completed historical plan predates the current test-reference guardrails.
+Any instructions below that mention `src/tests/config/test_database_settings.py`,
+`src/tests/di/test_database_provider.py`, `src/tests/migrations/test_commands.py`,
+or `src/tests/migrations/test_migrations_smoke.py` are superseded. Current
+infrastructure coverage belongs in shared fixtures/helpers and layer-level
+API/storage integration or migration smoke tests such as
+`src/tests/storages/test_database_migrations.py`.
+
 ## Goal
 
 Update the MVP decision records to match `docs/showcase-constructor-tz.md`, then

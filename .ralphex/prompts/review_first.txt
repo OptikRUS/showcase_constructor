@@ -41,6 +41,8 @@ Specifically verify:
 - transactions remain provider-owned when a DB layer exists;
 - tests use centralized fixtures/helpers instead of local app/client/container setup;
 - no-auth API coverage uses `self.no_auth_api` in a separate `Test*NoAuthAPI` class;
+- settings, DI, and Alembic mechanics are not covered by standalone
+  `src/tests/config`, `src/tests/di`, or `src/tests/migrations` unit-test trees;
 - no unrelated rule is changed to make the task easier.
 
 Report violations with severity:

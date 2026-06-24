@@ -25,6 +25,8 @@ Check:
   core context dataclasses stay plain already-validated values;
 - missing tests or fake tests;
 - no-auth API tests use `self.no_auth_api` in a separate `Test*NoAuthAPI` class;
+- no standalone `src/tests/config`, `src/tests/di`, or `src/tests/migrations`
+  infrastructure-mechanics tests;
 - stale persisted values for counters/metrics/database-side updates;
 - unnecessary complexity.
 

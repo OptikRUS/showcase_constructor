@@ -21,6 +21,8 @@ Classify every finding as exactly one:
 - common fixtures live in `src/tests/conftest.py`;
 - fixture mixins live in `src/tests/fixtures.py`;
 - helpers live in `src/tests/helpers/`;
+- no standalone `src/tests/config`, `src/tests/di`, or `src/tests/migrations`
+  trees are added for infrastructure mechanics;
 - new tests are inside `class Test*`;
 - both success and error paths are covered when relevant;
 - no-auth API scenarios use `self.no_auth_api` in a separate `Test*NoAuthAPI`

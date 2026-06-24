@@ -75,6 +75,10 @@ Plan and review work around these project boundaries:
 - `session.commit()` and `session.begin()` do not belong in storage or use case code.
 - Tests use `src/tests/conftest.py`, `src/tests/fixtures.py`, and
   `src/tests/helpers/` instead of local app/client/container setup.
+- Do not plan standalone `src/tests/config/`, `src/tests/di/`, or
+  `src/tests/migrations/` infrastructure-mechanics tests. Cover settings, DI,
+  and Alembic through shared fixtures plus API/storage integration or migration
+  smoke tests under the relevant behavior layer.
 - Protected API tests use `APIFixture.api`; no-auth scenarios use
   `APIFixture.no_auth_api` in a separate `Test*NoAuthAPI` class.
 

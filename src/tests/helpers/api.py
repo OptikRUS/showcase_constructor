@@ -12,6 +12,12 @@ class APIHelper:
     def get_health(self) -> Response:
         return self.client.get("/health")
 
+    def get_swagger_docs(self) -> Response:
+        return self.client.get("/docs")
+
+    def get_openapi_schema(self) -> Response:
+        return self.client.get("/openapi.json")
+
     def get_public_config(self, public_id: str) -> Response:
         return self.client.get(f"/api/v1/public/showcases/{public_id}")
 

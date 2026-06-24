@@ -10,7 +10,7 @@ class JwtUser(SnakeBoundaryModel):
 
     @field_validator("user_id", "partner_id")
     @classmethod
-    def validate_required_identifier(cls, value: str) -> str:
+    def validate_non_blank_identifier(cls, value: str) -> str:
         if not value.strip():
             message = "Auth identifier is required"
             raise ValueError(message)

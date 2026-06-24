@@ -7,11 +7,11 @@ from src.config.constants import constants
 
 def migrate(revision: str, db_url: str) -> None:
     config = Config(constants.DIRS.SRC / "migrations" / "alembic.ini")
-    config.set_main_option(name="sqlalchemy.url", value=db_url)
+    config.set_main_option("sqlalchemy.url", db_url)
     alembic_upgrade(config=config, revision=revision)
 
 
 def downgrade(revision: str, db_url: str) -> None:
     config = Config(constants.DIRS.SRC / "migrations" / "alembic.ini")
-    config.set_main_option(name="sqlalchemy.url", value=db_url)
+    config.set_main_option("sqlalchemy.url", db_url)
     alembic_downgrade(config=config, revision=revision)

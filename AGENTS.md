@@ -193,6 +193,9 @@ Reference:
   `root_router.include_router(...)`.
 - `create_app()` подключает только `root_router`, exception handlers/middleware при наличии,
   но не импортирует feature endpoints напрямую.
+- Swagger/OpenAPI/ReDoc остаются включёнными по умолчанию. Не передавать
+  `docs_url=None`, `openapi_url=None` или `redoc_url=None` без отдельного
+  product/security решения.
 - Endpoint делает только auth/validation/boundary conversion/use case call.
 - Core context/value dataclasses such as `AdminActorContext` are already-validated domain
   inputs. Do not add `from_raw`, normalization helpers, or auth exception imports to them
@@ -244,6 +247,10 @@ Reference:
 - Общие fixtures живут в `src/tests/conftest.py`.
 - Fixture mixins живут в `src/tests/fixtures.py`.
 - Helpers живут в `src/tests/helpers/`.
+- Не создавать standalone-каталоги `src/tests/config/`, `src/tests/di/` или
+  `src/tests/migrations/` для проверки инфраструктурной механики. Settings,
+  DI и Alembic проверяются через shared fixtures, API/storage integration tests
+  и migration smoke в слое `src/tests/storages/`.
 - API tests используют `APIFixture` и `APIHelper`; не создавать `FastAPI`, `TestClient`,
   `AsyncClient` или Dishka container локально в test-файле.
 - Для protected API тестов `APIFixture.api` — authenticated helper, а
@@ -274,6 +281,7 @@ Reference: `docs/references/examples/tests.md`.
 | Однобуквенные и сокращённые имена в тестах/conftest | Имена отражают роль |
 | Регистрация feature/common routers напрямую в `create_app()` | Routers собираются через `root_router` |
 | Fixtures внутри `src/tests/api/*`, `src/tests/core/*`, `src/tests/storages/*` | Инфраструктура централизована |
+| Standalone `src/tests/config`, `src/tests/di`, `src/tests/migrations` для infra mechanics | Инфраструктура проверяется через shared fixtures/integration smoke |
 | Прямые HTTP/SQL setup-вызовы в тестах вместо helpers | Helpers фиксируют общий тестовый контракт |
 
 Исключения допустимы только для существующего legacy-кода при явной локальной причине.

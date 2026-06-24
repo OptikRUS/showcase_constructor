@@ -71,7 +71,7 @@ class JwtUser(SnakeBoundaryModel):
 
     @field_validator("user_id", "partner_id")
     @classmethod
-    def validate_required_identifier(cls, value: str) -> str:
+    def validate_non_blank_identifier(cls, value: str) -> str:
         if not value.strip():
             message = "Auth identifier is required"
             raise ValueError(message)
@@ -106,8 +106,9 @@ async def jwt_user_deps(
 JwtUserDeps = Annotated[JwtUser, Depends(jwt_user_deps)]
 ```
 
-`JwtUser` owns raw JWT subject validation. Core context dataclasses receive already
-validated strings through direct construction, for example
+`JwtUser` owns raw JWT subject parsing and non-blank identifier validation. Required
+fields remain ordinary Pydantic required fields; the validator is only for blank
+strings. Core context dataclasses receive already validated strings through direct construction, for example
 `AdminActorContext(user_id=user.user_id, partner_id=user.partner_id)`. Do not add
 `from_raw()` or auth exception handling to core schemas to compensate for missing
 API-boundary validation.
@@ -155,9 +156,9 @@ async def health() -> Response:
     return Response(status_code=status.HTTP_200_OK)
 ```
 
-Redirect from `/` to `/docs` is optional and only makes sense when FastAPI docs are enabled.
-The current project disables `docs_url`, `openapi_url`, and `redoc_url` in `create_app()`, so
-`/health` is the only required common endpoint.
+Redirect from `/` to `/docs` is optional. FastAPI docs, OpenAPI schema, and ReDoc stay
+enabled by default; do not pass `docs_url=None`, `openapi_url=None`, or `redoc_url=None`
+unless a task explicitly includes a product/security decision to hide documentation.
 
 ## src/api/routers.py — Root router composition
 
