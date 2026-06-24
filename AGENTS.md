@@ -194,6 +194,9 @@ Reference:
 - `create_app()` подключает только `root_router`, exception handlers/middleware при наличии,
   но не импортирует feature endpoints напрямую.
 - Endpoint делает только auth/validation/boundary conversion/use case call.
+- Core context/value dataclasses such as `AdminActorContext` are already-validated domain
+  inputs. Do not add `from_raw`, normalization helpers, or auth exception imports to them
+  unless a local reference and the current task explicitly require that shape.
 - Один endpoint — один use case. Ветвление между use cases внутри endpoint запрещено.
 - HTTP exception mapping централизовать в `src/api/exceptions.py`, когда появятся доменные ошибки.
 - Все вызовы с именованными аргументами, если это не ухудшает читаемость стандартного API.
@@ -243,6 +246,10 @@ Reference:
 - Helpers живут в `src/tests/helpers/`.
 - API tests используют `APIFixture` и `APIHelper`; не создавать `FastAPI`, `TestClient`,
   `AsyncClient` или Dishka container локально в test-файле.
+- Для protected API тестов `APIFixture.api` — authenticated helper, а
+  `APIFixture.no_auth_api` — explicit unauthenticated helper. No-auth сценарии писать
+  отдельным `class Test*NoAuthAPI` и вызывать `self.no_auth_api`, не имитировать отсутствие
+  auth ручным удалением headers на общем helper.
 - Для domain objects/params/results использовать `FactoryHelper`, когда он есть или должен быть
   добавлен для нового домена.
 - Блоки Arrange/Act/Assert разделяются пустыми строками.

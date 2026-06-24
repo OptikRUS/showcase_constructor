@@ -9,12 +9,6 @@ class TestAdminAuthContextAPI(APIFixture):
     def _auth_headers(self, *, subject: dict[str, str]) -> dict[str, str]:
         return {"Authorization": f"Bearer {access_security.create_access_token(subject=subject)}"}
 
-    def test_missing_context_returns_unauthorized(self) -> None:
-        response = self.api.get_admin_auth_context()
-
-        assert response.status_code == codes.UNAUTHORIZED
-        assert response.json() == {"detail": "ADMIN_AUTHENTICATION_REQUIRED_ERROR"}
-
     @pytest.mark.parametrize(
         "headers",
         [
@@ -51,17 +45,6 @@ class TestAdminAuthContextAPI(APIFixture):
         assert response.status_code == codes.UNAUTHORIZED
         assert response.json() == {"detail": "ADMIN_AUTHENTICATION_REQUIRED_ERROR"}
 
-    def test_temporary_request_headers_do_not_authenticate(self) -> None:
-        response = self.api.get_admin_auth_context(
-            headers={
-                "X-Admin-User-Id": "admin-user-1",
-                "X-Partner-Id": "partner-1",
-            },
-        )
-
-        assert response.status_code == codes.UNAUTHORIZED
-        assert response.json() == {"detail": "ADMIN_AUTHENTICATION_REQUIRED_ERROR"}
-
     def test_valid_context_returns_admin_identifiers(self) -> None:
         response = self.api.get_admin_auth_context(
             headers=self._auth_headers(
@@ -77,3 +60,22 @@ class TestAdminAuthContextAPI(APIFixture):
             "userId": "admin-user-1",
             "partnerId": "partner-1",
         }
+
+
+class TestAdminAuthContextNoAuthAPI(APIFixture):
+    def test_unauthorized(self) -> None:
+        response = self.no_auth_api.get_admin_auth_context()
+
+        assert response.status_code == codes.UNAUTHORIZED
+        assert response.json() == {"detail": "ADMIN_AUTHENTICATION_REQUIRED_ERROR"}
+
+    def test_temporary_request_headers_do_not_authenticate(self) -> None:
+        response = self.no_auth_api.get_admin_auth_context(
+            headers={
+                "X-Admin-User-Id": "admin-user-1",
+                "X-Partner-Id": "partner-1",
+            },
+        )
+
+        assert response.status_code == codes.UNAUTHORIZED
+        assert response.json() == {"detail": "ADMIN_AUTHENTICATION_REQUIRED_ERROR"}

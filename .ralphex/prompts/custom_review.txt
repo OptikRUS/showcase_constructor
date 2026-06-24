@@ -21,7 +21,10 @@ Check:
 - correctness and edge cases;
 - security and input validation;
 - FastAPI endpoint/use-case/storage/DI boundaries;
+- raw JWT subject validation and auth exceptions stay in `src/api/auth/*`, while
+  core context dataclasses stay plain already-validated values;
 - missing tests or fake tests;
+- no-auth API tests use `self.no_auth_api` in a separate `Test*NoAuthAPI` class;
 - stale persisted values for counters/metrics/database-side updates;
 - unnecessary complexity.
 

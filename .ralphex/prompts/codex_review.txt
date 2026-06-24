@@ -54,10 +54,13 @@ Architecture rules:
 - endpoints stay thin and delegate to one use case;
 - routers compose through `src/api/routers.py::root_router`;
 - DI-managed endpoints use `DishkaRoute` and `FromDishka[...]`;
+- raw auth payload parsing, JWT subject validation, blank/missing credential rejection,
+  and auth exceptions stay in `src/api/auth/*`;
 - business rules stay in `src/core`;
 - persistence stays in `src/storages`;
 - transactions stay provider-owned when a DB layer exists;
 - tests use shared fixtures/helpers.
+- no-auth API tests use `self.no_auth_api` in a separate `Test*NoAuthAPI` class.
 
 Report findings with category and file:line references. If no issues found,
 say `NO ISSUES FOUND`.

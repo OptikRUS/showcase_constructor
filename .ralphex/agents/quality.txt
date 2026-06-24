@@ -32,6 +32,8 @@ requires fixing a measured bottleneck.
 
 - input validation;
 - authentication and authorization checks;
+- raw credential validation and auth exceptions remain in `src/api/auth/*`, not
+  core context dataclasses;
 - injection, command, and path traversal risks;
 - secret exposure;
 - information disclosure in responses, errors, and logs.
@@ -43,6 +45,8 @@ requires fixing a measured bottleneck.
 - routers are registered through `root_router`;
 - DI uses Dishka patterns when dependencies are managed;
 - business rules stay out of delivery and persistence;
+- core context dataclasses stay plain already-validated values and do not grow
+  `from_raw()` or normalization helpers without an explicit current reference;
 - persistence layer is named `storages`, not `repositories`;
 - storage/use-case code does not own transaction commits;
 - tests use shared helpers and fixtures.

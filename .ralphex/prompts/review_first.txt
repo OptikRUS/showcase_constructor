@@ -33,9 +33,14 @@ Specifically verify:
 - routers are registered through `src/api/routers.py::root_router`;
 - endpoint DI uses `DishkaRoute` and `FromDishka[...]` where dependencies are managed;
 - auth, validation, exception mapping, and middleware paths are not bypassed;
+- raw auth payload parsing, JWT subject validation, blank/missing credential rejection,
+  and auth exceptions stay in `src/api/auth/*`, not core context schemas;
+- core context dataclasses do not grow `from_raw()` or normalization helpers unless
+  the plan and current references explicitly require that shape;
 - persistence implementations live under `src/storages`, not `repositories`;
 - transactions remain provider-owned when a DB layer exists;
 - tests use centralized fixtures/helpers instead of local app/client/container setup;
+- no-auth API coverage uses `self.no_auth_api` in a separate `Test*NoAuthAPI` class;
 - no unrelated rule is changed to make the task easier.
 
 Report violations with severity:

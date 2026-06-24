@@ -8,11 +8,18 @@ from src.tests.helpers.factory import FactoryHelper
 
 class APIFixture:
     api: APIHelper
+    no_auth_api: APIHelper
 
     @pytest.fixture(autouse=True)
-    def _api_setup(self, app: FastAPI, no_auth_client: TestClient) -> None:
+    def _api_setup(
+        self,
+        app: FastAPI,
+        client: TestClient,
+        no_auth_client: TestClient,
+    ) -> None:
         _ = app
-        self.api = APIHelper(client=no_auth_client)
+        self.api = APIHelper(client=client)
+        self.no_auth_api = APIHelper(client=no_auth_client)
 
 
 class FactoryFixture:

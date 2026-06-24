@@ -24,6 +24,9 @@ Classify every finding as exactly one:
   or incomplete interfaces.
 - Data flow: request input, boundary conversion, use case call, and response
   output use the project conventions.
+- Auth boundary placement: raw credential parsing, JWT subject validation, and
+  auth exceptions stay in `src/api/auth/*`; core context dataclasses remain plain
+  already-validated values without invented `from_raw()` factories.
 - Edge cases: empty input, null values, errors, async behavior, and persistence
   safety when relevant.
 

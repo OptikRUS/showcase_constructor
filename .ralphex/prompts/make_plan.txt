@@ -99,8 +99,14 @@ Before creating the plan file:
 7. If publicness, auth matrix, or identifier exposure is not confirmed by the
    requirement, existing contract, or explicit user decision, record
    `product decision required` and do not plan implementation that decides it.
-8. Do not change app code while creating the plan.
-9. Do not add repository investigation as a Task; complete it before writing.
+8. For auth/current-context work, verify where raw credentials are parsed. Keep
+   JWT subject validation, blank/missing credential rejection, and auth exceptions
+   in `src/api/auth/*`; do not invent core schema factories such as `from_raw()`
+   or normalization helpers unless the current repository already requires them.
+9. For protected API tests, plan `self.api` as the authenticated helper and
+   no-auth scenarios as a separate `Test*NoAuthAPI` class using `self.no_auth_api`.
+10. Do not change app code while creating the plan.
+11. Do not add repository investigation as a Task; complete it before writing.
 
 Do not invent paths, class names, tests, commands, providers, use cases, models,
 or storage interfaces. If a detail is not verified, mark it as requiring
@@ -169,7 +175,9 @@ Use this structure:
   assert response.status_code == codes.OK
   ```
 - Edge cases:
+  - no-auth API scenarios through `self.no_auth_api`, not by mutating shared headers;
   - missing vs null request fields;
+  - blank or missing JWT subject fields rejected in `src/api/auth/*`;
   - boundary schema conversion;
   - dependency injection wiring;
   - persisted values after database-side updates when counters are involved.

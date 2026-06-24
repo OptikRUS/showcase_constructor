@@ -65,6 +65,9 @@ Plan and review work around these project boundaries:
 - Endpoint logic stays thin: auth/validation/boundary conversion/use case call.
 - One endpoint delegates to one use case.
 - DI-managed endpoints use `DishkaRoute` and `FromDishka[...]`.
+- Raw auth payload parsing, JWT subject validation, blank/missing credential rejection
+  and auth exceptions stay in `src/api/auth/*`; core context dataclasses receive
+  already-validated values and must not grow `from_raw()` or normalization helpers.
 - `src/core` owns business rules and depends on interfaces.
 - Persistence implementations live under `src/storages`.
 - Do not introduce `repositories` or `repos`.
@@ -72,6 +75,8 @@ Plan and review work around these project boundaries:
 - `session.commit()` and `session.begin()` do not belong in storage or use case code.
 - Tests use `src/tests/conftest.py`, `src/tests/fixtures.py`, and
   `src/tests/helpers/` instead of local app/client/container setup.
+- Protected API tests use `APIFixture.api`; no-auth scenarios use
+  `APIFixture.no_auth_api` in a separate `Test*NoAuthAPI` class.
 
 Do not plan `src/core`, `src/storages`, `src/config`, or Alembic files until a
 task actually requires those layers.
