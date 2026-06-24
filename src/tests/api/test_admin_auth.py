@@ -1,3 +1,4 @@
+import pytest
 from httpx2 import codes
 
 from src.tests.fixtures import APIFixture
@@ -6,6 +7,26 @@ from src.tests.fixtures import APIFixture
 class TestAdminAuthContextAPI(APIFixture):
     def test_missing_context_returns_unauthorized(self) -> None:
         response = self.api.get_admin_auth_context()
+
+        assert response.status_code == codes.UNAUTHORIZED
+        assert response.json() == {"detail": "ADMIN_AUTHENTICATION_REQUIRED_ERROR"}
+
+    @pytest.mark.parametrize(
+        "headers",
+        [
+            {"X-Admin-User-Id": "admin-user-1"},
+            {"X-Partner-Id": "partner-1"},
+            {"X-Admin-User-Id": "", "X-Partner-Id": "partner-1"},
+            {"X-Admin-User-Id": "admin-user-1", "X-Partner-Id": ""},
+            {"X-Admin-User-Id": "   ", "X-Partner-Id": "partner-1"},
+            {"X-Admin-User-Id": "admin-user-1", "X-Partner-Id": "   "},
+        ],
+    )
+    def test_incomplete_or_blank_context_returns_unauthorized(
+        self,
+        headers: dict[str, str],
+    ) -> None:
+        response = self.api.get_admin_auth_context(headers=headers)
 
         assert response.status_code == codes.UNAUTHORIZED
         assert response.json() == {"detail": "ADMIN_AUTHENTICATION_REQUIRED_ERROR"}

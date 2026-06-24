@@ -1,19 +1,18 @@
 from collections.abc import AsyncGenerator, Generator
 
 import pytest
-from dishka import AsyncContainer, make_async_container
-from dishka.integrations.fastapi import FastapiProvider
+from dishka import AsyncContainer
 from dishka.integrations.fastapi import setup_dishka as setup_dishka_fastapi
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from src.api.app import create_app
-from src.di.providers.admin_auth import AdminAuthProvider
+from src.di.container import create_container
 
 
 @pytest.fixture
 async def container() -> AsyncGenerator[AsyncContainer]:
-    container = make_async_container(FastapiProvider(), AdminAuthProvider())
+    container = create_container()
     yield container
     await container.close()
 
