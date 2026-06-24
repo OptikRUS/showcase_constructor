@@ -320,15 +320,15 @@ business code.
 
 **Actions:**
 
-- [ ] Update the Audit And Events section with the approved durability level or
+- [x] Update the Audit And Events section with the approved durability level or
   concrete blocked reason.
-- [ ] State how the durability level applies to admin showcase mutations,
+- [x] State how the durability level applies to admin showcase mutations,
   publishing, domain verification, and custom-code changes.
-- [ ] Cross-check the durability wording against the storage boundary from
+- [x] Cross-check the durability wording against the storage boundary from
   Task 2.
-- [ ] Confirm the diff contains only intended decision-record documentation
+- [x] Confirm the diff contains only intended decision-record documentation
   changes.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 6: Decide domain verification MVP method
 

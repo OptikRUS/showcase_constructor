@@ -34,14 +34,14 @@ runtime configuration, migrations, or custom rendering behavior.
 | Area | MVP boundary | Status |
 | --- | --- | --- |
 | Constructor editing | product decision required | Blocked until the editable entities, permissions, and publishing workflow are approved. |
-| Showcase publishing | Published snapshot response-field boundary approved; publication workflow product decision required | Future public exposure is approved only for the published snapshot field groups listed below. Publication states, publish/unpublish behavior, rollback, and durability remain blocked until focused decisions approve them. |
-| Custom domains | product decision required | Blocked until domain ownership verification and failure handling are approved. |
+| Showcase publishing | Published snapshot response-field boundary and in-memory audit/event boundary approved; publication workflow product decision required | Future public exposure is approved only for the published snapshot field groups listed below. Publication states, publish/unpublish behavior, and rollback remain blocked until focused decisions approve them; future publishing mutations must use the audit/event boundary below. |
+| Custom domains | product decision required | Blocked until domain ownership verification and failure handling are approved; future verification changes must use the audit/event boundary below. |
 | Analytics | product decision required | Blocked until event collection, retention, and public/admin visibility are approved. |
 | Billing | product decision required | Blocked until paid features, account ownership, and provider integration are approved. |
-| Admin API | MVP JWT bearer adapter plus approved admin showcase route boundary | `docs/decisions/admin-api-lifecycle.md` approves protected owner-scoped create, list own, get own, patch draft, clone, archive, and restore route boundaries; storage, lifecycle behavior, and audit durability still require their focused decisions. |
+| Admin API | MVP JWT bearer adapter plus approved admin showcase route and in-memory audit/event boundaries | `docs/decisions/admin-api-lifecycle.md` approves protected owner-scoped create, list own, get own, patch draft, clone, archive, and restore route boundaries; storage and lifecycle behavior still require their focused decisions, and approved mutations must use the audit/event boundary below. |
 | Public storefront | Opaque public showcase id and published snapshot response-field boundary approved; route methods product decision required | Future public reads may address a published snapshot by opaque public showcase id and may return only the approved published snapshot field groups below. Public route registration and methods remain blocked until a focused public-route decision approves them. |
 | Persistence | Approved in-memory MVP storage boundary; durable persistence product decision required | Future MVP implementation may add only process-local, non-durable `src/storages` storage for admin showcase flows. Database/file/external persistence, runtime config, migrations, and durability claims remain blocked until a durable backend decision is approved. |
-| Custom code | product decision required | Blocked until allowed code categories, sanitization, sandboxing, and review rules are approved. |
+| Custom code | product decision required | Blocked until allowed code categories, sanitization, sandboxing, and review rules are approved; future permission or content changes must use the audit/event boundary below. |
 
 ## Admin API Auth
 
@@ -63,8 +63,10 @@ Admin showcase lifecycle method/auth boundaries are approved in
 `docs/decisions/admin-api-lifecycle.md` for protected owner-scoped create, list
 own, get own, patch draft, clone, archive, and restore routes. That focused
 record selects `POST /api/v1/showcases/{id}/restore` for recovery and keeps the
-`unarchive` alias blocked. Storage, lifecycle behavior, and audit durability
-remain governed by their focused decisions before implementation may go live.
+`unarchive` alias blocked. Storage and lifecycle behavior remain governed by
+their focused decisions before implementation may go live. Approved admin
+mutations must emit process-local in-memory audit records under the audit/event
+boundary below; durable audit remains blocked.
 Public identifiers use the opaque public showcase id boundary below; slugs and
 custom-domain identifiers remain blocked.
 
@@ -79,11 +81,11 @@ path, and rationale.
 | Admin management reads | `GET /api/v1/showcases`, `GET /api/v1/showcases/{id}` | Not approved | Current admin context required | Approved only for owner-scoped list/get boundaries in `docs/decisions/admin-api-lifecycle.md`. |
 | Admin read metadata | `HEAD` | Not approved | Not app-defined | Approved MVP boundary: no explicit admin lifecycle `HEAD` routes. |
 | Admin preflight/discovery | `OPTIONS` | Not approved | Not app-defined as admin business routes | Approved MVP boundary: no explicit admin lifecycle `OPTIONS` routes; future CORS middleware must not make admin resources public. |
-| Admin creation | `POST /api/v1/showcases` | Not approved | Current admin context required | Approved only for owner-scoped create boundary in `docs/decisions/admin-api-lifecycle.md`; storage and audit decisions still apply. |
-| Admin clone/archive/restore actions | `POST /api/v1/showcases/{id}/clone`, `POST /api/v1/showcases/{id}/archive`, `POST /api/v1/showcases/{id}/restore` | Not approved | Current admin context required | Approved only for owner-scoped action boundaries in `docs/decisions/admin-api-lifecycle.md`; behavior and audit decisions still apply. |
-| Admin replacement | `PUT` | Not approved | Current admin context required | Mutation permissions and audit requirements remain product decision required. |
+| Admin creation | `POST /api/v1/showcases` | Not approved | Current admin context required | Approved only for owner-scoped create boundary in `docs/decisions/admin-api-lifecycle.md`; storage, lifecycle behavior, and the audit/event boundary still apply. |
+| Admin clone/archive/restore actions | `POST /api/v1/showcases/{id}/clone`, `POST /api/v1/showcases/{id}/archive`, `POST /api/v1/showcases/{id}/restore` | Not approved | Current admin context required | Approved only for owner-scoped action boundaries in `docs/decisions/admin-api-lifecycle.md`; behavior and the audit/event boundary still apply. |
+| Admin replacement | `PUT` | Not approved | Current admin context required | Mutation permissions and behavior remain product decision required; any later approval must use the audit/event boundary below. |
 | Admin partial updates | `PATCH /api/v1/showcases/{id}` | Not approved | Current admin context required | Approved only for owner-scoped draft patch boundary in `docs/decisions/admin-api-lifecycle.md`; patchable fields beyond the current title update remain product decision required. |
-| Admin deletion | `DELETE` | Not approved | Current admin context required | Deletion permissions, recovery needs, and audit requirements remain product decision required. |
+| Admin deletion | `DELETE` | Not approved | Current admin context required | Deletion permissions, recovery needs, and behavior remain product decision required; any later approval must use the audit/event boundary below. |
 
 ## Public Data And Identifiers
 
@@ -197,19 +199,37 @@ method and failure handling are approved.
 
 ## Audit And Events
 
-Audit/event durability is `product decision required`. This record does not
-choose best-effort application logs, durable database audit records, outbox
-events, external event streams, append-only storage, or another durability
-mechanism. Future plans must not treat admin mutations, publishing, domain
-verification, or custom-code changes as unaudited by default.
+The MVP audit/event boundary approves process-local in-memory audit records for
+future test/demo implementation. This boundary depends on the in-memory storage
+decision above: audit records are non-durable, retained only for the current
+process lifetime, lost on restart, not shared across workers, and not suitable
+for production compliance, billing, analytics, or incident reconstruction.
 
-| Audited action class | Durability decision | Feature plan blocked |
+Every approved audited mutation must write an audit record in the same
+request/use-case flow after the owner and permission checks succeed. Records may
+be exposed only to authenticated admin tooling approved by a later feature plan;
+this decision does not approve public audit data, public verification status, or
+private actor identifiers in storefront responses.
+
+Durable database audit records, transactional outbox events, external event
+streams, append-only storage, background delivery, cross-process ordering,
+retention beyond process lifetime, and production audit guarantees remain
+`product decision required`. If a later plan selects durable persistence, it
+must revisit audit durability instead of carrying this non-durable MVP boundary
+into production.
+
+| Audited action class | Durability decision | Feature plan boundary |
 | --- | --- | --- |
-| Admin changes | product decision required | Admin API and persistence feature plans. |
-| Showcase publishing changes | product decision required | Publishing, public storefront, and persistence feature plans. |
-| Domain verification changes | product decision required | Custom domain, publishing, and persistence feature plans. |
-| Custom code permission or content changes | product decision required | Custom code, admin API, and persistence feature plans. |
-| Analytics or billing-relevant events | product decision required | Analytics, billing, and persistence feature plans. |
+| Admin create showcase | Approved MVP boundary: process-local in-memory audit record | Future owner-scoped `POST /api/v1/showcases` implementation must record actor context, owned showcase id, action type, timestamp, and allowed response metadata. Durable audit remains blocked. |
+| Admin patch draft showcase | Approved MVP boundary: process-local in-memory audit record | Future owner-scoped `PATCH /api/v1/showcases/{id}` implementation must record actor context, owned showcase id, action type, timestamp, and changed field names or safe metadata. Draft content diffs, private settings, and durable audit remain blocked. |
+| Admin clone showcase | Approved MVP boundary: process-local in-memory audit record | Future owner-scoped clone implementation must record actor context, source showcase id, cloned showcase id, action type, timestamp, and safe metadata. Copy semantics and durable audit remain blocked by their own decisions. |
+| Admin archive showcase | Approved MVP boundary: process-local in-memory audit record | Future owner-scoped archive implementation must record actor context, owned showcase id, action type, timestamp, and safe archive metadata. Archive behavior and durable audit remain blocked by their own decisions. |
+| Admin restore showcase | Approved MVP boundary: process-local in-memory audit record | Future owner-scoped restore implementation must record actor context, owned showcase id, action type, timestamp, and safe restore metadata. Restore behavior and durable audit remain blocked by their own decisions. |
+| Admin unarchive alias | Blocked | The admin lifecycle boundary selects `POST /api/v1/showcases/{id}/restore`; no separate unarchive audit event is approved unless the alias is later approved. |
+| Showcase publishing changes | Approved MVP boundary: process-local in-memory audit record | If a later publishing decision approves publish, unpublish, rollback, or republish behavior, each mutation must record actor context, showcase id, action type, timestamp, and safe snapshot metadata. Publishing behavior and durable audit remain blocked until separately approved. |
+| Domain verification changes | Approved MVP boundary: process-local in-memory audit record | If a later domain verification decision approves verification requests, attempts, activation, expiration, or failure handling, each change must record actor context when present, domain identifier, action type, timestamp, and safe verification metadata. Verification method, public/admin status visibility, and durable audit remain blocked. |
+| Custom code permission or content changes | Approved MVP boundary: process-local in-memory audit record | If a later custom-code decision approves CSS, HTML, JavaScript, embeds, or server-side code permissions, each permission or content change must record actor context, showcase id, capability, action type, timestamp, and safe metadata. Code content, secrets, and durable audit remain blocked. |
+| Analytics or billing-relevant events | product decision required | Analytics, billing, event collection, retention, and public/admin visibility remain blocked; the non-durable audit boundary must not be reused as analytics or billing event storage. |
 
 ## Custom Code Permissions
 
@@ -248,9 +268,12 @@ capability and required control is explicitly approved.
   `src/storages` implementation for `AdminShowcaseStorage`.
 - Product decision required: choose the domain verification method before adding
   custom-domain clients, services, storages, or API routes.
-- Product decision required: choose audit/event durability requirements before
-  adding admin mutations, publishing actions, domain verification changes, or
-  custom-code changes.
+- Approved MVP boundary: future test/demo admin mutations, publishing actions,
+  domain verification changes, and custom-code changes may use process-local
+  in-memory audit records as defined above. Product decision required: choose
+  durable database audit records, outbox events, external event streams,
+  retention, delivery, and production audit guarantees before claiming durable
+  audit/event behavior.
 - Product decision required: choose custom code permissions and required controls
   before rendering or storing user-supplied CSS, HTML, JavaScript, embeds, or
   server-side logic.
@@ -259,7 +282,8 @@ capability and required control is explicitly approved.
 
 - Admin API feature plans beyond the owner-scoped showcase route boundary must
   wait for the final auth provider and any still-unresolved behavior,
-  persistence, audit, and public route method/path decisions.
+  persistence, and public route method/path decisions; approved test/demo
+  mutations must use the process-local in-memory audit boundary above.
 - Public storefront feature plans may use the approved opaque public showcase id
   and approved published snapshot response-field boundary, but must still wait
   for a public route method/path decision before registering storefront
@@ -268,9 +292,12 @@ capability and required control is explicitly approved.
   ownership, and transaction-boundary decisions. MVP admin showcase feature plans
   may use the approved process-local in-memory storage boundary only where
   non-durable test/demo behavior is acceptable.
-- Custom domain feature plans must wait for verification-method and durability
-  decisions.
+- Custom domain feature plans must wait for verification-method decisions;
+  approved verification changes must use the process-local in-memory audit
+  boundary above until durable audit is separately approved.
 - Analytics and billing feature plans must wait for explicit MVP scope and data
   exposure decisions.
 - Custom code feature plans must wait for permission, sanitization, sandboxing,
-  and review decisions.
+  and review decisions; approved permission or content changes must use the
+  process-local in-memory audit boundary above until durable audit is separately
+  approved.

@@ -52,10 +52,10 @@ application middleware/infrastructure and must not make admin resources public.
 | Persistence backend | product decision required: choose backend storage, migration strategy, ownership model, transaction boundary, and whether any in-memory-only behavior is acceptable. |
 | Lifecycle statuses | Approved response boundary may expose `draft`, `published`, `unpublished`, and `archived` status values; the full transition matrix remains product decision required for behavior implementation. |
 | Draft patch behavior | product decision required: define which fields beyond the current `title` draft update are patchable and whether a draft patch may affect any published snapshot. |
-| Clone behavior | product decision required: define copied fields, new status, public id or slug handling, draft and published snapshot handling, timestamps, and audit semantics. Ownership is approved as `context.partner_id`. |
-| Archive behavior | product decision required: define allowed source statuses, public-read consequences, snapshot retention, recovery window, and audit semantics. |
-| Restore policy | product decision required: define source and target statuses, recovery window, conflicts with current publication or slug state, and audit semantics for `POST /api/v1/showcases/{id}/restore`. |
-| Audit and events | product decision required: choose durable audit/event requirements for create, patch, clone, archive, and restore/unarchive before mutations go live. |
+| Clone behavior | product decision required: define copied fields, new status, public id or slug handling, draft and published snapshot handling, and timestamps. Ownership is approved as `context.partner_id`; audit emission follows the process-local in-memory boundary in `docs/decisions/mvp-boundaries.md`. |
+| Archive behavior | product decision required: define allowed source statuses, public-read consequences, snapshot retention, and recovery window. Audit emission follows the process-local in-memory boundary in `docs/decisions/mvp-boundaries.md`. |
+| Restore policy | product decision required: define source and target statuses, recovery window, and conflicts with current publication or slug state for `POST /api/v1/showcases/{id}/restore`. Audit emission follows the process-local in-memory boundary in `docs/decisions/mvp-boundaries.md`. |
+| Audit and events | Approved MVP boundary: owner-scoped create, patch draft, clone, archive, and restore mutations must emit process-local in-memory audit records as defined in `docs/decisions/mvp-boundaries.md`. Durable audit, outbox events, external streams, and the blocked `unarchive` alias remain product decision required. |
 
 ## Authenticated Admin Response Boundary
 
@@ -81,10 +81,11 @@ owner check succeeds. It does not approve public storefront exposure.
 This record still does not directly implement or register routes. Future
 implementation plans may use the approved method/auth/response boundary above,
 but must also satisfy any still-unresolved persistence, lifecycle behavior,
-public route method/path, and audit/event decisions before the corresponding
-behavior goes live. Public identifiers and public response fields must follow
-the opaque public showcase id and published snapshot response-field boundaries
-in `docs/decisions/mvp-boundaries.md`.
+public route method/path, and durable audit/event decisions before the
+corresponding behavior goes live. Public identifiers and public response fields
+must follow the opaque public showcase id and published snapshot response-field
+boundaries in `docs/decisions/mvp-boundaries.md`. Test/demo admin mutations must
+use that record's process-local in-memory audit/event boundary.
 
 This record does not allow:
 
