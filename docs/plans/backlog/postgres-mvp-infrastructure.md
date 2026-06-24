@@ -417,15 +417,15 @@ business tables or business route implementations.
 
 **Actions:**
 
-- [ ] Add failing tests for migration command configuration without connecting
+- [x] Add failing tests for migration command configuration without connecting
   to PostgreSQL.
-- [ ] Add `src/storages/models.py::Base` with no business ORM models.
-- [ ] Add Alembic `commands.py`, `env.py`, `alembic.ini`, `script.py.mako`, and
+- [x] Add `src/storages/models.py::Base` with no business ORM models.
+- [x] Add Alembic `commands.py`, `env.py`, `alembic.ini`, `script.py.mako`, and
   an empty `0001_migration_smoke.py` revision.
-- [ ] Wire `src/main.py` to run migrations on service start through
+- [x] Wire `src/main.py` to run migrations on service start through
   `src.migrations.commands.migrate`.
-- [ ] Run `rtk uv run pytest -vv -x src/tests/migrations/test_commands.py`.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Run `rtk uv run pytest -vv -x src/tests/migrations/test_commands.py`.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 6: Wire request-scoped AsyncSession as the DI Unit of Work
 
