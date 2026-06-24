@@ -247,10 +247,10 @@ explicit product decisions.
 
 **Actions:**
 
-- [ ] Add the focused decision record for draft settings, block, and offer editing.
-- [ ] Verify it preserves unresolved audit, import/sync, and publish behavior as `product decision required`.
-- [ ] Confirm no application, migration, dependency, or public schema file changed in this Task.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Add the focused decision record for draft settings, block, and offer editing.
+- [x] Verify it preserves unresolved audit, import/sync, and publish behavior as `product decision required`.
+- [x] Confirm no application, migration, dependency, or public schema file changed in this Task.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 2: Add PostgreSQL draft storage schema
 
