@@ -233,15 +233,15 @@ business code.
 
 **Actions:**
 
-- [ ] Update the public identifier rows with the approved identifier model or a
+- [x] Update the public identifier rows with the approved identifier model or a
   concrete blocked reason.
-- [ ] Record why the identifier does not expose internal storage or owner
+- [x] Record why the identifier does not expose internal storage or owner
   identity.
-- [ ] Align any public-route wording with the identifier decision without
+- [x] Align any public-route wording with the identifier decision without
   registering a route.
-- [ ] Confirm the diff contains only intended decision-record documentation
+- [x] Confirm the diff contains only intended decision-record documentation
   changes.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 4: Decide published snapshot exposure boundary
 

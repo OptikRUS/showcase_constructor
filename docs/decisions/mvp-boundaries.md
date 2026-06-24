@@ -38,8 +38,8 @@ runtime configuration, migrations, or custom rendering behavior.
 | Custom domains | product decision required | Blocked until domain ownership verification and failure handling are approved. |
 | Analytics | product decision required | Blocked until event collection, retention, and public/admin visibility are approved. |
 | Billing | product decision required | Blocked until paid features, account ownership, and provider integration are approved. |
-| Admin API | MVP JWT bearer adapter plus approved admin showcase route boundary | `docs/decisions/admin-api-lifecycle.md` approves protected owner-scoped create, list own, get own, patch draft, clone, archive, and restore route boundaries; storage, lifecycle behavior, public identifiers, and audit durability still require their focused decisions. |
-| Public storefront | product decision required | Blocked until public identifiers, routes, and response fields are approved. |
+| Admin API | MVP JWT bearer adapter plus approved admin showcase route boundary | `docs/decisions/admin-api-lifecycle.md` approves protected owner-scoped create, list own, get own, patch draft, clone, archive, and restore route boundaries; storage, lifecycle behavior, published-snapshot exposure, and audit durability still require their focused decisions. |
+| Public storefront | Opaque public showcase id approved; route and field exposure product decision required | Future public reads may address a published snapshot by opaque public showcase id only. Public route registration, methods, and response fields remain blocked until their focused decisions are approved. |
 | Persistence | Approved in-memory MVP storage boundary; durable persistence product decision required | Future MVP implementation may add only process-local, non-durable `src/storages` storage for admin showcase flows. Database/file/external persistence, runtime config, migrations, and durability claims remain blocked until a durable backend decision is approved. |
 | Custom code | product decision required | Blocked until allowed code categories, sanitization, sandboxing, and review rules are approved. |
 
@@ -63,9 +63,10 @@ Admin showcase lifecycle method/auth boundaries are approved in
 `docs/decisions/admin-api-lifecycle.md` for protected owner-scoped create, list
 own, get own, patch draft, clone, archive, and restore routes. That focused
 record selects `POST /api/v1/showcases/{id}/restore` for recovery and keeps the
-`unarchive` alias blocked. Storage, lifecycle behavior, public identifiers,
-published-snapshot exposure, and audit durability remain governed by their
-focused decisions before implementation may go live.
+`unarchive` alias blocked. Storage, lifecycle behavior, published-snapshot
+exposure, and audit durability remain governed by their focused decisions before
+implementation may go live. Public identifiers use the opaque public showcase id
+boundary below; slugs and custom-domain identifiers remain blocked.
 
 The only confirmed public runtime route remains `GET /health`. No admin `GET`,
 `HEAD`, `OPTIONS`, `POST`, `PUT`, `PATCH`, or `DELETE` route is public in this
@@ -86,22 +87,35 @@ path, and rationale.
 
 ## Public Data And Identifiers
 
-The only confirmed public data surface remains the existing `GET /health`
-response. No showcase, owner, domain, theme, page, asset, custom-code, analytics,
-billing, or verification-status field is approved for public storefront exposure
-by this record.
+The only confirmed public runtime surface remains the existing `GET /health`
+response. This record approves only the public identifier model for future
+published snapshot reads; it does not register a public storefront route and
+does not approve the public response-field set.
 
-No public identifier scheme is selected yet. Future feature plans must not
-assume public slugs, opaque public IDs, custom domains, stable aliases, or
-internal database IDs until the identifier model is explicitly approved.
+Future public reads use an opaque public showcase id, represented by the
+`public_id` route parameter in the existing test helper path
+`/api/v1/public/showcases/{public_id}` and by `id` on the current published
+public config snapshot/response schemas. The id is a stable, non-semantic public
+identifier assigned by the application for published snapshot lookup. It must
+not be derived from, equal to, or reversible to an internal database id,
+admin/user profile identifier, owner id, partner id, tenant/account id, email,
+username, custom-domain value, or slug.
+
+Public slugs, custom domains as identifiers, domain plus path routing, stable
+aliases, and internal database IDs are not approved public identifier schemes in
+the MVP. Future feature plans may use the opaque public id only after a separate
+route decision approves the public method/path and a separate exposure decision
+approves the response fields.
 
 | Field class | Public exposure | Rationale |
 | --- | --- | --- |
-| Public showcase identifier | product decision required | Blocked until the product chooses public slugs, opaque IDs, custom domains, another identifier scheme, or no public identifier. |
+| Public showcase identifier | Approved MVP boundary: opaque public showcase id | Future public reads may use `public_id` in `/api/v1/public/showcases/{public_id}` and may expose the same opaque id as published snapshot `id` only after public route and response-field decisions are approved. |
 | Internal database IDs | Not approved | Persistence identifiers must stay private unless a later decision approves a specific field and reason. |
 | Owner/admin identifiers | Not approved | Admin emails, usernames, profile identifiers, and account owner identifiers must not be exposed publicly without explicit approval. |
 | Tenant/account identifiers | Not approved | Tenant and account identifiers must not be exposed publicly before the isolation and discovery model is approved. |
-| Domain names and custom domains | product decision required | Blocked until domain ownership verification, display rules, and response-field exposure are approved. |
+| Public slug | Not approved | Human-readable or SEO slugs are blocked until collision handling, ownership, rename/redirect behavior, and public display rules are approved. |
+| Domain names and custom domains | product decision required | Blocked as public identifiers until domain ownership verification, display rules, and response-field exposure are approved. |
+| Domain plus path routing | Not approved | Blocked until custom-domain verification and path ownership semantics are approved. |
 | Showcase content fields | product decision required | Blocked until approved public fields for title, description, theme, pages, assets, metadata, and publication state are defined. |
 | Custom code metadata | product decision required | Blocked until custom-code permissions, review status, sanitization, and sandboxing decisions are approved. |
 | Domain verification status | product decision required | Blocked until verification method and public/admin visibility are approved. |
@@ -200,8 +214,10 @@ capability and required control is explicitly approved.
   production replacement criteria, and still-unresolved lifecycle behavior
   details before adding management behavior beyond the owner-scoped route
   boundary approved in `docs/decisions/admin-api-lifecycle.md`.
-- Product decision required: choose the public identifier model and public data
-  exposure rules before adding storefront routes or schemas.
+- Product decision required: choose public route methods and public data
+  exposure rules before adding storefront routes or schemas. The identifier
+  model is approved only as an opaque public showcase id and does not approve
+  route registration by itself.
 - Product decision required: choose the durable persistence backend, migration
   boundary, runtime config boundary, ownership model, and transaction behavior
   before adding database/file/external-service persistence, persistence-specific
@@ -222,8 +238,9 @@ capability and required control is explicitly approved.
 - Admin API feature plans beyond the owner-scoped showcase route boundary must
   wait for the final auth provider and any still-unresolved behavior,
   persistence, audit, and field-exposure decisions.
-- Public storefront feature plans must wait for public route, field exposure, and
-  identifier decisions.
+- Public storefront feature plans may use the approved opaque public showcase id,
+  but must still wait for public route and field-exposure decisions before
+  registering storefront endpoints.
 - Durable persistence feature plans must wait for backend, migration, config,
   ownership, and transaction-boundary decisions. MVP admin showcase feature plans
   may use the approved process-local in-memory storage boundary only where

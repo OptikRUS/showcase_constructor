@@ -48,7 +48,7 @@ application middleware/infrastructure and must not make admin resources public.
 | Per-method permissions | Approved MVP boundary for create, list own, get own, patch draft, clone, archive, and restore through the method/path matrix above; `unarchive` alias remains blocked. |
 | Admin `HEAD` and `OPTIONS` | Approved MVP boundary: no app-defined admin lifecycle `HEAD` or `OPTIONS` routes. Future CORS middleware must not change admin resource visibility. |
 | Admin response fields | Approved and blocked field groups are defined in `Authenticated Admin Response Boundary` below. |
-| Identifier exposure | Authenticated admin `id` and `ownerPartnerId` may be returned only for owned admin resources. Public ids or slugs remain blocked until the public identifier model is approved. Public exposure remains not approved. |
+| Identifier exposure | Authenticated admin `id` and `ownerPartnerId` may be returned only for owned admin resources. `publicId` may be returned only as the opaque public showcase id approved in `docs/decisions/mvp-boundaries.md`; public slugs remain blocked. Public storefront route exposure remains not approved. |
 | Persistence backend | product decision required: choose backend storage, migration strategy, ownership model, transaction boundary, and whether any in-memory-only behavior is acceptable. |
 | Lifecycle statuses | Approved response boundary may expose `draft`, `published`, `unpublished`, and `archived` status values; the full transition matrix remains product decision required for behavior implementation. |
 | Draft patch behavior | product decision required: define which fields beyond the current `title` draft update are patchable and whether a draft patch may affect any published snapshot. |
@@ -66,7 +66,7 @@ owner check succeeds. It does not approve public storefront exposure.
 | --- | --- |
 | Showcase `id` | Approved MVP boundary as the admin resource identifier used in admin route paths and responses. It is not a public showcase identifier. Direct database primary-key shape remains tied to the later persistence decision. |
 | Owner and partner fields | `ownerPartnerId` is approved only when it equals the caller's `context.partner_id`. Owner/admin emails, usernames, profile identifiers, and cross-partner account identifiers are blocked. |
-| Public ids or slugs | Blocked until the public identifier model is approved in `docs/decisions/mvp-boundaries.md`. Admin routes must not invent or expose a public id or slug before that decision. |
+| Public ids or slugs | `publicId` is approved only as the opaque public showcase id defined in `docs/decisions/mvp-boundaries.md`, and only for owned admin resources. Public slugs, custom-domain identifiers, domain plus path aliases, and internal database ids remain blocked. |
 | Title | Approved MVP boundary for create, list own, get own, patch draft, clone, archive, and restore responses. |
 | Status | Approved MVP boundary for admin-owned resources using `draft`, `published`, `unpublished`, and `archived`; transition rules remain behavior decisions. |
 | Draft snapshot metadata | Approved MVP boundary for metadata needed by the owner, such as draft version, update timestamp, and dirty/published comparison flags. Draft snapshot content fields remain tied to later constructor editing decisions. |
@@ -81,17 +81,18 @@ owner check succeeds. It does not approve public storefront exposure.
 This record still does not directly implement or register routes. Future
 implementation plans may use the approved method/auth/response boundary above,
 but must also satisfy any still-unresolved persistence, lifecycle behavior,
-public identifier, published-snapshot, and audit/event decisions before the
-corresponding behavior goes live.
+published-snapshot, and audit/event decisions before the corresponding behavior
+goes live. Public identifiers must follow the opaque public showcase id boundary
+in `docs/decisions/mvp-boundaries.md`.
 
 This record does not allow:
 
 - adding persistence interfaces or implementations for lifecycle storage;
 - adding `src/storages`, persistence runtime settings, migrations, database
   dependencies, or audit/event dependencies;
-- exposing public identifiers, slugs, public storefront data, foreign-owner
-  data, or admin identifiers beyond the authenticated admin response contract
-  above.
+- exposing public slugs, public storefront data, foreign-owner data, internal
+  database ids, or admin identifiers beyond the authenticated admin response
+  contract above.
 
 Future implementation plans must keep endpoints thin: one endpoint delegates to
 one use case, business rules live in `src/core`, storage access goes through
