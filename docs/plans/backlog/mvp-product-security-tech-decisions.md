@@ -251,11 +251,11 @@ durability и custom code permissions. Бизнес-код, runtime-конфиг
 
 **Actions:**
 
-- [ ] Add a "Domain Verification" section with approved method or `product decision required`.
-- [ ] Add an "Audit And Events" section with durability level and audited action classes.
-- [ ] Link each unresolved durability or verification question to the feature plan it blocks.
-- [ ] Run `rtk rg -n "Domain Verification|Audit And Events|durability|product decision required" docs/decisions/mvp-boundaries.md`.
-- [ ] Run `rtk make quality`, fix documentation-related failures if any, and repeat until successful.
+- [x] Add a "Domain Verification" section with approved method or `product decision required`.
+- [x] Add an "Audit And Events" section with durability level and audited action classes.
+- [x] Link each unresolved durability or verification question to the feature plan it blocks.
+- [x] Run `rtk rg -n "Domain Verification|Audit And Events|durability|product decision required" docs/decisions/mvp-boundaries.md`.
+- [x] Run `rtk make quality`, fix documentation-related failures if any, and repeat until successful.
 
 ### Task 6: Record custom code permission decisions
 

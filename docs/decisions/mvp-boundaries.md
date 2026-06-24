@@ -109,6 +109,39 @@ implementation remains blocked.
 | Transaction boundary | Project constraint approved | DI providers own the Unit of Work; storage and use case code must not call `session.commit()` or `session.begin()`. |
 | Storage behavior | Project constraint approved | Storage methods perform persistence operations, avoid business logic, and return domain schemas rather than ORM models. |
 
+## Domain Verification
+
+The MVP domain verification method is `product decision required`. This record
+does not choose DNS TXT records, CNAME validation, HTTP file validation, email
+verification, provider API checks, manual review, or another ownership proof.
+No custom-domain feature plan may implement verification clients, services,
+storages, API routes, background jobs, or public verification fields until the
+method and failure handling are approved.
+
+| Verification question | MVP decision | Feature plan blocked |
+| --- | --- | --- |
+| Ownership proof method | product decision required | Custom domain feature plan. |
+| Verification token format and storage | product decision required | Custom domain and persistence feature plans. |
+| Retry, expiration, and failure handling | product decision required | Custom domain and publishing feature plans. |
+| Activation after successful verification | product decision required | Public storefront and custom domain feature plans. |
+| Public/admin visibility of verification status | product decision required | Public data, admin API, and custom domain feature plans. |
+
+## Audit And Events
+
+Audit/event durability is `product decision required`. This record does not
+choose best-effort application logs, durable database audit records, outbox
+events, external event streams, append-only storage, or another durability
+mechanism. Future plans must not treat admin mutations, publishing, domain
+verification, or custom-code changes as unaudited by default.
+
+| Audited action class | Durability decision | Feature plan blocked |
+| --- | --- | --- |
+| Admin changes | product decision required | Admin API and persistence feature plans. |
+| Showcase publishing changes | product decision required | Publishing, public storefront, and persistence feature plans. |
+| Domain verification changes | product decision required | Custom domain, publishing, and persistence feature plans. |
+| Custom code permission or content changes | product decision required | Custom code, admin API, and persistence feature plans. |
+| Analytics or billing-relevant events | product decision required | Analytics, billing, and persistence feature plans. |
+
 ## Blocking Decisions
 
 - Product decision required: choose the admin API auth model and per-method
