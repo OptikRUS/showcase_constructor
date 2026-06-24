@@ -11,6 +11,9 @@ This directory contains executable RALPHEX plan files for `showcase_constructor`
 - Keep RALPHEX `plans_dir` pointed at `docs/plans`, not
   `docs/plans/backlog`; otherwise completed plans are archived into the invalid
   `docs/plans/backlog/completed/` subtree.
+- Treat any existing `docs/plans/backlog/completed/` directory as a repository
+  hygiene failure: move contained plans to `docs/plans/completed/` and remove
+  the empty invalid directory.
 - Use `rtk` for shell commands.
 - Do not add dependencies unless the plan explicitly updates both `pyproject.toml`
   and `uv.lock`.
@@ -132,6 +135,7 @@ scoped:
 ```bash
 rtk ls docs/plans/backlog/<feature-name>.md
 rtk rg -n "^### Task|^- \\[ \\]" docs/plans/backlog/<feature-name>.md
+rtk test ! -d docs/plans/backlog/completed
 rtk git diff HEAD -- docs/plans/backlog/<feature-name>.md
 rtk git status --short
 ```

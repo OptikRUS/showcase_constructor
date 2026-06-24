@@ -3,6 +3,8 @@
 ## src/api/boundary.py — Base Pydantic models
 
 ```python
+from typing import Any, Self
+
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel, to_snake
 
@@ -14,6 +16,17 @@ class BoundaryModel(BaseModel):
         populate_by_name=True,
     )
 
+    @classmethod
+    def parse(cls, data: Any) -> Self:
+        return cls.model_validate(data)
+
+    @classmethod
+    def parse_json(cls, data: Any) -> Self:
+        return cls.model_validate_json(data)
+
+    def dict(self, **kwargs: Any) -> dict[str, Any]:
+        return self.model_dump(mode="json", by_alias=True, **kwargs)
+
 
 class SnakeBoundaryModel(BaseModel):
     model_config = ConfigDict(
@@ -21,7 +34,83 @@ class SnakeBoundaryModel(BaseModel):
         from_attributes=True,
         populate_by_name=True,
     )
+
+    @classmethod
+    def parse(cls, data: Any) -> Self:
+        return cls.model_validate(data)
+
+    @classmethod
+    def parse_json(cls, data: Any) -> Self:
+        return cls.model_validate_json(data)
+
+    def dict(self, **kwargs: Any) -> dict[str, Any]:
+        return self.model_dump(mode="json", by_alias=True, **kwargs)
 ```
+
+## src/api/auth — Admin JWT dependency
+
+When admin endpoints require current owner context, use the project JWT boundary
+instead of temporary request headers.
+
+```python
+from datetime import timedelta
+from typing import Annotated
+
+from fastapi import Depends, Security
+from fastapi_jwt import JwtAccessBearer, JwtAuthorizationCredentials
+from pydantic import ValidationError, field_validator
+
+from src.api.boundary import SnakeBoundaryModel
+from src.config.settings import settings
+from src.core.admin_auth.exceptions import AdminAuthenticationRequiredError
+
+
+class JwtUser(SnakeBoundaryModel):
+    user_id: str
+    partner_id: str
+
+    @field_validator("user_id", "partner_id")
+    @classmethod
+    def validate_required_identifier(cls, value: str) -> str:
+        if not value.strip():
+            message = "Auth identifier is required"
+            raise ValueError(message)
+
+        return value
+
+    @classmethod
+    def from_credentials(cls, payload: object) -> "JwtUser":
+        try:
+            return cls.model_validate(payload)
+        except ValidationError as exc:
+            raise AdminAuthenticationRequiredError from exc
+
+
+access_security = JwtAccessBearer(
+    secret_key=settings.AUTH.SECRET_KEY.get_secret_value(),
+    auto_error=False,
+    access_expires_delta=timedelta(hours=settings.AUTH.ACCESS_TOKEN_EXPIRE_HOURS),
+    algorithm=settings.AUTH.ALGORITHM,
+)
+
+
+async def jwt_user_deps(
+    credentials: Annotated[JwtAuthorizationCredentials | None, Security(access_security)],
+) -> JwtUser:
+    if credentials is None:
+        raise AdminAuthenticationRequiredError
+
+    return JwtUser.from_credentials(credentials.subject)
+
+
+JwtUserDeps = Annotated[JwtUser, Depends(jwt_user_deps)]
+```
+
+`JwtUser` owns raw JWT subject validation. Core context dataclasses receive already
+validated strings through direct construction, for example
+`AdminActorContext(user_id=user.user_id, partner_id=user.partner_id)`. Do not add
+`from_raw()` or auth exception handling to core schemas to compensate for missing
+API-boundary validation.
 
 ## src/api/\<domain\>/schemas.py
 

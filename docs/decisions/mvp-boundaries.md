@@ -37,28 +37,26 @@ configuration, migrations, or custom rendering behavior.
 | Custom domains | product decision required | Blocked until domain ownership verification and failure handling are approved. |
 | Analytics | product decision required | Blocked until event collection, retention, and public/admin visibility are approved. |
 | Billing | product decision required | Blocked until paid features, account ownership, and provider integration are approved. |
-| Admin API | MVP temporary adapter | Only protected current-context wiring may use the temporary request-header adapter; final auth provider and route-specific permissions remain product decision required. |
+| Admin API | MVP JWT bearer adapter | Only protected current-context wiring may use the JWT bearer adapter; route-specific permissions remain product decision required. |
 | Public storefront | product decision required | Blocked until public identifiers, routes, and response fields are approved. |
 | Persistence | product decision required | Blocked until backend, migration, and transaction boundaries are approved. |
 | Custom code | product decision required | Blocked until allowed code categories, sanitization, sandboxing, and review rules are approved. |
 
 ## Admin API Auth
 
-### MVP temporary adapter
+### MVP JWT bearer adapter
 
-This MVP plan may implement a temporary request-header adapter only to establish
-the owner-aware admin boundary before the final external auth provider is
-selected. The adapter reads `X-Admin-User-Id` and `X-Partner-Id` from the
-request and treats missing or blank values as unauthenticated.
+This MVP boundary uses a `fastapi-jwt` bearer token adapter to establish the
+owner-aware admin boundary. The JWT subject must contain `user_id` and
+`partner_id`; missing, invalid, or blank values are unauthenticated.
 
-The temporary adapter may protect `GET /api/v1/admin/auth/context` and future
-admin showcase use cases added by this plan. It is not a production auth model,
-does not approve public admin data exposure, and does not approve an
-internal-admin cross-partner override.
+The JWT adapter may protect `GET /api/v1/admin/auth/context` and future admin
+showcase use cases that consume the current admin context. It does not approve
+public admin data exposure and does not approve an internal-admin cross-partner
+override.
 
-The final external auth provider, token/session validation model, trusted
-gateway contract for temporary headers, internal-admin override, and production
-replacement criteria are `product decision required`.
+External auth-provider integration, refresh/session activation, internal-admin
+override, and production replacement criteria remain `product decision required`.
 
 Admin showcase lifecycle operations are additionally blocked by
 `docs/decisions/admin-api-lifecycle.md`; create, list own, get own, patch draft,
@@ -72,7 +70,7 @@ path, and rationale.
 
 | Surface | Method class | Public access | Required auth | Status |
 | --- | --- | --- | --- | --- |
-| Admin current context | `GET /api/v1/admin/auth/context` | Not approved | MVP temporary adapter | Approved only for protected request-to-context wiring. |
+| Admin current context | `GET /api/v1/admin/auth/context` | Not approved | MVP JWT bearer adapter | Approved only for protected request-to-context wiring. |
 | Admin management reads | `GET` | Not approved | Current admin context required | Route-specific resources and response fields remain product decision required. |
 | Admin read metadata | `HEAD` | Not approved | product decision required | Blocked until parity with admin `GET` routes is approved. |
 | Admin preflight/discovery | `OPTIONS` | Not approved | product decision required | Blocked until CORS/preflight and discovery behavior are approved. |
@@ -180,10 +178,10 @@ capability and required control is explicitly approved.
 
 ## Blocking Decisions
 
-- Product decision required: choose the final external admin API auth provider,
-  token/session validation model, trusted gateway contract for temporary headers,
-  internal-admin override, production replacement criteria, and route-specific
-  method permissions before adding management routes beyond this MVP boundary.
+- Product decision required: choose the external admin API auth-provider
+  integration, refresh/session activation model, internal-admin override,
+  production replacement criteria, and route-specific method permissions before
+  adding management routes beyond this MVP boundary.
 - Product decision required: choose the public identifier model and public data
   exposure rules before adding storefront routes or schemas.
 - Product decision required: choose the persistence backend and migration

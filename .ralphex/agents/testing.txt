@@ -23,6 +23,8 @@ Classify every finding as exactly one:
 - helpers live in `src/tests/helpers/`;
 - new tests are inside `class Test*`;
 - both success and error paths are covered when relevant;
+- no-auth API scenarios use `self.no_auth_api` in a separate `Test*NoAuthAPI`
+  class, not ad hoc header mutation on the authenticated helper;
 - persisted values and same-response values are tested separately when both matter.
 
 ## Test Quality

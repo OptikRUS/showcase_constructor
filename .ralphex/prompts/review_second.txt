@@ -33,7 +33,10 @@
 Verify:
 - endpoint/use-case/storage/DI boundaries declared by AGENTS.md and plan;
 - Product/Security Decisions for API/auth/user-visible data changes;
+- auth boundary placement: raw JWT subject validation and auth exceptions stay in
+  `src/api/auth/*`, while core context dataclasses stay plain domain values;
 - test coverage for modified behavior;
+- no-auth API coverage uses `self.no_auth_api` in a separate `Test*NoAuthAPI` class;
 - no stale persisted values for counters/metrics/database-side updates;
 - no unrelated scope expansion.
 

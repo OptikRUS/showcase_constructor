@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from src.api.app import create_app
+from src.api.auth.deps import access_security
 from src.di.container import create_container
 
 
@@ -27,4 +28,16 @@ def app(container: AsyncContainer) -> FastAPI:
 @pytest.fixture
 def no_auth_client(app: FastAPI) -> Generator[TestClient]:
     with TestClient(app) as client:
+        yield client
+
+
+@pytest.fixture
+def client(app: FastAPI) -> Generator[TestClient]:
+    token = access_security.create_access_token(
+        subject={
+            "user_id": "admin-user-1",
+            "partner_id": "partner-1",
+        },
+    )
+    with TestClient(app, headers={"Authorization": f"Bearer {token}"}) as client:
         yield client

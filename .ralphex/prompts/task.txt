@@ -55,6 +55,11 @@
 # - Keep one endpoint mapped to one use case. Do not branch between use cases inside an endpoint.
 # - Register routers through `src/api/routers.py::root_router`, not directly in `create_app()`.
 # - Use `DishkaRoute` and `FromDishka[...]` for DI-managed endpoints.
+# - Keep raw auth payload parsing, JWT subject validation, blank/missing credential
+#   rejection, and auth exceptions in `src/api/auth/*`.
+# - Treat core context dataclasses as already-validated domain inputs. Do not add
+#   `from_raw()`, normalization helpers, or auth exception imports to core schemas
+#   unless the plan and current references explicitly require that shape.
 # - Keep business rules in `src/core`, persistence in `src/storages`, external
 #   adapters in `src/clients`/`src/services`, and dependency assembly in `src/di`.
 # - Do not introduce `repositories` or `repos`.
@@ -68,6 +73,8 @@
 #   non-mutating/error paths when relevant.
 # - Implement all checkboxes under the current Task section.
 # - Write tests for behavior changes before production changes.
+# - For protected API behavior, use `self.api` for authenticated requests and a
+#   separate `Test*NoAuthAPI` class with `self.no_auth_api` for no-auth scenarios.
 # - Keep one commit per Task only when the active RALPHEX loop requires commits.
 # - If a focused RED test unexpectedly passes, classify the Task path as
 #   `coverage-only` or `stale plan` and do not force artificial production changes.
@@ -80,6 +87,9 @@
 # - Update {{PLAN_FILE}} by changing completed checkboxes in the current Task
 #   section from [ ] to [x].
 # - If the active RALPHEX loop requires commits, commit code plus the updated plan.
+# - Verify `docs/plans/backlog/completed/` does not exist. If it exists, move
+#   contained plans to `docs/plans/completed/`, remove the empty invalid
+#   directory, and keep the diff scoped to that cleanup.
 # - Re-run the deterministic unchecked-checkbox scan.
 # - If no unchecked checkboxes remain, output exactly: <<<RALPHEX:ALL_TASKS_DONE>>>
 # - If unchecked checkboxes remain, stop here.

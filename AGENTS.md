@@ -89,6 +89,8 @@ rtk uv run pytest -vv -x src/tests/path/test_file.py::TestClass::test_name
 - Новые RALPHEX plan-файлы по умолчанию сохранять в
   `docs/plans/backlog/<plan-name>.md`.
 - Завершённые планы хранить в `docs/plans/completed/<plan-name>.md`.
+- Каталог `docs/plans/backlog/completed/` запрещён. Если он появился, переместить
+  файлы в `docs/plans/completed/` и удалить пустой invalid subtree.
 - Не создавать новые plan-файлы в корне `docs/plans/`, если пользователь явно
   не попросил legacy/root path.
 - `.ralphex/config` считается локальной runtime-конфигурацией и не должен
@@ -184,11 +186,17 @@ Reference:
 ## API
 
 - `src/api/routers.py` содержит `root_router = APIRouter()`.
+- `src/api/boundary.py::BoundaryModel` и `SnakeBoundaryModel` должны иметь
+  совместимые helpers `parse()`, `parse_json()` и `dict()`, где `dict()` вызывает
+  `model_dump(mode="json", by_alias=True, **kwargs)`.
 - Все common/domain routers регистрируются только в `src/api/routers.py` через
   `root_router.include_router(...)`.
 - `create_app()` подключает только `root_router`, exception handlers/middleware при наличии,
   но не импортирует feature endpoints напрямую.
 - Endpoint делает только auth/validation/boundary conversion/use case call.
+- Core context/value dataclasses such as `AdminActorContext` are already-validated domain
+  inputs. Do not add `from_raw`, normalization helpers, or auth exception imports to them
+  unless a local reference and the current task explicitly require that shape.
 - Один endpoint — один use case. Ветвление между use cases внутри endpoint запрещено.
 - HTTP exception mapping централизовать в `src/api/exceptions.py`, когда появятся доменные ошибки.
 - Все вызовы с именованными аргументами, если это не ухудшает читаемость стандартного API.
@@ -238,6 +246,10 @@ Reference:
 - Helpers живут в `src/tests/helpers/`.
 - API tests используют `APIFixture` и `APIHelper`; не создавать `FastAPI`, `TestClient`,
   `AsyncClient` или Dishka container локально в test-файле.
+- Для protected API тестов `APIFixture.api` — authenticated helper, а
+  `APIFixture.no_auth_api` — explicit unauthenticated helper. No-auth сценарии писать
+  отдельным `class Test*NoAuthAPI` и вызывать `self.no_auth_api`, не имитировать отсутствие
+  auth ручным удалением headers на общем helper.
 - Для domain objects/params/results использовать `FactoryHelper`, когда он есть или должен быть
   добавлен для нового домена.
 - Блоки Arrange/Act/Assert разделяются пустыми строками.

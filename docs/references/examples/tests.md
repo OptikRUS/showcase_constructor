@@ -22,7 +22,6 @@
 
 ```python
 from collections.abc import AsyncGenerator, Generator
-from copy import copy
 
 import pytest
 import pytest_asyncio
@@ -31,11 +30,11 @@ from dishka.integrations.fastapi import FastapiProvider
 from dishka.integrations.fastapi import setup_dishka as setup_dishka_fastapi
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from httpx2 import Headers
 from sqlalchemy import NullPool, delete
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
 from src.api.app import create_app
+from src.api.auth.deps import access_security
 from src.config.settings import settings
 from src.migrations.commands import downgrade, migrate
 from src.storages.database import async_session
@@ -95,17 +94,16 @@ def no_auth_client(app: FastAPI) -> Generator[TestClient]:
         yield client
 
 
-# Пример с JWT-аутентификацией (добавлять только если проект использует JWT):
-# @pytest.fixture(scope="session")
-# def auth_token() -> str:
-#     return access_security.create_access_token(subject={"user_id": 1})
-#
-# @pytest.fixture
-# def auth_client(no_auth_client: TestClient, auth_token: str) -> Generator[TestClient]:
-#     client = copy(no_auth_client)
-#     client.headers = Headers({"Authorization": f"Bearer {auth_token}"})
-#     yield client
-#     client.headers = Headers()
+@pytest.fixture
+def client(app: FastAPI) -> Generator[TestClient]:
+    token = access_security.create_access_token(
+        subject={
+            "user_id": "admin-user-1",
+            "partner_id": "partner-1",
+        },
+    )
+    with TestClient(app, headers={"Authorization": f"Bearer {token}"}) as client:
+        yield client
 ```
 
 ## src/tests/fixtures.py — Fixture mixin классы
@@ -125,10 +123,18 @@ from src.tests.helpers.use_case import ContainerHelper
 
 class APIFixture:
     api: APIHelper
+    no_auth_api: APIHelper
 
     @pytest.fixture(autouse=True)
-    def _api_setup(self, app: FastAPI, no_auth_client: TestClient) -> None:
-        self.api = APIHelper(client=no_auth_client)
+    def _api_setup(
+        self,
+        app: FastAPI,
+        client: TestClient,
+        no_auth_client: TestClient,
+    ) -> None:
+        _ = app
+        self.api = APIHelper(client=client)
+        self.no_auth_api = APIHelper(client=no_auth_client)
 
 
 class FactoryFixture:
@@ -181,6 +187,22 @@ class APIHelper:
             "/entities",
             json={"name": name, "amount": amount, "status": status},
         )
+```
+
+Protected API tests use `self.api`; unauthenticated scenarios use a separate
+`Test*NoAuthAPI` class and `self.no_auth_api`.
+
+```python
+from httpx2 import codes
+
+from src.tests.fixtures import APIFixture
+
+
+class TestEntityNoAuthAPI(APIFixture):
+    def test_unauthorized(self) -> None:
+        response = self.no_auth_api.get_entity(entity_id=1)
+
+        assert response.status_code == codes.UNAUTHORIZED
 ```
 
 ## src/tests/helpers/factory.py
