@@ -60,6 +60,11 @@ The final external auth provider, token/session validation model, trusted
 gateway contract for temporary headers, internal-admin override, and production
 replacement criteria are `product decision required`.
 
+Admin showcase lifecycle operations are additionally blocked by
+`docs/decisions/admin-api-lifecycle.md`; create, list own, get own, patch draft,
+clone, archive, and restore/unarchive remain unapproved until that focused
+record's required product and security decisions are resolved.
+
 The only confirmed public runtime route remains `GET /health`. No admin `GET`,
 `HEAD`, `OPTIONS`, `POST`, `PUT`, `PATCH`, or `DELETE` route is public in this
 MVP boundary unless a later decision record explicitly approves that method,
