@@ -103,6 +103,9 @@ business code.
 
 ## Validation Commands
 
+- `rtk rg --files .ralphex docs/plans docs/references/examples`
+- `rtk rg -n "^### Task|^- \\[ \\]" docs/plans .ralphex/prompts`
+- `rtk ralphex --config-dir=.ralphex --version`
 - `rtk make lint`
 - `rtk make types`
 - `rtk make tests`

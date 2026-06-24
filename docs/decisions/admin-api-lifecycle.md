@@ -49,7 +49,7 @@ application middleware/infrastructure and must not make admin resources public.
 | Admin `HEAD` and `OPTIONS` | Approved MVP boundary: no app-defined admin lifecycle `HEAD` or `OPTIONS` routes. Future CORS middleware must not change admin resource visibility. |
 | Admin response fields | Approved and blocked field groups are defined in `Authenticated Admin Response Boundary` below. |
 | Identifier exposure | Authenticated admin `id` and `ownerPartnerId` may be returned only for owned admin resources. `publicId` may be returned only as the opaque public showcase id approved in `docs/decisions/mvp-boundaries.md`; public slugs remain blocked. Public storefront route exposure remains not approved. |
-| Persistence backend | product decision required: choose backend storage, migration strategy, ownership model, transaction boundary, and whether any in-memory-only behavior is acceptable. |
+| Persistence backend | Approved MVP boundary: future test/demo admin showcase implementation may use only the process-local in-memory `src/storages` boundary from `docs/decisions/mvp-boundaries.md`; durable backend, migration strategy, runtime config, and durable transaction behavior remain product decision required. |
 | Lifecycle statuses | Approved response boundary may expose `draft`, `published`, `unpublished`, and `archived` status values; the full transition matrix remains product decision required for behavior implementation. |
 | Draft patch behavior | product decision required: define which fields beyond the current `title` draft update are patchable and whether a draft patch may affect any published snapshot. |
 | Clone behavior | product decision required: define copied fields, new status, public id or slug handling, draft and published snapshot handling, and timestamps. Ownership is approved as `context.partner_id`; audit emission follows the process-local in-memory boundary in `docs/decisions/mvp-boundaries.md`. |
@@ -79,24 +79,26 @@ owner check succeeds. It does not approve public storefront exposure.
 ## Implementation Boundary
 
 This record still does not directly implement or register routes. Future
-implementation plans may use the approved method/auth/response boundary above,
-but must also satisfy any still-unresolved persistence, lifecycle behavior,
-public route method/path, and durable audit/event decisions before the
-corresponding behavior goes live. Public identifiers and public response fields
-must follow the opaque public showcase id and published snapshot response-field
-boundaries in `docs/decisions/mvp-boundaries.md`. Test/demo admin mutations must
-use that record's process-local in-memory audit/event boundary.
+implementation plans may use the approved method/auth/response boundary above
+with the process-local in-memory storage and audit/event boundaries in
+`docs/decisions/mvp-boundaries.md`, but must also satisfy any still-unresolved
+lifecycle behavior, public route method/path, durable persistence, and durable
+audit/event decisions before the corresponding behavior goes live. Public
+identifiers and public response fields must follow the opaque public showcase id
+and published snapshot response-field boundaries in
+`docs/decisions/mvp-boundaries.md`.
 
 This record does not allow:
 
-- adding persistence interfaces or implementations for lifecycle storage;
-- adding `src/storages`, persistence runtime settings, migrations, database
-  dependencies, or audit/event dependencies;
+- adding durable persistence interfaces or implementations for lifecycle storage;
+- adding `src/storages` outside the approved process-local in-memory MVP
+  boundary, persistence runtime settings, migrations, database dependencies, or
+  audit/event dependencies;
 - exposing public slugs, public storefront data outside the approved published
   snapshot boundary, foreign-owner data, internal database ids, or admin
   identifiers beyond the authenticated admin response contract above.
 
 Future implementation plans must keep endpoints thin: one endpoint delegates to
 one use case, business rules live in `src/core`, storage access goes through
-core-owned interfaces, and concrete persistence belongs under `src/storages`
-only after persistence decisions are approved.
+core-owned interfaces, and concrete durable persistence belongs under
+`src/storages` only after durable persistence decisions are approved.
