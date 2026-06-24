@@ -146,11 +146,11 @@ durability и custom code permissions. Бизнес-код, runtime-конфиг
 
 **Actions:**
 
-- [ ] Add an "Admin API Auth" section with the selected auth model or `product decision required`.
-- [ ] Add a method auth matrix covering admin read and write methods.
-- [ ] State whether any admin `GET`, `HEAD` or `OPTIONS` route may be public; if not confirmed, keep it blocked.
-- [ ] Run `rtk rg -n "Admin API Auth|Method|GET|POST|PATCH|DELETE|product decision required" docs/decisions/mvp-boundaries.md`.
-- [ ] Run `rtk make quality`, fix documentation-related failures if any, and repeat until successful.
+- [x] Add an "Admin API Auth" section with the selected auth model or `product decision required`.
+- [x] Add a method auth matrix covering admin read and write methods.
+- [x] State whether any admin `GET`, `HEAD` or `OPTIONS` route may be public; if not confirmed, keep it blocked.
+- [x] Run `rtk rg -n "Admin API Auth|Method|GET|POST|PATCH|DELETE|product decision required" docs/decisions/mvp-boundaries.md`.
+- [x] Run `rtk make quality`, fix documentation-related failures if any, and repeat until successful.
 
 ### Task 3: Record public data and identifier exposure decisions
 

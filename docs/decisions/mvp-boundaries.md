@@ -42,6 +42,28 @@ configuration, migrations, or custom rendering behavior.
 | Persistence | product decision required | Blocked until backend, migration, and transaction boundaries are approved. |
 | Custom code | product decision required | Blocked until allowed code categories, sanitization, sandboxing, and review rules are approved. |
 
+## Admin API Auth
+
+The admin API auth model is `product decision required`. This record does not
+choose token auth, session auth, API keys, mTLS, OAuth, internal network access,
+or another protection model. No admin API feature plan may implement management
+routes until the model and per-method permissions are approved.
+
+The only confirmed public runtime route remains `GET /health`. No future admin
+`GET`, `HEAD`, `OPTIONS`, `POST`, `PUT`, `PATCH`, or `DELETE` route is public
+unless a later decision record explicitly approves that method, path, and
+rationale.
+
+| Surface | Method class | Public access | Required auth | Status |
+| --- | --- | --- | --- | --- |
+| Admin management reads | `GET` | product decision required | product decision required | Blocked until readable resources and permissions are approved. |
+| Admin read metadata | `HEAD` | product decision required | product decision required | Blocked until parity with admin `GET` routes is approved. |
+| Admin preflight/discovery | `OPTIONS` | product decision required | product decision required | Blocked until CORS/preflight and discovery behavior are approved. |
+| Admin creation | `POST` | Not approved | product decision required | Blocked until mutation permissions and audit requirements are approved. |
+| Admin replacement | `PUT` | Not approved | product decision required | Blocked until mutation permissions and audit requirements are approved. |
+| Admin partial updates | `PATCH` | Not approved | product decision required | Blocked until mutation permissions and audit requirements are approved. |
+| Admin deletion | `DELETE` | Not approved | product decision required | Blocked until deletion permissions, recovery needs, and audit requirements are approved. |
+
 ## Blocking Decisions
 
 - Product decision required: choose the admin API auth model and per-method
