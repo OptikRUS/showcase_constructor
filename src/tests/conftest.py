@@ -1,14 +1,50 @@
 from collections.abc import AsyncGenerator, Generator
 
 import pytest
+import pytest_asyncio
 from dishka import AsyncContainer
 from dishka.integrations.fastapi import setup_dishka as setup_dishka_fastapi
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from sqlalchemy import NullPool
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
 from src.api.app import create_app
 from src.api.auth.deps import access_security
+from src.config.settings import settings
 from src.di.container import create_container
+from src.migrations.commands import downgrade, migrate
+from src.storages.database import async_session
+
+
+@pytest.fixture(scope="session")
+def setup_migrations() -> Generator[None]:
+    db_url = settings.DATABASE.URL.get_secret_value()
+    migrate(revision="heads", db_url=db_url)
+    yield
+    downgrade(revision="base", db_url=db_url)
+
+
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def engine(setup_migrations: None) -> AsyncGenerator[AsyncEngine]:
+    _ = setup_migrations
+    test_engine = create_async_engine(
+        url=settings.DATABASE.URL.get_secret_value(),
+        poolclass=NullPool,
+    )
+    yield test_engine
+    await test_engine.dispose()
+
+
+@pytest_asyncio.fixture
+async def session(engine: AsyncEngine) -> AsyncGenerator[AsyncSession]:
+    async with async_session(bind=engine) as db_session:
+        try:
+            yield db_session
+            await db_session.commit()
+        except Exception:
+            await db_session.rollback()
+            raise
 
 
 @pytest.fixture

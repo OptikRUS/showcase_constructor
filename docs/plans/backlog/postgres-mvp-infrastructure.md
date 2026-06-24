@@ -501,12 +501,12 @@ business tables or business route implementations.
 
 **Actions:**
 
-- [ ] Add a failing migration smoke test that uses only Alembic metadata/version
+- [x] Add a failing migration smoke test that uses only Alembic metadata/version
   state and no business tables.
-- [ ] Add centralized test engine, migration setup, and `AsyncSession` fixtures
+- [x] Add centralized test engine, migration setup, and `AsyncSession` fixtures
   in `src/tests/conftest.py`.
-- [ ] Add `StorageFixture` and `src/tests/helpers/storage.py` for shared DB
+- [x] Add `StorageFixture` and `src/tests/helpers/storage.py` for shared DB
   readback needed by the smoke test and future storage tests.
-- [ ] Run `rtk uv run pytest -vv -x src/tests/migrations/test_migrations_smoke.py`
+- [x] Run `rtk uv run pytest -vv -x src/tests/migrations/test_migrations_smoke.py`
   with PostgreSQL `DB_*` settings configured.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
