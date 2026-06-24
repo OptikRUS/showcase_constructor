@@ -1,0 +1,26 @@
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["src/tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "D",
+    "COM812",
+    "ISC001",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"src/tests/**/*.py" = ["S101", "PLR2004"]
+"src/migrations/**/*.py" = ["INP001"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+explicit_package_bases = true
+plugins = ["sqlalchemy.ext.mypy.plugin"]
+exclude = ["src/migrations/"]
