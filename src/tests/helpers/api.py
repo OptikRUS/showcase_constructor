@@ -1,5 +1,6 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
+from typing import Any
 
 from httpx2 import Response
 from starlette.testclient import TestClient
@@ -23,3 +24,11 @@ class APIHelper:
 
     def get_admin_auth_context(self, headers: Mapping[str, str] | None = None) -> Response:
         return self.client.get("/api/v1/admin/auth/context", headers=headers)
+
+    def patch_admin_showcase_draft_settings(
+        self,
+        *,
+        showcase_id: str,
+        json: Mapping[str, Any],
+    ) -> Response:
+        return self.client.patch(f"/api/v1/showcases/{showcase_id}", json=json)

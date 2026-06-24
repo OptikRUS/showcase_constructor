@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import AsyncGenerator, Generator
 
 import pytest
@@ -14,7 +15,7 @@ from src.api.auth.deps import access_security
 from src.config.settings import settings
 from src.di.container import create_container
 from src.migrations.commands import downgrade, migrate
-from src.storages.database import async_session
+from src.storages.database import async_engine, async_session
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -60,6 +61,7 @@ def app(container: AsyncContainer) -> FastAPI:
 def no_auth_client(app: FastAPI) -> Generator[TestClient]:
     with TestClient(app) as client:
         yield client
+    asyncio.run(async_engine.dispose())
 
 
 @pytest.fixture
@@ -72,3 +74,4 @@ def client(app: FastAPI) -> Generator[TestClient]:
     )
     with TestClient(app, headers={"Authorization": f"Bearer {token}"}) as client:
         yield client
+    asyncio.run(async_engine.dispose())

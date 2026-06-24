@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
-from sqlalchemy import insert, text
+from sqlalchemy import insert, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.showcases.schemas import JsonObject
+from src.core.showcases.schemas import AdminShowcaseDraft, JsonObject
 from src.storages.models import AdminShowcaseModel
 
 
@@ -29,6 +29,20 @@ class StorageHelper:
                 published_snapshot=published_snapshot,
             )
         )
+
+    async def get_admin_showcase_draft(self, *, showcase_id: str) -> AdminShowcaseDraft:
+        model = await self.session.scalar(
+            select(AdminShowcaseModel).where(AdminShowcaseModel.id == showcase_id)
+        )
+
+        if model is None:
+            message = f"Admin showcase {showcase_id!r} was not found"
+            raise RuntimeError(message)
+
+        return model.to_draft_domain()
+
+    async def commit(self) -> None:
+        await self.session.commit()
 
     async def get_current_alembic_version(self) -> str:
         result = await self.session.execute(text("select version_num from alembic_version"))

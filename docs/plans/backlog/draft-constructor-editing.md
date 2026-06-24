@@ -367,12 +367,12 @@ explicit product decisions.
 
 **Actions:**
 
-- [ ] Add focused API tests for same-owner draft settings patch, no-auth, foreign-owner, missing showcase, and published snapshot preservation.
-- [ ] Run the focused API test and confirm it fails for the missing route/use case.
-- [ ] Add the minimal endpoint, boundary schemas, use case, provider wiring, router registration, and API helper method.
-- [ ] Re-run the focused API test and confirm it passes.
-- [ ] Perform only necessary safe refactoring and re-run the focused API test.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Add focused API tests for same-owner draft settings patch, no-auth, foreign-owner, missing showcase, and published snapshot preservation.
+- [x] Run the focused API test and confirm it fails for the missing route/use case.
+- [x] Add the minimal endpoint, boundary schemas, use case, provider wiring, router registration, and API helper method.
+- [x] Re-run the focused API test and confirm it passes.
+- [x] Perform only necessary safe refactoring and re-run the focused API test.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 5: Implement block list and create
 
