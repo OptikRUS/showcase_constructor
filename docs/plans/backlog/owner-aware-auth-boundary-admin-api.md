@@ -280,13 +280,13 @@ temporary auth adapter без привязки к внешнему auth provider
 
 **Actions:**
 
-- [ ] Add the focused RED core use case test that proves a partner cannot read another partner's showcase.
-- [ ] Run `rtk uv run pytest -vv -x src/tests/core/showcases/test_get_admin_showcase_use_case.py::TestGetAdminShowcaseUseCase::test_forbids_reading_foreign_showcase` and confirm it fails for the expected missing use case/schema/interface.
-- [ ] Implement the minimal core showcase schema, storage interface, exception and read use case required for the test to pass.
-- [ ] Add same-owner and not-found focused tests for the read use case.
-- [ ] Re-run `rtk uv run pytest -vv -x src/tests/core/showcases/test_get_admin_showcase_use_case.py` and confirm it passes.
-- [ ] Perform only necessary safe refactoring and re-run the focused read use case test file.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Add the focused RED core use case test that proves a partner cannot read another partner's showcase.
+- [x] Run `rtk uv run pytest -vv -x src/tests/core/showcases/test_get_admin_showcase_use_case.py::TestGetAdminShowcaseUseCase::test_forbids_reading_foreign_showcase` and confirm it fails for the expected missing use case/schema/interface.
+- [x] Implement the minimal core showcase schema, storage interface, exception and read use case required for the test to pass.
+- [x] Add same-owner and not-found focused tests for the read use case.
+- [x] Re-run `rtk uv run pytest -vv -x src/tests/core/showcases/test_get_admin_showcase_use_case.py` and confirm it passes.
+- [x] Perform only necessary safe refactoring and re-run the focused read use case test file.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 5: Enforce owner-aware mutation access in core showcase use case
 

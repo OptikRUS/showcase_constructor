@@ -11,9 +11,24 @@ from src.core.public_config.schemas import (
     PublicWidgetInfo,
     PublishedPublicConfigSnapshot,
 )
+from src.core.showcases.schemas import AdminShowcase
 
 
 class FactoryHelper:
+    @classmethod
+    def admin_showcase(
+        cls,
+        *,
+        id: str = "showcase-1",
+        owner_partner_id: str = "partner-1",
+        title: str = "Test showcase",
+    ) -> AdminShowcase:
+        return AdminShowcase(
+            id=id,
+            owner_partner_id=owner_partner_id,
+            title=title,
+        )
+
     @classmethod
     def published_public_config_snapshot(cls) -> PublishedPublicConfigSnapshot:
         offer_field = PublicOfferField(key="amount", value="100000", visible=True)
