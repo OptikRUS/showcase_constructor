@@ -242,13 +242,13 @@ temporary auth adapter без привязки к внешнему auth provider
 
 **Actions:**
 
-- [ ] Add the focused RED API test for missing admin context returning 401 through centralized exception mapping.
-- [ ] Run `rtk uv run pytest -vv -x src/tests/api/test_admin_auth.py::TestAdminAuthContextAPI::test_missing_context_returns_unauthorized` and confirm it fails for the expected missing route/mapping/provider.
-- [ ] Implement centralized exception mapping, app wiring, request-scoped auth provider and the minimal protected context endpoint.
-- [ ] Add and run the focused valid-context API test with both auth headers.
-- [ ] Re-run `rtk uv run pytest -vv -x src/tests/api/test_admin_auth.py` and confirm it passes.
-- [ ] Perform only necessary safe refactoring and re-run the focused API test file.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Add the focused RED API test for missing admin context returning 401 through centralized exception mapping.
+- [x] Run `rtk uv run pytest -vv -x src/tests/api/test_admin_auth.py::TestAdminAuthContextAPI::test_missing_context_returns_unauthorized` and confirm it fails for the expected missing route/mapping/provider.
+- [x] Implement centralized exception mapping, app wiring, request-scoped auth provider and the minimal protected context endpoint.
+- [x] Add and run the focused valid-context API test with both auth headers.
+- [x] Re-run `rtk uv run pytest -vv -x src/tests/api/test_admin_auth.py` and confirm it passes.
+- [x] Perform only necessary safe refactoring and re-run the focused API test file.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 4: Enforce owner-aware read access in core showcase use case
 

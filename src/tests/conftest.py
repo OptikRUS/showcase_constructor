@@ -8,11 +8,12 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from src.api.app import create_app
+from src.di.providers.admin_auth import AdminAuthProvider
 
 
 @pytest.fixture
 async def container() -> AsyncGenerator[AsyncContainer]:
-    container = make_async_container(FastapiProvider())
+    container = make_async_container(FastapiProvider(), AdminAuthProvider())
     yield container
     await container.close()
 

@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from httpx2 import Response
@@ -13,3 +14,6 @@ class APIHelper:
 
     def get_public_config(self, public_id: str) -> Response:
         return self.client.get(f"/api/v1/public/showcases/{public_id}")
+
+    def get_admin_auth_context(self, headers: Mapping[str, str] | None = None) -> Response:
+        return self.client.get("/api/v1/admin/auth/context", headers=headers)
