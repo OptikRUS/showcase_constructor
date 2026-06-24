@@ -460,14 +460,14 @@ business tables or business route implementations.
 
 **Actions:**
 
-- [ ] Add a focused failing provider test for successful commit and exception
+- [x] Add a focused failing provider test for successful commit and exception
   rollback.
-- [ ] Implement `DatabaseProvider` using the shared `async_session` factory.
-- [ ] Register `DatabaseProvider()` in `src/di/container.py`.
-- [ ] Verify `rtk rg -n "session\\.(commit|begin)\\(" src/core src/storages`
+- [x] Implement `DatabaseProvider` using the shared `async_session` factory.
+- [x] Register `DatabaseProvider()` in `src/di/container.py`.
+- [x] Verify `rtk rg -n "session\\.(commit|begin)\\(" src/core src/storages`
   finds no forbidden storage/use-case transaction calls.
-- [ ] Run `rtk uv run pytest -vv -x src/tests/di/test_database_provider.py`.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Run `rtk uv run pytest -vv -x src/tests/di/test_database_provider.py`.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 7: Add centralized PostgreSQL test fixtures and migration smoke coverage
 

@@ -1,6 +1,8 @@
 from dishka import AsyncContainer, make_async_container
 from dishka.integrations.fastapi import FastapiProvider
 
+from src.di.providers.database import DatabaseProvider
+
 
 def create_container() -> AsyncContainer:
-    return make_async_container(FastapiProvider())
+    return make_async_container(FastapiProvider(), DatabaseProvider())
