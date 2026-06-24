@@ -86,6 +86,29 @@ internal database IDs until the identifier model is explicitly approved.
 | Custom code metadata | product decision required | Blocked until custom-code permissions, review status, sanitization, and sandboxing decisions are approved. |
 | Domain verification status | product decision required | Blocked until verification method and public/admin visibility are approved. |
 
+## Persistence
+
+The MVP persistence backend is `product decision required`. This record does not
+choose PostgreSQL, SQLite, in-memory storage, file storage, an external service,
+or any other backend. No feature plan may add persistence runtime settings,
+storage implementations, storage interfaces, migrations, or database
+dependencies until the backend and migration boundary are explicitly approved.
+
+Future plans may introduce `src/config`, `src/storages`, `src/core/storages.py`,
+and `migrations` only after the persistence backend, ownership model, migration
+strategy, and transaction boundary are approved. Until then, any persistence
+implementation remains blocked.
+
+| Boundary | MVP decision | Required constraint |
+| --- | --- | --- |
+| Backend choice | product decision required | Blocked until the MVP chooses durable database storage, in-memory-only behavior, or another explicit backend. |
+| Runtime config | product decision required | `src/config` may be added only when runtime settings such as database URLs, credentials, or paths are needed and approved. |
+| Storage layer | product decision required | Persistent implementations must live under `src/storages`; do not introduce `repositories` or `repos`. |
+| Core storage interfaces | product decision required | Add `src/core/storages.py` only when a use case needs an interface owned by `src/core`. |
+| Migrations | product decision required | Add `migrations` only when a database-backed model and migration policy are approved. |
+| Transaction boundary | Project constraint approved | DI providers own the Unit of Work; storage and use case code must not call `session.commit()` or `session.begin()`. |
+| Storage behavior | Project constraint approved | Storage methods perform persistence operations, avoid business logic, and return domain schemas rather than ORM models. |
+
 ## Blocking Decisions
 
 - Product decision required: choose the admin API auth model and per-method

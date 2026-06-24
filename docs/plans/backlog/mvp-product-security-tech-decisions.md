@@ -214,11 +214,11 @@ durability и custom code permissions. Бизнес-код, runtime-конфиг
 
 **Actions:**
 
-- [ ] Add a "Persistence" section with backend choice, migration boundary and config boundary.
-- [ ] State whether future plans may introduce `src/config`, `src/storages` and `migrations`.
-- [ ] Record the storage naming and transaction boundary constraints from `AGENTS.md`.
-- [ ] Run `rtk rg -n "Persistence|storages|migrations|transaction|product decision required" docs/decisions/mvp-boundaries.md`.
-- [ ] Run `rtk make quality`, fix documentation-related failures if any, and repeat until successful.
+- [x] Add a "Persistence" section with backend choice, migration boundary and config boundary.
+- [x] State whether future plans may introduce `src/config`, `src/storages` and `migrations`.
+- [x] Record the storage naming and transaction boundary constraints from `AGENTS.md`.
+- [x] Run `rtk rg -n "Persistence|storages|migrations|transaction|product decision required" docs/decisions/mvp-boundaries.md`.
+- [x] Run `rtk make quality`, fix documentation-related failures if any, and repeat until successful.
 
 ### Task 5: Record domain verification and audit/event durability decisions
 
