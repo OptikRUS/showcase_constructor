@@ -251,16 +251,16 @@ business tables or business route implementations.
 
 **Actions:**
 
-- [ ] Update `docs/decisions/mvp-boundaries.md` with the PostgreSQL durable
+- [x] Update `docs/decisions/mvp-boundaries.md` with the PostgreSQL durable
   storage boundary, custom-code frontend boundary, and public/admin MVP route
   decision matrix.
-- [ ] Update `docs/decisions/admin-api-lifecycle.md` so protected admin route
+- [x] Update `docs/decisions/admin-api-lifecycle.md` so protected admin route
   decisions and persistence language match the updated MVP boundary.
-- [ ] Verify the decision records contain no stale claim that in-memory storage
+- [x] Verify the decision records contain no stale claim that in-memory storage
   is the product MVP persistence layer.
-- [ ] Verify the decision records do not approve backend execution of custom
+- [x] Verify the decision records do not approve backend execution of custom
   code or public exposure of internal database identifiers.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 2: Clean stale route-exposure guard tests without adding business routes
 

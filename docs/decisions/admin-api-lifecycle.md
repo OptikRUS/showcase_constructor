@@ -3,13 +3,13 @@
 ## Status
 
 Decision-first guardrail. This record does not approve route registration,
-business implementation, persistence, runtime configuration, migrations, or
-dependency changes.
+business implementation, business table design, runtime configuration,
+migrations, or dependency changes.
 
 It complements `docs/decisions/mvp-boundaries.md`, which remains the active MVP
-boundary. The admin showcase route/auth boundary below is approved for MVP
-planning, while any unresolved item in either decision record stays
-`product decision required`.
+boundary. The admin showcase route/auth boundary below and PostgreSQL durable
+storage boundary are approved for MVP planning, while any unresolved item in
+either decision record stays `product decision required`.
 
 ## Approved Lifecycle Surface
 
@@ -62,15 +62,15 @@ application middleware/infrastructure and must not make admin resources public.
 | Per-method permissions | Approved MVP boundary for create, list own, get own, patch draft, clone, archive, and restore through the method/path matrix above; `unarchive` alias remains blocked. |
 | Admin `HEAD` and `OPTIONS` | Approved MVP boundary: no app-defined admin lifecycle `HEAD` or `OPTIONS` routes. Future CORS middleware must not change admin resource visibility. |
 | Admin response fields | Approved and blocked field groups are defined in `Authenticated Admin Response Boundary` below. |
-| Identifier exposure | Authenticated admin `id` and `ownerPartnerId` may be returned only for owned admin resources. `publicId` may be returned only as the opaque public showcase id approved in `docs/decisions/mvp-boundaries.md`; public slugs remain blocked. Public storefront route exposure remains not approved. |
-| Persistence backend | Approved MVP boundary: future test/demo admin showcase implementation may use only the process-local in-memory `src/storages` boundary from `docs/decisions/mvp-boundaries.md`; durable backend, migration strategy, runtime config, and durable transaction behavior remain product decision required. |
+| Identifier exposure | Authenticated admin `id` and `ownerPartnerId` may be returned only for owned admin resources. `publicId` may be returned only as the opaque public showcase id approved in `docs/decisions/mvp-boundaries.md`; public slugs remain blocked. Public storefront exposure is limited to published snapshot data under the MVP boundary. |
+| Persistence backend | Approved MVP boundary: PostgreSQL durable storage from `docs/decisions/mvp-boundaries.md`; exact business tables, migration contents, lifecycle storage behavior, and query contracts remain product decision required. |
 | Lifecycle statuses | Approved response boundary may expose `draft`, `published`, `unpublished`, and `archived` status values; the full transition matrix remains product decision required for behavior implementation. |
 | Draft patch behavior | product decision required: define which fields beyond the current `title` draft update are patchable and whether a draft patch may affect any published snapshot. |
-| Clone behavior | product decision required: define copied fields, new status, public id or slug handling, draft and published snapshot handling, and timestamps. Ownership is approved as `context.partner_id`; audit emission follows the process-local in-memory boundary in `docs/decisions/mvp-boundaries.md`. |
-| Archive behavior | product decision required: define allowed source statuses, public-read consequences, snapshot retention, and recovery window. Audit emission follows the process-local in-memory boundary in `docs/decisions/mvp-boundaries.md`. |
-| Restore policy | product decision required: define source and target statuses, recovery window, and conflicts with current publication or slug state for `POST /api/v1/showcases/{id}/restore`. Audit emission follows the process-local in-memory boundary in `docs/decisions/mvp-boundaries.md`. |
-| Audit and events | Approved MVP boundary: owner-scoped create, patch draft, clone, archive, and restore mutations must emit process-local in-memory audit records as defined in `docs/decisions/mvp-boundaries.md`. Durable audit, outbox events, external streams, and the blocked `unarchive` alias remain product decision required. |
-| Atomic mutation boundary | Approved MVP boundary: owner/status validation, in-memory state mutation, public-id changes, and audit append must be one process-local lock-protected operation or leave state unchanged. |
+| Clone behavior | product decision required: define copied fields, new status, public id or slug handling, draft and published snapshot handling, and timestamps. Ownership is approved as `context.partner_id`; audit emission follows the PostgreSQL audit boundary in `docs/decisions/mvp-boundaries.md`. |
+| Archive behavior | product decision required: define allowed source statuses, public-read consequences, snapshot retention, and recovery window. Audit emission follows the PostgreSQL audit boundary in `docs/decisions/mvp-boundaries.md`. |
+| Restore policy | product decision required: define source and target statuses, recovery window, and conflicts with current publication or slug state for `POST /api/v1/showcases/{id}/restore`. Audit emission follows the PostgreSQL audit boundary in `docs/decisions/mvp-boundaries.md`. |
+| Audit and events | Approved MVP boundary: owner-scoped create, patch draft, clone, archive, and restore mutations must emit PostgreSQL audit records as defined in `docs/decisions/mvp-boundaries.md`. Transactional outbox behavior, external streams, retention, analytics visibility, and the blocked `unarchive` alias remain product decision required. |
+| Atomic mutation boundary | Approved MVP boundary: owner/status validation, PostgreSQL state mutation, public-id changes, and audit append must share the DI-managed database Unit of Work or leave state unchanged. |
 
 ## Authenticated Admin Response Boundary
 
@@ -79,13 +79,13 @@ owner check succeeds. It does not approve public storefront exposure.
 
 | Field group | Authenticated admin response boundary |
 | --- | --- |
-| Showcase `id` | Approved MVP boundary as the admin resource identifier used in admin route paths and responses. It is not a public showcase identifier. Direct database primary-key shape remains tied to the later persistence decision. |
+| Showcase `id` | Approved MVP boundary as the admin resource identifier used in admin route paths and responses. It is not a public showcase identifier, and internal PostgreSQL primary keys must not be exposed publicly. |
 | Owner and partner fields | `ownerPartnerId` is approved only when it equals the caller's `context.partner_id`. Owner/admin emails, usernames, profile identifiers, and cross-partner account identifiers are blocked. |
 | Public ids or slugs | `publicId` is approved only as the opaque public showcase id defined in `docs/decisions/mvp-boundaries.md`, and only for owned admin resources. Public slugs, custom-domain identifiers, domain plus path aliases, and internal database ids remain blocked. |
 | Title | Approved MVP boundary for create, list own, get own, patch draft, clone, archive, and restore responses. |
 | Status | Approved MVP boundary for admin-owned resources using `draft`, `published`, `unpublished`, and `archived`; transition rules remain behavior decisions. |
 | Draft snapshot metadata | Approved MVP boundary for metadata needed by the owner, such as draft version, update timestamp, and dirty/published comparison flags. Draft snapshot content fields remain tied to later constructor editing decisions. |
-| Published snapshot metadata | Approved MVP boundary for metadata needed by the owner, such as published version, publication timestamp, and whether a published snapshot exists. Public snapshot field exposure is governed by the approved published snapshot response-field boundary in `docs/decisions/mvp-boundaries.md`; public route registration remains separate. |
+| Published snapshot metadata | Approved MVP boundary for metadata needed by the owner, such as published version, publication timestamp, and whether a published snapshot exists. Public snapshot field exposure is governed by the approved published snapshot response-field boundary in `docs/decisions/mvp-boundaries.md`. |
 | Timestamps | `createdAt` and `updatedAt` are approved MVP response fields for authenticated owner-scoped admin routes. |
 | Archive metadata | `archivedAt` is approved when archive behavior is implemented. `archivedBy` actor identifiers and retention/recovery details remain blocked until audit and archive behavior decisions are approved. |
 | Restore metadata | `restoredAt` is approved when restore behavior is implemented. `restoredBy` actor identifiers and conflict-resolution details remain blocked until audit and restore behavior decisions are approved. |
@@ -95,28 +95,26 @@ owner check succeeds. It does not approve public storefront exposure.
 
 This record still does not directly implement or register routes. Future
 implementation plans may use the approved method/auth/response boundary above
-with the process-local in-memory storage and audit/event boundaries in
+with the PostgreSQL storage and audit/event boundaries in
 `docs/decisions/mvp-boundaries.md`, but must also satisfy any still-unresolved
-lifecycle behavior, public route method/path, durable persistence, and durable
-audit/event decisions before the corresponding behavior goes live. Public
+lifecycle behavior, business schema, outbox/retention, and public route behavior
+decisions before the corresponding behavior goes live. Public
 identifiers and public response fields must follow the opaque public showcase id
 and published snapshot response-field boundaries in
 `docs/decisions/mvp-boundaries.md`.
 
 This record does not allow:
 
-- adding durable persistence interfaces or implementations for lifecycle storage;
-- adding `src/storages` outside the approved process-local in-memory MVP
-  boundary, persistence runtime settings, migrations, database dependencies, or
-  audit/event dependencies;
+- adding business persistence interfaces, ORM models, or migrations before a
+  focused table/schema decision approves them;
+- using in-memory storage as the product persistence layer instead of
+  PostgreSQL;
 - exposing public slugs, public storefront data outside the approved published
   snapshot boundary, foreign-owner data, internal database ids, or admin
   identifiers beyond the authenticated admin response contract above.
 
 Future implementation plans must keep endpoints thin: one endpoint delegates to
 one use case, business rules live in `src/core`, storage access goes through
-core-owned interfaces, and concrete durable persistence belongs under
-`src/storages` only after durable persistence decisions are approved.
-For the approved in-memory MVP path, a request-scoped storage adapter may wrap
-the app-scoped process-local state owner defined in `docs/decisions/mvp-boundaries.md`;
-it must not create isolated per-request mutable stores for lifecycle data.
+core-owned interfaces, and concrete PostgreSQL persistence belongs under
+`src/storages`. DI owns the `AsyncSession` Unit of Work; storage and use case
+code must not call `session.commit()` or `session.begin()`.
