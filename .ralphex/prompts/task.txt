@@ -80,6 +80,9 @@
 # - Update {{PLAN_FILE}} by changing completed checkboxes in the current Task
 #   section from [ ] to [x].
 # - If the active RALPHEX loop requires commits, commit code plus the updated plan.
+# - Verify `docs/plans/backlog/completed/` does not exist. If it exists, move
+#   contained plans to `docs/plans/completed/`, remove the empty invalid
+#   directory, and keep the diff scoped to that cleanup.
 # - Re-run the deterministic unchecked-checkbox scan.
 # - If no unchecked checkboxes remain, output exactly: <<<RALPHEX:ALL_TASKS_DONE>>>
 # - If unchecked checkboxes remain, stop here.

@@ -72,6 +72,9 @@ Before printing `PLAN_CREATED`, verify:
 - the created plan file exists;
 - the Goal/Context clearly match the current task description;
 - the plan file path is under `docs/plans/backlog/`;
+- `docs/plans/backlog/completed/` does not exist; if it exists, move contained
+  plans to `docs/plans/completed/` and remove the empty invalid directory before
+  reporting success;
 - API/auth/user-visible data plans contain `## Product/Security Decisions`;
 - no file under `docs/superpowers/plans/` was created;
 - no unrelated existing plan file was modified;

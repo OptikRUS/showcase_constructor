@@ -33,8 +33,8 @@ admin lifecycle surface are `product decision required`.
 
 | Decision area | Current boundary |
 | --- | --- |
-| Admin auth model | product decision required: choose the final auth provider, token or session validation model, trusted temporary-header gateway contract, production replacement criteria, and whether any internal-admin override is allowed. |
-| Current owner context | product decision required: define the authenticated admin actor, partner or tenant ownership source, and how ownership is propagated into use cases. |
+| Admin auth model | MVP JWT bearer adapter selected for current-context wiring; external auth-provider integration, refresh/session activation, production replacement criteria, and internal-admin override remain product decision required. |
+| Current owner context | JWT subject must provide `user_id` and `partner_id`; route-specific ownership propagation for lifecycle use cases remains product decision required. |
 | Per-method permissions | product decision required: approve create, list own, get own, patch draft, clone, archive, and restore/unarchive permissions separately. |
 | Admin `HEAD` and `OPTIONS` | product decision required: decide whether these methods exist, whether they mirror protected `GET` behavior, and how CORS/preflight should be handled. |
 | Admin response fields | product decision required: approve the authenticated admin response contract for ids, owner fields, public ids or slugs, titles, statuses, draft and published snapshots, timestamps, archive metadata, and restore metadata. |

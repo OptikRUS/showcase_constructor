@@ -89,6 +89,8 @@ rtk uv run pytest -vv -x src/tests/path/test_file.py::TestClass::test_name
 - Новые RALPHEX plan-файлы по умолчанию сохранять в
   `docs/plans/backlog/<plan-name>.md`.
 - Завершённые планы хранить в `docs/plans/completed/<plan-name>.md`.
+- Каталог `docs/plans/backlog/completed/` запрещён. Если он появился, переместить
+  файлы в `docs/plans/completed/` и удалить пустой invalid subtree.
 - Не создавать новые plan-файлы в корне `docs/plans/`, если пользователь явно
   не попросил legacy/root path.
 - `.ralphex/config` считается локальной runtime-конфигурацией и не должен
@@ -184,6 +186,9 @@ Reference:
 ## API
 
 - `src/api/routers.py` содержит `root_router = APIRouter()`.
+- `src/api/boundary.py::BoundaryModel` и `SnakeBoundaryModel` должны иметь
+  совместимые helpers `parse()`, `parse_json()` и `dict()`, где `dict()` вызывает
+  `model_dump(mode="json", by_alias=True, **kwargs)`.
 - Все common/domain routers регистрируются только в `src/api/routers.py` через
   `root_router.include_router(...)`.
 - `create_app()` подключает только `root_router`, exception handlers/middleware при наличии,

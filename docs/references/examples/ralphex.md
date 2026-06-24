@@ -188,6 +188,11 @@ Keep `plans_dir` at the `docs/plans` root. RALPHEX moves completed plans into
 lifecycle path. New plans are still saved to `docs/plans/backlog/` by the plan
 creation prompt.
 
+`docs/plans/backlog/completed/` must not exist in the repository. If it appears,
+move every plan inside it to `docs/plans/completed/`, remove the empty invalid
+directory, and treat the cleanup as part of the RALPHEX task before claiming
+completion.
+
 Do not commit tokens, chat IDs, machine-specific paths, `.env` values, progress
 logs, worktrees, or debug archives.
 
