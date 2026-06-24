@@ -11,7 +11,7 @@ from src.core.public_config.schemas import (
     PublicWidgetInfo,
     PublishedPublicConfigSnapshot,
 )
-from src.core.showcases.schemas import AdminShowcase
+from src.core.showcases.schemas import AdminShowcase, AdminShowcaseUpdateParams
 
 
 class FactoryHelper:
@@ -28,6 +28,14 @@ class FactoryHelper:
             owner_partner_id=owner_partner_id,
             title=title,
         )
+
+    @classmethod
+    def admin_showcase_update_params(
+        cls,
+        *,
+        title: str = "Updated showcase",
+    ) -> AdminShowcaseUpdateParams:
+        return AdminShowcaseUpdateParams(title=title)
 
     @classmethod
     def published_public_config_snapshot(cls) -> PublishedPublicConfigSnapshot:

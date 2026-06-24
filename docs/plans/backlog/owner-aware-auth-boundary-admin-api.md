@@ -316,10 +316,10 @@ temporary auth adapter без привязки к внешнему auth provider
 
 **Actions:**
 
-- [ ] Add the focused RED core use case test that proves a partner cannot update another partner's showcase.
-- [ ] Run `rtk uv run pytest -vv -x src/tests/core/showcases/test_update_admin_showcase_use_case.py::TestUpdateAdminShowcaseUseCase::test_forbids_updating_foreign_showcase` and confirm it fails for the expected missing mutation use case/params/interface.
-- [ ] Implement the minimal update params schema, storage interface method and mutation use case required for the test to pass.
-- [ ] Add same-owner and not-found focused tests for the mutation use case.
-- [ ] Re-run `rtk uv run pytest -vv -x src/tests/core/showcases/test_update_admin_showcase_use_case.py` and confirm it passes.
-- [ ] Perform only necessary safe refactoring and re-run the focused mutation use case test file.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Add the focused RED core use case test that proves a partner cannot update another partner's showcase.
+- [x] Run `rtk uv run pytest -vv -x src/tests/core/showcases/test_update_admin_showcase_use_case.py::TestUpdateAdminShowcaseUseCase::test_forbids_updating_foreign_showcase` and confirm it fails for the expected missing mutation use case/params/interface.
+- [x] Implement the minimal update params schema, storage interface method and mutation use case required for the test to pass.
+- [x] Add same-owner and not-found focused tests for the mutation use case.
+- [x] Re-run `rtk uv run pytest -vv -x src/tests/core/showcases/test_update_admin_showcase_use_case.py` and confirm it passes.
+- [x] Perform only necessary safe refactoring and re-run the focused mutation use case test file.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
