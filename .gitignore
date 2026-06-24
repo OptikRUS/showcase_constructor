@@ -256,8 +256,10 @@ cython_debug/
 # RALPHEX runtime artifacts
 .ralphex/config
 .ralphex/config.backup
+.ralphex/bin
 .ralphex/progress/
 .ralphex/worktrees/
 ralphex-debug-*.tar.gz
 tmp_ralphex_debug/
 docs/showcase-constructor-tz.md
+.codex

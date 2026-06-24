@@ -107,6 +107,10 @@ rtk uv run pytest -vv -x src/tests/path/test_file.py::TestClass::test_name
 - Для API/auth/user-visible data план должен содержать
   `## Product/Security Decisions`; нерешённые public/auth/identifier вопросы
   фиксируются как `product decision required`, а не решаются имплицитно.
+- Для планирования, выполнения или review задач по admin API, public storefront,
+  persistence, custom domains, audit/events, analytics/billing или custom code
+  сначала читать `docs/decisions/mvp-boundaries.md`; unresolved пункты оттуда
+  остаются `product decision required`.
 - RALPHEX plans используют checkbox actions только внутри `### Task N: ...`.
 
 ---

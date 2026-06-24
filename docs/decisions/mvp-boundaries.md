@@ -94,15 +94,17 @@ or any other backend. No feature plan may add persistence runtime settings,
 storage implementations, storage interfaces, migrations, or database
 dependencies until the backend and migration boundary are explicitly approved.
 
-Future plans may introduce `src/config`, `src/storages`, `src/core/storages.py`,
-and `migrations` only after the persistence backend, ownership model, migration
-strategy, and transaction boundary are approved. Until then, any persistence
-implementation remains blocked.
+Future persistence plans may introduce persistence-specific `src/config`
+settings, `src/storages`, `src/core/storages.py`, and `migrations` only after the
+persistence backend, ownership model, migration strategy, and transaction
+boundary are approved. Until then, any persistence implementation remains
+blocked. Non-persistence runtime configuration still requires the relevant
+feature decision and the project config rules.
 
 | Boundary | MVP decision | Required constraint |
 | --- | --- | --- |
 | Backend choice | product decision required | Blocked until the MVP chooses durable database storage, in-memory-only behavior, or another explicit backend. |
-| Runtime config | product decision required | `src/config` may be added only when runtime settings such as database URLs, credentials, or paths are needed and approved. |
+| Persistence runtime config | product decision required | Persistence-specific `src/config` settings may be added only when database URLs, credentials, or paths are needed and approved. |
 | Storage layer | product decision required | Persistent implementations must live under `src/storages`; do not introduce `repositories` or `repos`. |
 | Core storage interfaces | product decision required | Add `src/core/storages.py` only when a use case needs an interface owned by `src/core`. |
 | Migrations | product decision required | Add `migrations` only when a database-backed model and migration policy are approved. |
@@ -166,8 +168,8 @@ capability and required control is explicitly approved.
 - Product decision required: choose the public identifier model and public data
   exposure rules before adding storefront routes or schemas.
 - Product decision required: choose the persistence backend and migration
-  boundary before adding `src/config`, `src/storages`, `src/core/storages.py`, or
-  `migrations`.
+  boundary before adding persistence-specific `src/config` settings,
+  `src/storages`, `src/core/storages.py`, or `migrations`.
 - Product decision required: choose the domain verification method before adding
   custom-domain clients, services, storages, or API routes.
 - Product decision required: choose audit/event durability requirements before

@@ -68,6 +68,11 @@ The section must answer:
 Do not infer privacy approval only because a field appears in a plan. Missing or
 disputed auth/data exposure requires a plan amendment before implementation.
 
+Before planning, executing, or reviewing admin API, public storefront,
+persistence, custom domain, audit/event, analytics/billing, or custom-code work,
+read `docs/decisions/mvp-boundaries.md`. Unresolved items in that decision record
+remain `product decision required`.
+
 ## Task Selection
 
 Task execution starts by reading the whole plan, the current progress log, and

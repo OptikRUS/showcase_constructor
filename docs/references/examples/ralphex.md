@@ -93,6 +93,11 @@ The section must explicitly answer:
 
 Do not infer privacy approval from the presence of a field in a plan.
 
+Before planning, executing, or reviewing admin API, public storefront,
+persistence, custom domain, audit/event, analytics/billing, or custom-code work,
+read `docs/decisions/mvp-boundaries.md`. Unresolved items in that decision record
+remain `product decision required`.
+
 ## Implementation Sketches
 
 Use `## Implementation Notes` and Task-level `Implementation Sketch` sections
