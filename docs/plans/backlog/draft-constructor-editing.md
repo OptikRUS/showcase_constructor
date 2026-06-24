@@ -286,12 +286,12 @@ explicit product decisions.
 
 **Actions:**
 
-- [ ] Add or update one focused migration smoke test for the new head revision.
-- [ ] Run the focused migration smoke test and confirm it fails for the missing revision.
-- [ ] Add the minimal migration and SQLAlchemy model changes for draft constructor storage.
-- [ ] Re-run the focused migration smoke test and confirm it passes.
-- [ ] Perform only necessary safe refactoring and re-run the focused migration smoke test.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Add or update one focused migration smoke test for the new head revision.
+- [x] Run the focused migration smoke test and confirm it fails for the missing revision.
+- [x] Add the minimal migration and SQLAlchemy model changes for draft constructor storage.
+- [x] Re-run the focused migration smoke test and confirm it passes.
+- [x] Perform only necessary safe refactoring and re-run the focused migration smoke test.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 3: Implement database storage primitives for draft settings
 
