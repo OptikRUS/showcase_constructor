@@ -142,9 +142,9 @@ decisions are approved.
 
 **Actions:**
 
-- [ ] Add the focused API exposure test for the unapproved admin lifecycle route surface.
-- [ ] Run `rtk uv run pytest -vv -x src/tests/api/test_admin_showcase_lifecycle_routes.py::TestAdminShowcaseLifecycleRouteExposure::test_admin_lifecycle_routes_are_not_registered_without_decisions`.
-- [ ] If the focused test passes without production changes, classify the Task as `coverage-only`.
-- [ ] If the focused test fails because a live admin lifecycle route is already registered, remove only the accidental route exposure or stop for a plan amendment if the route belongs to unrelated user work.
-- [ ] Re-run the focused API test and confirm it passes.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Add the focused API exposure test for the unapproved admin lifecycle route surface.
+- [x] Run `rtk uv run pytest -vv -x src/tests/api/test_admin_showcase_lifecycle_routes.py::TestAdminShowcaseLifecycleRouteExposure::test_admin_lifecycle_routes_are_not_registered_without_decisions`.
+- [x] If the focused test passes without production changes, classify the Task as `coverage-only`.
+- [x] If the focused test fails because a live admin lifecycle route is already registered, remove only the accidental route exposure or stop for a plan amendment if the route belongs to unrelated user work.
+- [x] Re-run the focused API test and confirm it passes.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
