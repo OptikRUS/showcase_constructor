@@ -1,0 +1,117 @@
+[project]
+name = "showcase-constructor"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "dishka>=1.4.2,<2.0.0",
+    "fastapi>=0.115.13,<1.0.0",
+    "uvicorn>=0.34.0,<1.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.0.0,<3.0.0",
+    "mypy>=1.15.0,<2.0.0",
+    "pytest>=8.3.4,<9.0.0",
+    "pytest-asyncio>=1.0.0",
+    "pytest-cov>=6.0.0,<8.0.0",
+    "ruff>=0.9.9,<1.0.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["src/tests"]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "src/tests/*",
+    "src/main.py",
+    "*/__dishka_factory_*",
+]
+
+[tool.coverage.report]
+omit = [
+    "src/tests/*",
+    "src/main.py",
+    "*/__dishka_factory_*",
+]
+exclude_lines = [
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
+
+[tool.mypy]
+mypy_path = ["."]
+plugins = ["pydantic.mypy"]
+follow_imports = "silent"
+strict = true
+disallow_subclassing_any = false
+disallow_any_generics = false
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["src.tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+disallow_untyped_decorators = false
+warn_return_any = false
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[tool.ruff]
+target-version = "py313"
+src = ["src"]
+exclude = [".venv"]
+line-length = 100
+show-fixes = true
+output-format = "concise"
+
+[tool.ruff.format]
+preview = true
+line-ending = "auto"
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint]
+ignore = [
+    "D",
+    "RUF001",
+    "RUF012",
+    "FIX",
+    "TD002",
+    "TD003",
+    "COM812",
+]
+select = ["ALL"]
+unfixable = [
+    "E711",
+    "E712",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"src/tests/*" = [
+    "S101",
+    "S106",
+    "FBT",
+    "ARG002",
+    "PT004",
+    "ANN201",
+    "PLR2004",
+]
+
+[tool.ruff.lint.pylint]
+max-args = 6
+
+[tool.ruff.lint.flake8-builtins]
+builtins-ignorelist = ["id", "type"]
+
+[tool.ruff.lint.pep8-naming]
+classmethod-decorators = ["pydantic.model_validator", "pydantic.field_validator"]
