@@ -14,11 +14,17 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraftBlock,
     AdminShowcaseDraftBlockCreateParams,
     AdminShowcaseDraftBlockPatchParams,
+    AdminShowcaseDraftOffer,
+    AdminShowcaseDraftOfferCreateParams,
     AdminShowcaseDraftSettingsPatchParams,
     AdminShowcaseUpdateParams,
 )
 from src.core.storages import AdminShowcaseStorage
-from src.storages.models import AdminShowcaseDraftBlockModel, AdminShowcaseModel
+from src.storages.models import (
+    AdminShowcaseDraftBlockModel,
+    AdminShowcaseDraftOfferModel,
+    AdminShowcaseModel,
+)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -139,6 +145,80 @@ class DatabaseAdminShowcaseStorage(AdminShowcaseStorage):
 
         if deleted_block_id is None:
             raise AdminShowcaseDraftBlockNotFoundError
+
+    async def list_draft_offers(self, *, showcase_id: str) -> list[AdminShowcaseDraftOffer]:
+        result = await self.session.scalars(
+            select(AdminShowcaseDraftOfferModel)
+            .where(AdminShowcaseDraftOfferModel.showcase_id == showcase_id)
+            .order_by(
+                AdminShowcaseDraftOfferModel.block_id,
+                AdminShowcaseDraftOfferModel.manual_order,
+                AdminShowcaseDraftOfferModel.offer_id,
+            )
+        )
+
+        return [model.to_domain() for model in result.all()]
+
+    async def create_draft_offer(
+        self,
+        *,
+        showcase_id: str,
+        offer_id: str,
+        params: AdminShowcaseDraftOfferCreateParams,
+    ) -> AdminShowcaseDraftOffer:
+        model = await self.session.scalar(
+            insert(AdminShowcaseDraftOfferModel)
+            .from_select(
+                [
+                    "showcase_internal_id",
+                    "showcase_id",
+                    "offer_id",
+                    "block_id",
+                    "enabled",
+                    "manual_order",
+                    "cta_text",
+                    "usp_text",
+                    "fields",
+                    "categories",
+                    "logo_url",
+                    "rounded_logo_url",
+                    "display_name",
+                    "site_name",
+                    "cpa_url",
+                    "legal_entity",
+                    "inn",
+                    "erid",
+                    "data",
+                ],
+                select(
+                    AdminShowcaseModel.internal_id,
+                    AdminShowcaseModel.id,
+                    literal(offer_id),
+                    literal(params.block_id),
+                    literal(params.enabled),
+                    literal(params.manual_order),
+                    literal(params.cta_text),
+                    literal(params.usp_text),
+                    literal(params.fields, type_=JSONB),
+                    literal(params.categories, type_=JSONB),
+                    literal(params.logo_url),
+                    literal(params.rounded_logo_url),
+                    literal(params.display_name),
+                    literal(params.site_name),
+                    literal(params.cpa_url),
+                    literal(params.legal_entity),
+                    literal(params.inn),
+                    literal(params.erid),
+                    literal(params.data, type_=JSONB),
+                ).where(AdminShowcaseModel.id == showcase_id),
+            )
+            .returning(AdminShowcaseDraftOfferModel)
+        )
+
+        if model is None:
+            raise AdminShowcaseNotFoundError
+
+        return model.to_domain()
 
     async def update_draft(
         self,

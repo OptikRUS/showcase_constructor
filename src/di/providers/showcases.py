@@ -5,8 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.showcases.use_cases import (
     CreateAdminShowcaseBlockUseCase,
+    CreateAdminShowcaseOfferUseCase,
     DeleteAdminShowcaseBlockUseCase,
     ListAdminShowcaseBlocksUseCase,
+    ListAdminShowcaseOffersUseCase,
     PatchAdminShowcaseBlockUseCase,
     UpdateAdminShowcaseDraftSettingsUseCase,
 )
@@ -54,3 +56,18 @@ class ShowcaseProvider(Provider):
         storage: AdminShowcaseStorage,
     ) -> DeleteAdminShowcaseBlockUseCase:
         return DeleteAdminShowcaseBlockUseCase(storage=storage)
+
+    @provide(scope=Scope.REQUEST)
+    def get_list_admin_showcase_offers_use_case(
+        self,
+        storage: AdminShowcaseStorage,
+    ) -> ListAdminShowcaseOffersUseCase:
+        return ListAdminShowcaseOffersUseCase(storage=storage)
+
+    @provide(scope=Scope.REQUEST)
+    def get_create_admin_showcase_offer_use_case(
+        self,
+        storage: AdminShowcaseStorage,
+        offer_id: UUID,
+    ) -> CreateAdminShowcaseOfferUseCase:
+        return CreateAdminShowcaseOfferUseCase(storage=storage, offer_id=offer_id)

@@ -502,12 +502,12 @@ explicit product decisions.
 
 **Actions:**
 
-- [ ] Add focused API/core/storage tests for offer list and create behavior.
-- [ ] Run the focused offer list/create test and confirm it fails for the missing behavior.
-- [ ] Add minimal domain schemas, exceptions, use cases, storage methods, endpoint methods, boundary schemas, exception mapping, and helpers.
-- [ ] Re-run the focused offer list/create test and confirm it passes.
-- [ ] Perform only necessary safe refactoring and re-run the focused offer test.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Add focused API/core/storage tests for offer list and create behavior.
+- [x] Run the focused offer list/create test and confirm it fails for the missing behavior.
+- [x] Add minimal domain schemas, exceptions, use cases, storage methods, endpoint methods, boundary schemas, exception mapping, and helpers.
+- [x] Re-run the focused offer list/create test and confirm it passes.
+- [x] Perform only necessary safe refactoring and re-run the focused offer test.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 8: Implement offer patch and delete
 

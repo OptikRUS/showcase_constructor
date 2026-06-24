@@ -63,3 +63,14 @@ class APIHelper:
         block_id: str,
     ) -> Response:
         return self.client.delete(f"/api/v1/showcases/{showcase_id}/blocks/{block_id}")
+
+    def list_admin_showcase_offers(self, *, showcase_id: str) -> Response:
+        return self.client.get(f"/api/v1/showcases/{showcase_id}/offers")
+
+    def create_admin_showcase_offer(
+        self,
+        *,
+        showcase_id: str,
+        json: Mapping[str, Any],
+    ) -> Response:
+        return self.client.post(f"/api/v1/showcases/{showcase_id}/offers", json=json)

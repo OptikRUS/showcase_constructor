@@ -19,6 +19,7 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraftBlockCreateParams,
     AdminShowcaseDraftBlockPatchParams,
     AdminShowcaseDraftOffer,
+    AdminShowcaseDraftOfferCreateParams,
     AdminShowcaseUpdateParams,
     JsonObject,
     JsonValue,
@@ -56,6 +57,25 @@ class AdminShowcaseDraftBlockPatchParamsFactoryKwargs(TypedDict):
 class AdminShowcaseDraftOfferFactoryKwargs(TypedDict):
     id: NotRequired[str]
     showcase_id: NotRequired[str]
+    block_id: NotRequired[str | None]
+    enabled: NotRequired[bool]
+    manual_order: NotRequired[int]
+    cta_text: NotRequired[str | None]
+    usp_text: NotRequired[str | None]
+    fields: NotRequired[list[JsonValue]]
+    categories: NotRequired[list[JsonValue]]
+    logo_url: NotRequired[str | None]
+    rounded_logo_url: NotRequired[str | None]
+    display_name: NotRequired[str | None]
+    site_name: NotRequired[str | None]
+    cpa_url: NotRequired[str | None]
+    legal_entity: NotRequired[str | None]
+    inn: NotRequired[str | None]
+    erid: NotRequired[str | None]
+    data: NotRequired[JsonObject]
+
+
+class AdminShowcaseDraftOfferCreateParamsFactoryKwargs(TypedDict):
     block_id: NotRequired[str | None]
     enabled: NotRequired[bool]
     manual_order: NotRequired[int]
@@ -146,6 +166,33 @@ class FactoryHelper:
         return AdminShowcaseDraftOffer(
             id=kwargs.get("id", "offer-1"),
             showcase_id=kwargs.get("showcase_id", "showcase-1"),
+            block_id=kwargs.get("block_id", "block-1"),
+            enabled=kwargs.get("enabled", True),
+            manual_order=kwargs.get("manual_order", 10),
+            cta_text=kwargs.get("cta_text", "Open offer"),
+            usp_text=kwargs.get("usp_text", "Fast approval"),
+            fields=kwargs.get("fields", []),
+            categories=kwargs.get("categories", []),
+            logo_url=kwargs.get("logo_url", "https://cdn.example.test/logo.png"),
+            rounded_logo_url=kwargs.get(
+                "rounded_logo_url",
+                "https://cdn.example.test/logo-rounded.png",
+            ),
+            display_name=kwargs.get("display_name", "Fast Loan"),
+            site_name=kwargs.get("site_name", "Example Bank"),
+            cpa_url=kwargs.get("cpa_url", "https://cpa.example.test/click"),
+            legal_entity=kwargs.get("legal_entity", "Example Bank LLC"),
+            inn=kwargs.get("inn", "1234567890"),
+            erid=kwargs.get("erid"),
+            data=kwargs.get("data", {}),
+        )
+
+    @classmethod
+    def admin_showcase_draft_offer_create_params(
+        cls,
+        **kwargs: Unpack[AdminShowcaseDraftOfferCreateParamsFactoryKwargs],
+    ) -> AdminShowcaseDraftOfferCreateParams:
+        return AdminShowcaseDraftOfferCreateParams(
             block_id=kwargs.get("block_id", "block-1"),
             enabled=kwargs.get("enabled", True),
             manual_order=kwargs.get("manual_order", 10),

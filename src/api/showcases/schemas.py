@@ -9,8 +9,11 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraftBlock,
     AdminShowcaseDraftBlockCreateParams,
     AdminShowcaseDraftBlockPatchParams,
+    AdminShowcaseDraftOffer,
+    AdminShowcaseDraftOfferCreateParams,
     AdminShowcaseDraftSettingsPatchParams,
     JsonObject,
+    JsonValue,
 )
 
 AdminShowcaseDraftBlockType = Literal[
@@ -157,4 +160,87 @@ class AdminShowcaseDraftBlockResponse(BoundaryModel):
             desktop_settings=block.desktop_settings,
             mobile_settings=block.mobile_settings,
             data=block.data,
+        )
+
+
+class AdminShowcaseDraftOfferCreateRequest(BoundaryModel):
+    model_config = ConfigDict(extra="forbid")
+
+    block_id: str | None = None
+    enabled: bool = True
+    manual_order: int
+    cta_text: str | None = None
+    usp_text: str | None = None
+    fields: list[JsonValue] = Field(default_factory=list)
+    categories: list[JsonValue] = Field(default_factory=list)
+    logo_url: str | None = None
+    rounded_logo_url: str | None = None
+    display_name: str | None = None
+    site_name: str | None = None
+    cpa_url: str | None = None
+    legal_entity: str | None = None
+    inn: str | None = None
+    erid: str | None = None
+    data: JsonObject = Field(default_factory=dict)
+
+    def to_domain(self) -> AdminShowcaseDraftOfferCreateParams:
+        return AdminShowcaseDraftOfferCreateParams(
+            block_id=self.block_id,
+            enabled=self.enabled,
+            manual_order=self.manual_order,
+            cta_text=self.cta_text,
+            usp_text=self.usp_text,
+            fields=self.fields,
+            categories=self.categories,
+            logo_url=self.logo_url,
+            rounded_logo_url=self.rounded_logo_url,
+            display_name=self.display_name,
+            site_name=self.site_name,
+            cpa_url=self.cpa_url,
+            legal_entity=self.legal_entity,
+            inn=self.inn,
+            erid=self.erid,
+            data=self.data,
+        )
+
+
+class AdminShowcaseDraftOfferResponse(BoundaryModel):
+    id: str
+    block_id: str | None
+    enabled: bool
+    manual_order: int
+    cta_text: str | None
+    usp_text: str | None
+    fields: list[JsonValue]
+    categories: list[JsonValue]
+    logo_url: str | None
+    rounded_logo_url: str | None
+    display_name: str | None
+    site_name: str | None
+    cpa_url: str | None
+    legal_entity: str | None
+    inn: str | None
+    erid: str | None
+    data: JsonObject
+
+    @classmethod
+    def from_domain(cls, offer: AdminShowcaseDraftOffer) -> Self:
+        return cls(
+            id=offer.id,
+            block_id=offer.block_id,
+            enabled=offer.enabled,
+            manual_order=offer.manual_order,
+            cta_text=offer.cta_text,
+            usp_text=offer.usp_text,
+            fields=offer.fields,
+            categories=offer.categories,
+            logo_url=offer.logo_url,
+            rounded_logo_url=offer.rounded_logo_url,
+            display_name=offer.display_name,
+            site_name=offer.site_name,
+            cpa_url=offer.cpa_url,
+            legal_entity=offer.legal_entity,
+            inn=offer.inn,
+            erid=offer.erid,
+            data=offer.data,
         )

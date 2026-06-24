@@ -1,0 +1,254 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from httpx2 import codes
+
+from src.tests.fixtures import APIFixture, FactoryFixture, StorageFixture
+
+if TYPE_CHECKING:
+    from src.core.showcases.schemas import JsonObject
+
+
+class TestAdminShowcaseOffersAPI(APIFixture, FactoryFixture, StorageFixture):
+    async def test_creates_and_lists_draft_offers(self) -> None:
+        published_snapshot: JsonObject = {
+            "id": "public-showcase-api-offers-1",
+            "blocks": [{"type": "offers", "offers": [{"id": "published-offer"}]}],
+        }
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-api-offers-1",
+            owner_partner_id="partner-1",
+            title="Offers showcase",
+            draft_settings={"design_id": "classic"},
+            published_snapshot=published_snapshot,
+        )
+        await self.storage_helper.create_admin_showcase_draft_block(
+            block=self.factory.admin_showcase_draft_block(
+                id="block-api-offers-a",
+                showcase_id="showcase-api-offers-1",
+                order=10,
+                title="Primary offers",
+            )
+        )
+        await self.storage_helper.create_admin_showcase_draft_block(
+            block=self.factory.admin_showcase_draft_block(
+                id="block-api-offers-b",
+                showcase_id="showcase-api-offers-1",
+                order=20,
+                title="Secondary offers",
+            )
+        )
+        await self.storage_helper.create_admin_showcase_draft_offer(
+            offer=self.factory.admin_showcase_draft_offer(
+                id="offer-api-existing-disabled",
+                showcase_id="showcase-api-offers-1",
+                block_id="block-api-offers-b",
+                enabled=False,
+                manual_order=20,
+                cta_text="Draft disabled CTA",
+                usp_text="Draft disabled USP",
+                fields=[{"key": "rate", "value": "12%", "visible": False}],
+                categories=["loans"],
+                logo_url="https://cdn.example.test/existing-logo.png",
+                rounded_logo_url="https://cdn.example.test/existing-rounded.png",
+                display_name="Disabled draft offer",
+                site_name="Existing Bank",
+                cpa_url="https://cpa.example.test/existing",
+                legal_entity="Existing Bank LLC",
+                inn="9876543210",
+                erid="erid-existing",
+                data={"source": "manual"},
+            )
+        )
+        await self.storage_helper.commit()
+
+        create_response = self.api.create_admin_showcase_offer(
+            showcase_id="showcase-api-offers-1",
+            json={
+                "blockId": "block-api-offers-a",
+                "enabled": True,
+                "manualOrder": 10,
+                "ctaText": "Apply now",
+                "uspText": "Decision in 5 minutes",
+                "fields": [
+                    {"key": "amount", "value": "100000", "visible": True},
+                    {"key": "internal_score", "value": "A", "visible": False},
+                ],
+                "categories": ["cash", "cards"],
+                "logoUrl": "https://cdn.example.test/new-logo.png",
+                "roundedLogoUrl": "https://cdn.example.test/new-rounded.png",
+                "displayName": "New draft offer",
+                "siteName": "New Bank",
+                "cpaUrl": "https://cpa.example.test/new",
+                "legalEntity": "New Bank LLC",
+                "inn": "1234567890",
+                "erid": "erid-new",
+                "data": {"source": "manual", "rating": 5},
+            },
+        )
+
+        assert create_response.status_code == codes.CREATED
+        created_payload = create_response.json()
+        assert created_payload == {
+            "id": created_payload["id"],
+            "blockId": "block-api-offers-a",
+            "enabled": True,
+            "manualOrder": 10,
+            "ctaText": "Apply now",
+            "uspText": "Decision in 5 minutes",
+            "fields": [
+                {"key": "amount", "value": "100000", "visible": True},
+                {"key": "internal_score", "value": "A", "visible": False},
+            ],
+            "categories": ["cash", "cards"],
+            "logoUrl": "https://cdn.example.test/new-logo.png",
+            "roundedLogoUrl": "https://cdn.example.test/new-rounded.png",
+            "displayName": "New draft offer",
+            "siteName": "New Bank",
+            "cpaUrl": "https://cpa.example.test/new",
+            "legalEntity": "New Bank LLC",
+            "inn": "1234567890",
+            "erid": "erid-new",
+            "data": {"source": "manual", "rating": 5},
+        }
+        assert isinstance(created_payload["id"], str)
+        assert created_payload["id"]
+
+        list_response = self.api.list_admin_showcase_offers(showcase_id="showcase-api-offers-1")
+
+        assert list_response.status_code == codes.OK
+        assert list_response.json() == [
+            created_payload,
+            {
+                "id": "offer-api-existing-disabled",
+                "blockId": "block-api-offers-b",
+                "enabled": False,
+                "manualOrder": 20,
+                "ctaText": "Draft disabled CTA",
+                "uspText": "Draft disabled USP",
+                "fields": [{"key": "rate", "value": "12%", "visible": False}],
+                "categories": ["loans"],
+                "logoUrl": "https://cdn.example.test/existing-logo.png",
+                "roundedLogoUrl": "https://cdn.example.test/existing-rounded.png",
+                "displayName": "Disabled draft offer",
+                "siteName": "Existing Bank",
+                "cpaUrl": "https://cpa.example.test/existing",
+                "legalEntity": "Existing Bank LLC",
+                "inn": "9876543210",
+                "erid": "erid-existing",
+                "data": {"source": "manual"},
+            },
+        ]
+
+        persisted_offers = await self.storage_helper.list_admin_showcase_draft_offers(
+            showcase_id="showcase-api-offers-1"
+        )
+        assert [offer.id for offer in persisted_offers] == [
+            created_payload["id"],
+            "offer-api-existing-disabled",
+        ]
+        persisted = await self.storage_helper.get_admin_showcase_draft(
+            showcase_id="showcase-api-offers-1"
+        )
+        assert persisted.published_snapshot == published_snapshot
+
+    async def test_forbids_foreign_owner_offer_access(self) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-api-offers-foreign",
+            owner_partner_id="partner-2",
+            title="Foreign offers showcase",
+            published_snapshot={"id": "public-offers-foreign"},
+        )
+        await self.storage_helper.create_admin_showcase_draft_block(
+            block=self.factory.admin_showcase_draft_block(
+                id="block-api-offers-foreign",
+                showcase_id="showcase-api-offers-foreign",
+            )
+        )
+        await self.storage_helper.commit()
+
+        list_response = self.api.list_admin_showcase_offers(
+            showcase_id="showcase-api-offers-foreign"
+        )
+        create_response = self.api.create_admin_showcase_offer(
+            showcase_id="showcase-api-offers-foreign",
+            json={
+                "blockId": "block-api-offers-foreign",
+                "manualOrder": 1,
+                "displayName": "Foreign offer",
+            },
+        )
+
+        assert list_response.status_code == codes.FORBIDDEN
+        assert list_response.json() == {"detail": "SHOWCASE_ACCESS_DENIED_ERROR"}
+        assert create_response.status_code == codes.FORBIDDEN
+        assert create_response.json() == {"detail": "SHOWCASE_ACCESS_DENIED_ERROR"}
+        persisted_offers = await self.storage_helper.list_admin_showcase_draft_offers(
+            showcase_id="showcase-api-offers-foreign"
+        )
+        assert persisted_offers == []
+
+    def test_returns_not_found_for_missing_showcase(self) -> None:
+        list_response = self.api.list_admin_showcase_offers(showcase_id="missing-showcase")
+        create_response = self.api.create_admin_showcase_offer(
+            showcase_id="missing-showcase",
+            json={"manualOrder": 1, "displayName": "Missing showcase offer"},
+        )
+
+        assert list_response.status_code == codes.NOT_FOUND
+        assert list_response.json() == {"detail": "ADMIN_SHOWCASE_NOT_FOUND_ERROR"}
+        assert create_response.status_code == codes.NOT_FOUND
+        assert create_response.json() == {"detail": "ADMIN_SHOWCASE_NOT_FOUND_ERROR"}
+
+    async def test_returns_not_found_for_missing_block_assignment(self) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-api-offers-missing-block",
+            owner_partner_id="partner-1",
+            title="Missing block offer showcase",
+        )
+        await self.storage_helper.commit()
+
+        response = self.api.create_admin_showcase_offer(
+            showcase_id="showcase-api-offers-missing-block",
+            json={
+                "blockId": "missing-block",
+                "manualOrder": 1,
+                "displayName": "Offer with missing block",
+            },
+        )
+
+        assert response.status_code == codes.NOT_FOUND
+        assert response.json() == {"detail": "ADMIN_SHOWCASE_DRAFT_BLOCK_NOT_FOUND_ERROR"}
+        persisted_offers = await self.storage_helper.list_admin_showcase_draft_offers(
+            showcase_id="showcase-api-offers-missing-block"
+        )
+        assert persisted_offers == []
+
+
+class TestAdminShowcaseOffersNoAuthAPI(APIFixture, StorageFixture):
+    async def test_requires_authentication(self) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-api-offers-no-auth",
+            owner_partner_id="partner-1",
+            title="No auth offers showcase",
+            published_snapshot={"id": "public-offers-no-auth"},
+        )
+        await self.storage_helper.commit()
+
+        list_response = self.no_auth_api.list_admin_showcase_offers(
+            showcase_id="showcase-api-offers-no-auth"
+        )
+        create_response = self.no_auth_api.create_admin_showcase_offer(
+            showcase_id="showcase-api-offers-no-auth",
+            json={"manualOrder": 1, "displayName": "No auth offer"},
+        )
+
+        assert list_response.status_code == codes.UNAUTHORIZED
+        assert list_response.json() == {"detail": "ADMIN_AUTHENTICATION_REQUIRED_ERROR"}
+        assert create_response.status_code == codes.UNAUTHORIZED
+        assert create_response.json() == {"detail": "ADMIN_AUTHENTICATION_REQUIRED_ERROR"}
+        persisted_offers = await self.storage_helper.list_admin_showcase_draft_offers(
+            showcase_id="showcase-api-offers-no-auth"
+        )
+        assert persisted_offers == []

@@ -7,14 +7,18 @@ from src.api.showcases.schemas import (
     AdminShowcaseDraftBlockCreateRequest,
     AdminShowcaseDraftBlockPatchRequest,
     AdminShowcaseDraftBlockResponse,
+    AdminShowcaseDraftOfferCreateRequest,
+    AdminShowcaseDraftOfferResponse,
     AdminShowcaseDraftPatchRequest,
     AdminShowcaseDraftResponse,
 )
 from src.core.admin_auth.schemas import AdminActorContext
 from src.core.showcases.use_cases import (
     CreateAdminShowcaseBlockUseCase,
+    CreateAdminShowcaseOfferUseCase,
     DeleteAdminShowcaseBlockUseCase,
     ListAdminShowcaseBlocksUseCase,
+    ListAdminShowcaseOffersUseCase,
     PatchAdminShowcaseBlockUseCase,
     UpdateAdminShowcaseDraftSettingsUseCase,
 )
@@ -96,3 +100,32 @@ async def delete_showcase_draft_block(
 ) -> None:
     context = AdminActorContext(user_id=user.user_id, partner_id=user.partner_id)
     await use_case.execute(showcase_id=showcase_id, block_id=block_id, context=context)
+
+
+@router.get(path="/{showcase_id}/offers", status_code=status.HTTP_200_OK)
+async def list_showcase_draft_offers(
+    showcase_id: str,
+    user: JwtUserDeps,
+    use_case: FromDishka[ListAdminShowcaseOffersUseCase],
+) -> list[AdminShowcaseDraftOfferResponse]:
+    context = AdminActorContext(user_id=user.user_id, partner_id=user.partner_id)
+    offers = await use_case.execute(showcase_id=showcase_id, context=context)
+
+    return [AdminShowcaseDraftOfferResponse.from_domain(offer=offer) for offer in offers]
+
+
+@router.post(path="/{showcase_id}/offers", status_code=status.HTTP_201_CREATED)
+async def create_showcase_draft_offer(
+    showcase_id: str,
+    body: AdminShowcaseDraftOfferCreateRequest,
+    user: JwtUserDeps,
+    use_case: FromDishka[CreateAdminShowcaseOfferUseCase],
+) -> AdminShowcaseDraftOfferResponse:
+    context = AdminActorContext(user_id=user.user_id, partner_id=user.partner_id)
+    offer = await use_case.execute(
+        showcase_id=showcase_id,
+        params=body.to_domain(),
+        context=context,
+    )
+
+    return AdminShowcaseDraftOfferResponse.from_domain(offer=offer)

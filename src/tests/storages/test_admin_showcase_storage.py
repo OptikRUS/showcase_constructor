@@ -7,6 +7,7 @@ from src.core.showcases.exceptions import (
 from src.core.showcases.schemas import (
     AdminShowcaseDraftBlockCreateParams,
     AdminShowcaseDraftBlockPatchParams,
+    AdminShowcaseDraftOfferCreateParams,
     AdminShowcaseDraftSettingsPatchParams,
     JsonObject,
 )
@@ -236,3 +237,78 @@ class TestDatabaseAdminShowcaseStorage(FactoryFixture, StorageFixture):
 
         assert patch_error.value.detail == "ADMIN_SHOWCASE_DRAFT_BLOCK_NOT_FOUND_ERROR"
         assert delete_error.value.detail == "ADMIN_SHOWCASE_DRAFT_BLOCK_NOT_FOUND_ERROR"
+
+    async def test_creates_and_lists_draft_offers_ordered_by_block_and_manual_order(self) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-offers-storage-1",
+            owner_partner_id="partner-1",
+            title="Offer storage showcase",
+            published_snapshot={"id": "public-offers-storage-1"},
+        )
+        await self.storage_helper.create_admin_showcase_draft_offer(
+            offer=self.factory.admin_showcase_draft_offer(
+                id="offer-storage-existing",
+                showcase_id="showcase-offers-storage-1",
+                block_id="block-storage-offers-b",
+                enabled=False,
+                manual_order=20,
+                fields=[{"key": "rate", "value": "12%", "visible": False}],
+                categories=["loans"],
+                display_name="Existing disabled offer",
+            )
+        )
+        storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
+        params = AdminShowcaseDraftOfferCreateParams(
+            block_id="block-storage-offers-a",
+            enabled=True,
+            manual_order=10,
+            cta_text="Apply now",
+            usp_text="Decision in 5 minutes",
+            fields=[
+                {"key": "amount", "value": "100000", "visible": True},
+                {"key": "internal_score", "value": "A", "visible": False},
+            ],
+            categories=["cash", "cards"],
+            logo_url="https://cdn.example.test/new-logo.png",
+            rounded_logo_url="https://cdn.example.test/new-rounded.png",
+            display_name="New storage offer",
+            site_name="New Bank",
+            cpa_url="https://cpa.example.test/new",
+            legal_entity="New Bank LLC",
+            inn="1234567890",
+            erid="erid-new",
+            data={"source": "manual", "rating": 5},
+        )
+
+        created = await storage.create_draft_offer(
+            showcase_id="showcase-offers-storage-1",
+            offer_id="offer-storage-created",
+            params=params,
+        )
+        offers = await storage.list_draft_offers(showcase_id="showcase-offers-storage-1")
+
+        assert created.id == "offer-storage-created"
+        assert created.showcase_id == "showcase-offers-storage-1"
+        assert created.block_id == "block-storage-offers-a"
+        assert created.enabled is True
+        assert created.manual_order == 10
+        assert created.cta_text == "Apply now"
+        assert created.usp_text == "Decision in 5 minutes"
+        assert created.fields == [
+            {"key": "amount", "value": "100000", "visible": True},
+            {"key": "internal_score", "value": "A", "visible": False},
+        ]
+        assert created.categories == ["cash", "cards"]
+        assert created.logo_url == "https://cdn.example.test/new-logo.png"
+        assert created.rounded_logo_url == "https://cdn.example.test/new-rounded.png"
+        assert created.display_name == "New storage offer"
+        assert created.site_name == "New Bank"
+        assert created.cpa_url == "https://cpa.example.test/new"
+        assert created.legal_entity == "New Bank LLC"
+        assert created.inn == "1234567890"
+        assert created.erid == "erid-new"
+        assert created.data == {"source": "manual", "rating": 5}
+        assert [offer.id for offer in offers] == [
+            "offer-storage-created",
+            "offer-storage-existing",
+        ]

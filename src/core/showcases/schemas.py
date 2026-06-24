@@ -84,3 +84,23 @@ class AdminShowcaseDraftOffer:
     inn: str | None
     erid: str | None
     data: JsonObject
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AdminShowcaseDraftOfferCreateParams:
+    block_id: str | None
+    enabled: bool
+    manual_order: int
+    cta_text: str | None
+    usp_text: str | None
+    fields: list[JsonValue]
+    categories: list[JsonValue]
+    logo_url: str | None
+    rounded_logo_url: str | None
+    display_name: str | None
+    site_name: str | None
+    cpa_url: str | None
+    legal_entity: str | None
+    inn: str | None
+    erid: str | None
+    data: JsonObject
