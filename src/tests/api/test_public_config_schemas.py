@@ -1,7 +1,10 @@
+from dataclasses import replace
+
 import pytest
 from pydantic import ValidationError
 
 from src.api.public_config.schemas import PublicConfigResponse
+from src.core.public_config.schemas import PublicOfferField
 from src.tests.fixtures import FactoryFixture
 
 
@@ -119,10 +122,36 @@ class TestPublicConfigResponseSchema(FactoryFixture):
 
     def test_excludes_draft_and_private_fields(self) -> None:
         snapshot = self.factory.published_public_config_snapshot()
-
-        serialized_payload = PublicConfigResponse.from_domain(snapshot=snapshot).model_dump_json(
-            by_alias=True,
+        assert snapshot.widget_info is not None
+        published_offer = snapshot.widget_info.offers[0]
+        offer_with_hidden_field = replace(
+            published_offer,
+            fields=(
+                *published_offer.fields,
+                PublicOfferField(
+                    key="draftSecret",
+                    value="hidden-draft-value",
+                    visible=False,
+                ),
+            ),
         )
+        snapshot_with_hidden_field = replace(
+            snapshot,
+            blocks=(
+                replace(
+                    snapshot.blocks[0],
+                    offers=(offer_with_hidden_field,),
+                ),
+            ),
+            widget_info=replace(
+                snapshot.widget_info,
+                offers=(offer_with_hidden_field,),
+            ),
+        )
+
+        serialized_payload = PublicConfigResponse.from_domain(
+            snapshot=snapshot_with_hidden_field,
+        ).model_dump_json(by_alias=True)
 
         forbidden_field_names = (
             "ownerId",
@@ -132,6 +161,8 @@ class TestPublicConfigResponseSchema(FactoryFixture):
             "serviceSettings",
             "createdBy",
             "internalId",
+            "draftSecret",
+            "hidden-draft-value",
         )
         for field_name in forbidden_field_names:
             assert field_name not in serialized_payload
@@ -190,6 +221,122 @@ class TestPublicConfigResponseSchema(FactoryFixture):
             PublicConfigResponse.model_validate(leaky_payload)
 
         assert ("widgetInfo", "offers", 0, "internalId") in {
+            tuple(error["loc"]) for error in exc_info.value.errors()
+        }
+
+    @pytest.mark.parametrize(
+        ("field_name", "field_value"),
+        [
+            ("enabled", False),
+            ("manualOrder", 20),
+            ("blockId", "draft-block-1"),
+            ("ctaText", "Private CTA"),
+            ("uspText", "Private USP"),
+            ("legalEntity", "Private Entity LLC"),
+            ("inn", "1234567890"),
+            ("erid", "draft-erid"),
+        ],
+    )
+    def test_rejects_widget_offer_draft_fields(
+        self,
+        field_name: str,
+        field_value: object,
+    ) -> None:
+        snapshot = self.factory.published_public_config_snapshot()
+        payload = PublicConfigResponse.from_domain(snapshot=snapshot).model_dump(
+            mode="json",
+            by_alias=True,
+        )
+        assert payload["widgetInfo"] is not None
+        leaky_payload = {
+            **payload,
+            "widgetInfo": {
+                **payload["widgetInfo"],
+                "offers": [
+                    {
+                        **payload["widgetInfo"]["offers"][0],
+                        field_name: field_value,
+                    },
+                ],
+            },
+        }
+
+        with pytest.raises(ValidationError) as exc_info:
+            PublicConfigResponse.model_validate(leaky_payload)
+
+        assert ("widgetInfo", "offers", 0, field_name) in {
+            tuple(error["loc"]) for error in exc_info.value.errors()
+        }
+
+    @pytest.mark.parametrize(
+        ("field_name", "field_value"),
+        [
+            ("fallbackText", "Draft fallback"),
+            ("metaTitle", "Draft meta title"),
+            ("metaDescription", "Draft meta description"),
+        ],
+    )
+    def test_rejects_draft_only_settings_fields(
+        self,
+        field_name: str,
+        field_value: object,
+    ) -> None:
+        snapshot = self.factory.published_public_config_snapshot()
+        payload = PublicConfigResponse.from_domain(snapshot=snapshot).model_dump(
+            mode="json",
+            by_alias=True,
+        )
+        leaky_payload = {
+            **payload,
+            "settings": {
+                **payload["settings"],
+                field_name: field_value,
+            },
+        }
+
+        with pytest.raises(ValidationError) as exc_info:
+            PublicConfigResponse.model_validate(leaky_payload)
+
+        assert ("settings", field_name) in {
+            tuple(error["loc"]) for error in exc_info.value.errors()
+        }
+
+    @pytest.mark.parametrize(
+        ("field_name", "field_value"),
+        [
+            ("id", "draft-block-1"),
+            ("order", 10),
+            ("visible", False),
+            ("subtitle", "Draft subtitle"),
+            ("desktopSettings", {"columns": 3}),
+            ("mobileSettings", {"columns": 1}),
+            ("data", {"html": "<section>Draft</section>"}),
+        ],
+    )
+    def test_rejects_block_draft_fields(
+        self,
+        field_name: str,
+        field_value: object,
+    ) -> None:
+        snapshot = self.factory.published_public_config_snapshot()
+        payload = PublicConfigResponse.from_domain(snapshot=snapshot).model_dump(
+            mode="json",
+            by_alias=True,
+        )
+        leaky_payload = {
+            **payload,
+            "blocks": [
+                {
+                    **payload["blocks"][0],
+                    field_name: field_value,
+                },
+            ],
+        }
+
+        with pytest.raises(ValidationError) as exc_info:
+            PublicConfigResponse.model_validate(leaky_payload)
+
+        assert ("blocks", 0, field_name) in {
             tuple(error["loc"]) for error in exc_info.value.errors()
         }
 

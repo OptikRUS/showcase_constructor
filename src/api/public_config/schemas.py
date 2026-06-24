@@ -1,6 +1,6 @@
 from typing import Self
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, field_validator
 
 from src.api.boundary import BoundaryModel
 from src.core.public_config.schemas import (
@@ -58,6 +58,14 @@ class PublicOfferResponse(PublicConfigBoundaryModel):
     site_name: str
     url: str
     fields: tuple[PublicOfferFieldResponse, ...]
+
+    @field_validator("fields")
+    @classmethod
+    def exclude_hidden_fields(
+        cls,
+        fields: tuple[PublicOfferFieldResponse, ...],
+    ) -> tuple[PublicOfferFieldResponse, ...]:
+        return tuple(field for field in fields if field.visible)
 
 
 class PublicBlockResponse(PublicConfigBoundaryModel):

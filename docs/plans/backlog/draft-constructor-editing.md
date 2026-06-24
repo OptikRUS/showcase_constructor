@@ -586,9 +586,9 @@ explicit product decisions.
 
 **Actions:**
 
-- [ ] Add focused public config separation tests for draft-only data, disabled offers, and hidden fields.
-- [ ] Run the focused public config test and confirm it fails only if public schemas leak draft/private data.
-- [ ] Add the minimal schema/projection adjustment needed by the approved decision record, or classify the Task as `coverage-only` if existing schemas already pass.
-- [ ] Re-run the focused public config test and confirm it passes.
-- [ ] Perform only necessary safe refactoring and re-run the focused public config test.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Add focused public config separation tests for draft-only data, disabled offers, and hidden fields.
+- [x] Run the focused public config test and confirm it fails only if public schemas leak draft/private data.
+- [x] Add the minimal schema/projection adjustment needed by the approved decision record, or classify the Task as `coverage-only` if existing schemas already pass.
+- [x] Re-run the focused public config test and confirm it passes.
+- [x] Perform only necessary safe refactoring and re-run the focused public config test.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
