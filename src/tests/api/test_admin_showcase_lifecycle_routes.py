@@ -6,29 +6,20 @@ from src.tests.fixtures import APIFixture
 
 class TestAdminShowcaseLifecycleRouteExposure(APIFixture):
     @pytest.mark.parametrize(
-        ("method", "path", "json_body"),
+        ("method", "path"),
         [
-            ("POST", "/api/v1/showcases", {"title": "Draft showcase"}),
-            ("GET", "/api/v1/showcases", None),
-            ("HEAD", "/api/v1/showcases", None),
-            ("OPTIONS", "/api/v1/showcases", None),
-            ("GET", "/api/v1/showcases/showcase-1", None),
-            ("HEAD", "/api/v1/showcases/showcase-1", None),
-            ("OPTIONS", "/api/v1/showcases/showcase-1", None),
-            ("PATCH", "/api/v1/showcases/showcase-1", {"title": "Updated draft"}),
-            ("POST", "/api/v1/showcases/showcase-1/clone", None),
-            ("POST", "/api/v1/showcases/showcase-1/archive", None),
-            # Negative candidate guards only; final restore/unarchive route remains undecided.
-            ("POST", "/api/v1/showcases/showcase-1/restore", None),
-            ("POST", "/api/v1/showcases/showcase-1/unarchive", None),
+            ("HEAD", "/api/v1/showcases"),
+            ("OPTIONS", "/api/v1/showcases"),
+            ("HEAD", "/api/v1/showcases/showcase-1"),
+            ("OPTIONS", "/api/v1/showcases/showcase-1"),
+            ("POST", "/api/v1/showcases/showcase-1/unarchive"),
         ],
     )
-    def test_admin_lifecycle_routes_are_not_registered_without_decisions(
+    def test_blocked_admin_lifecycle_methods_or_aliases_are_not_exposed(
         self,
         method: str,
         path: str,
-        json_body: dict[str, str] | None,
     ) -> None:
-        response = self.api.client.request(method=method, url=path, json=json_body)
+        response = self.api.client.request(method=method, url=path)
 
-        assert response.status_code == codes.NOT_FOUND
+        assert response.status_code in {codes.NOT_FOUND, codes.METHOD_NOT_ALLOWED}

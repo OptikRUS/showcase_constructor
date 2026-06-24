@@ -291,15 +291,15 @@ business tables or business route implementations.
 
 **Actions:**
 
-- [ ] Update admin lifecycle route-exposure tests so they guard only methods or
+- [x] Update admin lifecycle route-exposure tests so they guard only methods or
   aliases still explicitly blocked by the updated decision records.
-- [ ] Update or remove the public config route-exposure test so it no longer
+- [x] Update or remove the public config route-exposure test so it no longer
   blocks future implementation of approved public `GET` routes.
-- [ ] Run `rtk uv run pytest -vv -x src/tests/api/test_admin_showcase_lifecycle_routes.py`.
-- [ ] Run `rtk uv run pytest -vv -x src/tests/api/test_public_config_routes.py`.
-- [ ] Confirm the task changed only guardrail tests/helpers and added no
+- [x] Run `rtk uv run pytest -vv -x src/tests/api/test_admin_showcase_lifecycle_routes.py`.
+- [x] Run `rtk uv run pytest -vv -x src/tests/api/test_public_config_routes.py`.
+- [x] Confirm the task changed only guardrail tests/helpers and added no
   business implementation.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 3: Add SQLAlchemy async, asyncpg, and Alembic dependencies
 
