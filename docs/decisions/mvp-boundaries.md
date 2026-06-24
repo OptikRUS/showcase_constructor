@@ -37,32 +37,44 @@ configuration, migrations, or custom rendering behavior.
 | Custom domains | product decision required | Blocked until domain ownership verification and failure handling are approved. |
 | Analytics | product decision required | Blocked until event collection, retention, and public/admin visibility are approved. |
 | Billing | product decision required | Blocked until paid features, account ownership, and provider integration are approved. |
-| Admin API | product decision required | Blocked until the admin auth model and method permissions are approved. |
+| Admin API | MVP temporary adapter | Only protected current-context wiring may use the temporary request-header adapter; final auth provider and route-specific permissions remain product decision required. |
 | Public storefront | product decision required | Blocked until public identifiers, routes, and response fields are approved. |
 | Persistence | product decision required | Blocked until backend, migration, and transaction boundaries are approved. |
 | Custom code | product decision required | Blocked until allowed code categories, sanitization, sandboxing, and review rules are approved. |
 
 ## Admin API Auth
 
-The admin API auth model is `product decision required`. This record does not
-choose token auth, session auth, API keys, mTLS, OAuth, internal network access,
-or another protection model. No admin API feature plan may implement management
-routes until the model and per-method permissions are approved.
+### MVP temporary adapter
 
-The only confirmed public runtime route remains `GET /health`. No future admin
-`GET`, `HEAD`, `OPTIONS`, `POST`, `PUT`, `PATCH`, or `DELETE` route is public
-unless a later decision record explicitly approves that method, path, and
-rationale.
+This MVP plan may implement a temporary request-header adapter only to establish
+the owner-aware admin boundary before the final external auth provider is
+selected. The adapter reads `X-Admin-User-Id` and `X-Partner-Id` from the
+request and treats missing or blank values as unauthenticated.
+
+The temporary adapter may protect `GET /api/v1/admin/auth/context` and future
+admin showcase use cases added by this plan. It is not a production auth model,
+does not approve public admin data exposure, and does not approve an
+internal-admin cross-partner override.
+
+The final external auth provider, token/session validation model, trusted
+gateway contract for temporary headers, internal-admin override, and production
+replacement criteria are `product decision required`.
+
+The only confirmed public runtime route remains `GET /health`. No admin `GET`,
+`HEAD`, `OPTIONS`, `POST`, `PUT`, `PATCH`, or `DELETE` route is public in this
+MVP boundary unless a later decision record explicitly approves that method,
+path, and rationale.
 
 | Surface | Method class | Public access | Required auth | Status |
 | --- | --- | --- | --- | --- |
-| Admin management reads | `GET` | product decision required | product decision required | Blocked until readable resources and permissions are approved. |
-| Admin read metadata | `HEAD` | product decision required | product decision required | Blocked until parity with admin `GET` routes is approved. |
-| Admin preflight/discovery | `OPTIONS` | product decision required | product decision required | Blocked until CORS/preflight and discovery behavior are approved. |
-| Admin creation | `POST` | Not approved | product decision required | Blocked until mutation permissions and audit requirements are approved. |
-| Admin replacement | `PUT` | Not approved | product decision required | Blocked until mutation permissions and audit requirements are approved. |
-| Admin partial updates | `PATCH` | Not approved | product decision required | Blocked until mutation permissions and audit requirements are approved. |
-| Admin deletion | `DELETE` | Not approved | product decision required | Blocked until deletion permissions, recovery needs, and audit requirements are approved. |
+| Admin current context | `GET /api/v1/admin/auth/context` | Not approved | MVP temporary adapter | Approved only for protected request-to-context wiring. |
+| Admin management reads | `GET` | Not approved | Current admin context required | Route-specific resources and response fields remain product decision required. |
+| Admin read metadata | `HEAD` | Not approved | product decision required | Blocked until parity with admin `GET` routes is approved. |
+| Admin preflight/discovery | `OPTIONS` | Not approved | product decision required | Blocked until CORS/preflight and discovery behavior are approved. |
+| Admin creation | `POST` | Not approved | Current admin context required | Mutation permissions and audit requirements remain product decision required. |
+| Admin replacement | `PUT` | Not approved | Current admin context required | Mutation permissions and audit requirements remain product decision required. |
+| Admin partial updates | `PATCH` | Not approved | Current admin context required | Mutation permissions and audit requirements remain product decision required. |
+| Admin deletion | `DELETE` | Not approved | Current admin context required | Deletion permissions, recovery needs, and audit requirements remain product decision required. |
 
 ## Public Data And Identifiers
 
@@ -163,8 +175,10 @@ capability and required control is explicitly approved.
 
 ## Blocking Decisions
 
-- Product decision required: choose the admin API auth model and per-method
-  permissions before adding management routes.
+- Product decision required: choose the final external admin API auth provider,
+  token/session validation model, trusted gateway contract for temporary headers,
+  internal-admin override, production replacement criteria, and route-specific
+  method permissions before adding management routes beyond this MVP boundary.
 - Product decision required: choose the public identifier model and public data
   exposure rules before adding storefront routes or schemas.
 - Product decision required: choose the persistence backend and migration
@@ -181,8 +195,8 @@ capability and required control is explicitly approved.
 
 ## Blocked Feature Plans
 
-- Admin API feature plans must wait for the admin auth model, method matrix, and
-  protected/public route decisions.
+- Admin API feature plans beyond this MVP boundary must wait for the final auth
+  provider, method matrix, and protected/public route decisions.
 - Public storefront feature plans must wait for public route, field exposure, and
   identifier decisions.
 - Persistence feature plans must wait for backend, migration, config, and

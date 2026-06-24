@@ -169,10 +169,10 @@ temporary auth adapter без привязки к внешнему auth provider
 
 **Actions:**
 
-- [ ] Add a focused documentation change that records the temporary request-header auth adapter as an MVP boundary.
-- [ ] Run `rtk rg -n "Admin API Auth|MVP temporary adapter|X-Admin-User-Id|X-Partner-Id|product decision required" docs/decisions/mvp-boundaries.md` and confirm the boundary is discoverable.
-- [ ] Confirm the decision record still marks the final external auth provider and internal-admin override as `product decision required`.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Add a focused documentation change that records the temporary request-header auth adapter as an MVP boundary.
+- [x] Run `rtk rg -n "Admin API Auth|MVP temporary adapter|X-Admin-User-Id|X-Partner-Id|product decision required" docs/decisions/mvp-boundaries.md` and confirm the boundary is discoverable.
+- [x] Confirm the decision record still marks the final external auth provider and internal-admin override as `product decision required`.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 2: Add core admin context and auth exceptions
 
