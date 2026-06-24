@@ -373,13 +373,13 @@ business tables or business route implementations.
 
 **Actions:**
 
-- [ ] Add a focused failing settings test for `DatabaseSettings.URL`.
-- [ ] Add database settings and filesystem constants using the existing
+- [x] Add a focused failing settings test for `DatabaseSettings.URL`.
+- [x] Add database settings and filesystem constants using the existing
   pydantic-settings style.
-- [ ] Add `src/storages/database.py` with `create_async_engine` and
+- [x] Add `src/storages/database.py` with `create_async_engine` and
   `async_sessionmaker(expire_on_commit=False)`.
-- [ ] Run `rtk uv run pytest -vv -x src/tests/config/test_database_settings.py`.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Run `rtk uv run pytest -vv -x src/tests/config/test_database_settings.py`.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 5: Add Alembic async migration layout and smoke revision
 
