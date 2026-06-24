@@ -399,11 +399,11 @@ business code.
 
 **Actions:**
 
-- [ ] Update the Custom Code Permissions section with approved MVP permissions
+- [x] Update the Custom Code Permissions section with approved MVP permissions
   or concrete blocked reasons for each category.
-- [ ] Record required controls for any allowed category.
-- [ ] Cross-check custom-code audit wording against the Audit And Events decision
+- [x] Record required controls for any allowed category.
+- [x] Cross-check custom-code audit wording against the Audit And Events decision
   from Task 5.
-- [ ] Confirm the diff contains only intended decision-record documentation
+- [x] Confirm the diff contains only intended decision-record documentation
   changes.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.

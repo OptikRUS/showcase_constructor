@@ -41,7 +41,7 @@ runtime configuration, migrations, or custom rendering behavior.
 | Admin API | MVP JWT bearer adapter plus approved admin showcase route and in-memory audit/event boundaries | `docs/decisions/admin-api-lifecycle.md` approves protected owner-scoped create, list own, get own, patch draft, clone, archive, and restore route boundaries; storage and lifecycle behavior still require their focused decisions, and approved mutations must use the audit/event boundary below. |
 | Public storefront | Opaque public showcase id and published snapshot response-field boundary approved; route methods product decision required | Future public reads may address a published snapshot by opaque public showcase id and may return only the approved published snapshot field groups below. Public route registration and methods remain blocked until a focused public-route decision approves them. |
 | Persistence | Approved in-memory MVP storage boundary; durable persistence product decision required | Future MVP implementation may add only process-local, non-durable `src/storages` storage for admin showcase flows and DNS TXT domain verification state. Database/file/external persistence, runtime config, migrations, and durability claims remain blocked until a durable backend decision is approved. |
-| Custom code | product decision required | Blocked until allowed code categories, sanitization, sandboxing, and review rules are approved; future permission or content changes must use the audit/event boundary below. |
+| Custom code | Approved MVP boundary: no user-supplied custom code | Custom CSS, HTML, JavaScript, external embeds, and server-side custom code are forbidden in MVP. Future post-MVP permission or content changes require explicit controls and must use the audit/event boundary below. |
 
 ## Admin API Auth
 
@@ -140,7 +140,7 @@ that public payload.
 | Domain names and custom domains | Not approved as public identifiers | DNS TXT verification is approved below only as an ownership-proof method. Custom domains, domain plus path routing, display rules, and response-field exposure remain blocked as public identifier schemes until a focused routing/public-exposure decision approves them. |
 | Domain plus path routing | Not approved | DNS TXT verification does not approve Host-based routing, path ownership semantics, or public renderer domain lookup behavior. |
 | Showcase content fields outside the published public config snapshot | product decision required | Future title, description, theme, page, asset, SEO metadata, and publication-state fields remain blocked unless they are added to an approved published snapshot contract by a later decision. |
-| Custom code metadata | product decision required | Blocked until custom-code permissions, review status, sanitization, and sandboxing decisions are approved. |
+| Custom code metadata | Not approved | MVP forbids user-supplied custom code, so public responses must not expose custom-code metadata, review state, sanitizer state, sandbox settings, or custom-code publication state. |
 | Domain verification status | Not approved for public exposure; protected owner-admin visibility may be approved by a later route plan | DNS TXT verification status may be returned only through future authenticated owner-scoped admin domain management routes after those routes are approved. Public storefront responses must not expose verification status. |
 
 ## Persistence
@@ -239,25 +239,32 @@ into production.
 | Admin unarchive alias | Blocked | The admin lifecycle boundary selects `POST /api/v1/showcases/{id}/restore`; no separate unarchive audit event is approved unless the alias is later approved. |
 | Showcase publishing changes | Approved MVP boundary: process-local in-memory audit record | If a later publishing decision approves publish, unpublish, rollback, or republish behavior, each mutation must record actor context, showcase id, action type, timestamp, and safe snapshot metadata. Publishing behavior and durable audit remain blocked until separately approved. |
 | Domain verification changes | Approved MVP boundary: process-local in-memory audit record | Future DNS TXT verification requests, owner-triggered rechecks, and safe status updates must record actor context when present, domain identifier, action type, timestamp, and safe verification metadata. Activation, expiration, automatic retry policy, public/admin status visibility, and durable audit remain blocked. |
-| Custom code permission or content changes | Approved MVP boundary: process-local in-memory audit record | If a later custom-code decision approves CSS, HTML, JavaScript, embeds, or server-side code permissions, each permission or content change must record actor context, showcase id, capability, action type, timestamp, and safe metadata. Code content, secrets, and durable audit remain blocked. |
+| Custom code permission or content changes | Blocked by the current custom-code permission boundary; future approved changes must use process-local in-memory audit records | MVP forbids CSS, HTML, JavaScript, embeds, and server-side custom code changes. If a later decision approves any category, each permission or content change must record actor context, showcase id, capability, action type, timestamp, and safe metadata. Code content, secrets, and durable audit remain blocked. |
 | Analytics or billing-relevant events | product decision required | Analytics, billing, event collection, retention, and public/admin visibility remain blocked; the non-durable audit boundary must not be reused as analytics or billing event storage. |
 
 ## Custom Code Permissions
 
-Custom code permissions are `product decision required`. This record does not
-approve storage, execution, rendering, preview, publication, or public exposure
-for user-supplied CSS, HTML, JavaScript, external embeds, or server-side logic.
-Future plans must not add rendering clients, sanitizer policies, sandbox
-runtime, persistence fields, moderation workflow, or audit behavior until each
-capability and required control is explicitly approved.
+The MVP custom-code permission boundary is an explicit prohibition: no
+user-supplied custom CSS, custom HTML, custom JavaScript, external embeds, or
+server-side custom code may be stored, executed, rendered, previewed, published,
+or exposed publicly in MVP. This is an approved MVP boundary, not an unresolved
+permission question.
+
+Future plans may rely on the absence of custom-code behavior for MVP work. They
+must not add rendering clients, sanitizer policies, sandbox runtime, persistence
+fields, moderation workflow, preview/public rendering paths, publication state,
+rollback state, or custom-code audit writes unless a later decision approves a
+specific category and every required control for that category. Any later
+approved custom-code permission or content change must use the process-local
+in-memory audit/event boundary above until durable audit is separately approved.
 
 | Capability | MVP permission | Required controls before implementation |
 | --- | --- | --- |
-| Custom CSS | product decision required | Blocked until allowed selectors/properties, sanitization, storage, preview, publish review, and public rendering rules are approved. |
-| Custom HTML | product decision required | Blocked until allowed tags/attributes, sanitizer behavior, link/media policy, storage, review, and public rendering rules are approved. |
-| Custom JavaScript | product decision required | Blocked until execution sandboxing, CSP, network/API permissions, storage, review, audit, rollback, and public rendering rules are approved. |
-| External embeds | product decision required | Blocked until provider allowlist, iframe sandboxing, CSP, privacy/data-sharing rules, review, and public rendering rules are approved. |
-| Server-side custom code | product decision required | Blocked until server execution is explicitly allowed and isolation, resource limits, secrets/network restrictions, review, audit, and rollback controls are approved. |
+| Custom CSS | Approved MVP boundary: forbidden | A later approval must define scoped selector/property allowlists, CSS sanitization, CSP/style-src rules including remote import handling, storage, admin preview isolation, publication review, rollback, public rendering rules, and audit metadata. |
+| Custom HTML | Approved MVP boundary: forbidden | A later approval must define allowed tags/attributes, sanitizer behavior, script and event-handler rejection, link/media policy, CSP, storage, admin preview isolation, publication review, rollback, public rendering rules, and audit metadata. |
+| Custom JavaScript | Approved MVP boundary: forbidden | A later approval must define execution sandboxing, CSP, network/API permissions, secret access rules, storage, review, admin preview and public runtime isolation, publication, rollback, and audit metadata. |
+| External embeds | Approved MVP boundary: forbidden | A later approval must define provider allowlists, iframe sandboxing, CSP frame-src/connect-src rules, privacy and data-sharing disclosure, storage, review, admin preview and public rendering rules, rollback, and audit metadata. |
+| Server-side custom code | Approved MVP boundary: forbidden | A later approval must explicitly allow server execution and define isolation, resource limits, filesystem/secret/network restrictions, storage, review, deployment, rollback, monitoring, and audit metadata. |
 
 ## Blocking Decisions
 
@@ -288,9 +295,11 @@ capability and required control is explicitly approved.
   durable database audit records, outbox events, external event streams,
   retention, delivery, and production audit guarantees before claiming durable
   audit/event behavior.
-- Product decision required: choose custom code permissions and required controls
-  before rendering or storing user-supplied CSS, HTML, JavaScript, embeds, or
-  server-side logic.
+- Approved MVP boundary: user-supplied custom CSS, HTML, JavaScript, external
+  embeds, and server-side custom code are forbidden in MVP. Product decision
+  required: approve a specific post-MVP category and its controls before
+  storing, previewing, rendering, executing, publishing, or publicly exposing any
+  user-supplied custom-code content.
 
 ## Blocked Feature Plans
 
@@ -314,7 +323,8 @@ capability and required control is explicitly approved.
   audit boundary above until durable audit is separately approved.
 - Analytics and billing feature plans must wait for explicit MVP scope and data
   exposure decisions.
-- Custom code feature plans must wait for permission, sanitization, sandboxing,
-  and review decisions; approved permission or content changes must use the
-  process-local in-memory audit boundary above until durable audit is separately
+- Custom code feature plans are blocked for MVP because every user-supplied
+  custom-code category is forbidden. A later post-MVP plan must first approve a
+  specific category, required controls, and the process-local in-memory audit
+  boundary for permission or content changes until durable audit is separately
   approved.
