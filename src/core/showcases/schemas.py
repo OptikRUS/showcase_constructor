@@ -29,6 +29,11 @@ class AdminShowcaseDraft:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class AdminShowcaseDraftSettingsPatchParams:
+    settings: JsonObject
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class AdminShowcaseDraftBlock:
     id: str
     showcase_id: str

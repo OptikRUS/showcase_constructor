@@ -324,12 +324,12 @@ explicit product decisions.
 
 **Actions:**
 
-- [ ] Add focused storage tests for draft settings update and published snapshot preservation.
-- [ ] Run the focused storage test and confirm it fails for the missing storage behavior.
-- [ ] Extend the core storage interface, domain schemas, concrete storage, and storage helper minimally.
-- [ ] Re-run the focused storage test and confirm it passes.
-- [ ] Perform only necessary safe refactoring and re-run the focused storage test.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Add focused storage tests for draft settings update and published snapshot preservation.
+- [x] Run the focused storage test and confirm it fails for the missing storage behavior.
+- [x] Extend the core storage interface, domain schemas, concrete storage, and storage helper minimally.
+- [x] Re-run the focused storage test and confirm it passes.
+- [x] Perform only necessary safe refactoring and re-run the focused storage test.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 4: Expose protected draft settings PATCH
 

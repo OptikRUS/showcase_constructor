@@ -1,12 +1,34 @@
 from dataclasses import dataclass
 
-from sqlalchemy import text
+from sqlalchemy import insert, text
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.core.showcases.schemas import JsonObject
+from src.storages.models import AdminShowcaseModel
 
 
 @dataclass(kw_only=True, slots=True)
 class StorageHelper:
     session: AsyncSession
+
+    async def create_admin_showcase(
+        self,
+        *,
+        id: str = "showcase-1",
+        owner_partner_id: str = "partner-1",
+        title: str = "Test showcase",
+        draft_settings: JsonObject | None = None,
+        published_snapshot: JsonObject | None = None,
+    ) -> None:
+        await self.session.execute(
+            insert(AdminShowcaseModel).values(
+                id=id,
+                owner_partner_id=owner_partner_id,
+                title=title,
+                draft_settings=draft_settings or {},
+                published_snapshot=published_snapshot,
+            )
+        )
 
     async def get_current_alembic_version(self) -> str:
         result = await self.session.execute(text("select version_num from alembic_version"))
