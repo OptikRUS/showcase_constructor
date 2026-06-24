@@ -287,8 +287,8 @@ durability и custom code permissions. Бизнес-код, runtime-конфиг
 
 **Actions:**
 
-- [ ] Add a "Custom Code Permissions" section.
-- [ ] Classify CSS, HTML, JavaScript, external embeds and server-side code separately.
-- [ ] Record required controls for each allowed capability, or mark it `product decision required`.
-- [ ] Run `rtk rg -n "Custom Code Permissions|CSS|JavaScript|server-side|product decision required" docs/decisions/mvp-boundaries.md`.
-- [ ] Run `rtk make quality`, fix documentation-related failures if any, and repeat until successful.
+- [x] Add a "Custom Code Permissions" section.
+- [x] Classify CSS, HTML, JavaScript, external embeds and server-side code separately.
+- [x] Record required controls for each allowed capability, or mark it `product decision required`.
+- [x] Run `rtk rg -n "Custom Code Permissions|CSS|JavaScript|server-side|product decision required" docs/decisions/mvp-boundaries.md`.
+- [x] Run `rtk make quality`, fix documentation-related failures if any, and repeat until successful.

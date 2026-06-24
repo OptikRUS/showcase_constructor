@@ -142,6 +142,23 @@ verification, or custom-code changes as unaudited by default.
 | Custom code permission or content changes | product decision required | Custom code, admin API, and persistence feature plans. |
 | Analytics or billing-relevant events | product decision required | Analytics, billing, and persistence feature plans. |
 
+## Custom Code Permissions
+
+Custom code permissions are `product decision required`. This record does not
+approve storage, execution, rendering, preview, publication, or public exposure
+for user-supplied CSS, HTML, JavaScript, external embeds, or server-side logic.
+Future plans must not add rendering clients, sanitizer policies, sandbox
+runtime, persistence fields, moderation workflow, or audit behavior until each
+capability and required control is explicitly approved.
+
+| Capability | MVP permission | Required controls before implementation |
+| --- | --- | --- |
+| Custom CSS | product decision required | Blocked until allowed selectors/properties, sanitization, storage, preview, publish review, and public rendering rules are approved. |
+| Custom HTML | product decision required | Blocked until allowed tags/attributes, sanitizer behavior, link/media policy, storage, review, and public rendering rules are approved. |
+| Custom JavaScript | product decision required | Blocked until execution sandboxing, CSP, network/API permissions, storage, review, audit, rollback, and public rendering rules are approved. |
+| External embeds | product decision required | Blocked until provider allowlist, iframe sandboxing, CSP, privacy/data-sharing rules, review, and public rendering rules are approved. |
+| Server-side custom code | product decision required | Blocked until server execution is explicitly allowed and isolation, resource limits, secrets/network restrictions, review, audit, and rollback controls are approved. |
+
 ## Blocking Decisions
 
 - Product decision required: choose the admin API auth model and per-method
