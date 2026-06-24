@@ -5,7 +5,9 @@ You are creating a RALPHEX plan for the current FastAPI/Dishka project.
 Available RALPHEX variables:
 - `{{PLAN_DESCRIPTION}}` - request passed to `ralphex --plan "<task description>"`
 - `{{PROGRESS_FILE}}` - current RALPHEX progress log path
-- `{{PLANS_DIR}}` - plans directory; in this project it must resolve to `docs/plans/backlog`
+- `{{PLANS_DIR}}` - RALPHEX plan root; in this project it should resolve to
+  `docs/plans`, while newly created plans must still be saved under
+  `docs/plans/backlog`
 
 CRITICAL: Resolve the current task description before doing anything else.
 The current task description is the request passed to:
@@ -44,6 +46,9 @@ After reading any required skill, write only:
 
 The controlling output format is this project's RALPHEX format:
 - save to `docs/plans/backlog/<feature-name>.md`;
+- never save a new plan directly under `docs/plans/`;
+- never create or use `docs/plans/backlog/completed/`; completed plans belong
+  only under `docs/plans/completed/`;
 - use `# Plan: <name>`;
 - include `## Goal`, `## Context`, optional `## Implementation Notes` for
   non-trivial code changes, required `## Product/Security Decisions` for

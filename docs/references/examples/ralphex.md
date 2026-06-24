@@ -177,10 +177,16 @@ requires them.
 The portable local config keys used here are:
 
 - `executor = codex`
-- `plans_dir = docs/plans/backlog`
+- `plans_dir = docs/plans`
 - `move_plan_on_completion = true`
 - `pass_claude_md = true`
 - task/review model and iteration controls
+
+Keep `plans_dir` at the `docs/plans` root. RALPHEX moves completed plans into
+`docs/plans/completed/` relative to that root; setting `plans_dir` to
+`docs/plans/backlog` creates the invalid `docs/plans/backlog/completed/`
+lifecycle path. New plans are still saved to `docs/plans/backlog/` by the plan
+creation prompt.
 
 Do not commit tokens, chat IDs, machine-specific paths, `.env` values, progress
 logs, worktrees, or debug archives.
@@ -189,7 +195,7 @@ logs, worktrees, or debug archives.
 
 Transferred without behavior change:
 
-- backlog/completed plan routing;
+- backlog-to-completed plan routing;
 - `PLAN_CREATED` plus `<<<RALPHEX:PLAN_READY>>>`;
 - deterministic first-unchecked-checkbox task selection;
 - `coverage-only` and `stale plan`;

@@ -8,6 +8,9 @@ This directory contains executable RALPHEX plan files for `showcase_constructor`
 - Keep one feature, refactor, or documentation workflow per plan file.
 - Store new plans as `docs/plans/backlog/<feature-name>.md`.
 - Let RALPHEX move completed plans to `docs/plans/completed/`.
+- Keep RALPHEX `plans_dir` pointed at `docs/plans`, not
+  `docs/plans/backlog`; otherwise completed plans are archived into the invalid
+  `docs/plans/backlog/completed/` subtree.
 - Use `rtk` for shell commands.
 - Do not add dependencies unless the plan explicitly updates both `pyproject.toml`
   and `uv.lock`.
