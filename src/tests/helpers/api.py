@@ -10,3 +10,6 @@ class APIHelper:
 
     def get_health(self) -> Response:
         return self.client.get("/health")
+
+    def get_public_config(self, public_id: str) -> Response:
+        return self.client.get(f"/api/v1/public/showcases/{public_id}")
