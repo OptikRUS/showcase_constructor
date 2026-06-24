@@ -113,10 +113,10 @@ decisions are approved.
 
 **Actions:**
 
-- [ ] Update or create the focused decision record for the admin lifecycle blockers.
-- [ ] Verify the decision record explicitly keeps unresolved auth, persistence, identifier, restore/unarchive, status transition, and audit items as `product decision required`.
-- [ ] Confirm no live admin route, storage, config, migration, or dependency file was added in this Task.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Update or create the focused decision record for the admin lifecycle blockers.
+- [x] Verify the decision record explicitly keeps unresolved auth, persistence, identifier, restore/unarchive, status transition, and audit items as `product decision required`.
+- [x] Confirm no live admin route, storage, config, migration, or dependency file was added in this Task.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 2: Pin unapproved admin lifecycle routes as not registered
 
