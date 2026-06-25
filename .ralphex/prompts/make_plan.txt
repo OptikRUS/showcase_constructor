@@ -1,4 +1,4 @@
-# Prompt for creating an atomic RALPHEX plan for showcase_constructor
+# Prompt for creating a cohesive vertical milestone RALPHEX plan for showcase_constructor
 
 You are creating a RALPHEX plan for the current FastAPI/Dishka project.
 
@@ -198,7 +198,8 @@ Use this structure:
 - Do not create standalone config/DI/migration unit-test directories for
   infrastructure mechanics.
 - Apply TDD to behavior changes.
-- Each Task should be small enough to finish with green validation.
+- Each Task should be one cohesive vertical milestone that can finish with green
+  validation in one RALPHEX iteration.
 
 ## Validation Commands
 
@@ -209,12 +210,12 @@ Use this structure:
 
 ## Tasks
 
-### Task 1: <one atomic observable result>
+### Task 1: <one cohesive vertical milestone>
 
 **Success Criteria:**
 
-- <verifiable final result>
-- <specific test or scenario that proves it>
+- <verifiable final capability milestone>
+- <specific tests or scenarios that prove every observable result in the milestone>
 - `rtk make quality` exits successfully.
 
 **Implementation Sketch:**
@@ -226,33 +227,59 @@ Use this structure:
 
 **Actions:**
 
-- [ ] Add or update one focused test for the required behavior.
-- [ ] Run the narrowest relevant test and confirm it fails for the expected missing behavior.
-- [ ] Make the minimal production change required for the test to pass.
-- [ ] Re-run the focused test and confirm it passes.
-- [ ] Perform only necessary safe refactoring and re-run the focused test.
+- [ ] Add or update focused tests for all required scenarios in this milestone.
+- [ ] Run the narrowest relevant tests and confirm they fail for the expected missing behavior.
+- [ ] Make the minimal production changes required for the tests to pass.
+- [ ] Re-run the focused tests and confirm they pass.
+- [ ] Perform only necessary safe refactoring and re-run the focused tests.
 - [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
 ````
 
 Continue with sequential `### Task 2:`, `### Task 3:`, and so on.
 
+## Task sizing
+
+Each Task represents one cohesive vertical milestone, not one tiny code edit or
+one endpoint method by default. RALPHEX still executes exactly one Task section
+per iteration, so size Tasks as a complete, reviewable capability slice.
+
+Use one Task for 2-4 tightly related observable results when they belong to the
+same capability, the same auth/publicness decision, the same domain aggregate,
+and the same family of tests. For a medium feature, target roughly 3-5 Task
+sections. For a large feature, target roughly 5-7 Task sections.
+
+It is acceptable to combine pairs such as list/create plus patch/delete for one
+draft resource when owner checks, schemas, storage, use cases, validation, and
+tests form one cohesive slice.
+
+Split Tasks when the work crosses different Product/Security Decisions, public
+and protected API, schema migration and behavioral API slices, unrelated
+domains, different persistence boundaries, or review-only work and production
+behavior.
+
 ## Task rules
 
-1. Task headings must use `### Task N: <specific result>`.
+1. Task headings must use `### Task N: <cohesive vertical milestone>`.
 2. Each Task must contain `Success Criteria` and `Actions`.
-3. `Success Criteria` use normal bullets, not checkboxes.
+3. `Success Criteria` use normal bullets, not checkboxes, and enumerate every
+   scenario inside the milestone.
 4. Add `Implementation Sketch` when it reduces ambiguity.
 5. Executable actions under `Actions` use only `- [ ]`.
 6. Do not put checkboxes outside Task sections.
 7. Each Task must contain at least one unchecked checkbox.
-8. For behavior changes, keep RED, GREEN, refactor, and validation inside the same Task.
+8. For behavior changes, keep the focused tests, expected RED, minimal GREEN,
+   necessary refactor, and validation inside the same Task.
 9. If a RED test is already green, classify the path as `coverage-only` or
    `stale plan`; do not force fake production changes.
 10. Documentation-only Tasks do not need artificial tests, but still end with
     relevant validation.
 11. Do not add a final catch-all testing Task.
-12. Split Tasks that cover multiple behaviors, methods, permissions, response
-    fields, or unrelated layers.
+12. Do not split every endpoint, method, or helper into its own Task when they
+    are part of one cohesive vertical milestone.
+13. Always split Tasks across different Product/Security Decisions, public and
+    protected API, schema migration and behavioral API slices, unrelated
+    domains, different persistence boundaries, or review-only work and
+    production behavior.
 
 ## Final self-check
 

@@ -43,7 +43,7 @@ Parser-critical requirements:
 - `## Constraints`
 - `## Validation Commands`
 - `## Tasks`
-- `### Task N: <specific result>`
+- `### Task N: <cohesive vertical milestone>`
 - executable actions only as `- [ ]` checkboxes inside Task sections
 
 Validation commands for behavior work:
@@ -54,6 +54,30 @@ rtk make types
 rtk make tests
 rtk make quality
 ```
+
+## Task Sizing
+
+Each Task is one cohesive vertical milestone that RALPHEX executes in one
+iteration. It should usually contain 2-4 tightly related observable results when
+they share one capability, one auth/publicness decision, one domain aggregate,
+and one family of tests.
+
+For a medium feature, prefer roughly 3-5 Task sections. For a large feature,
+prefer roughly 5-7 Task sections. Do not split every endpoint, method, or helper
+into a separate Task when the work is one capability slice.
+
+It is acceptable for one Task to combine list/create plus patch/delete for one
+draft resource when owner checks, schemas, storage, use cases, validation, and
+tests are part of the same cohesive vertical milestone.
+
+Always split Tasks across different Product/Security Decisions, public and
+protected API, schema migration and behavioral API slices, unrelated domains,
+different persistence boundaries, or review-only work and production behavior.
+
+Success Criteria list every scenario inside the milestone. Behavior-work Actions
+stay TDD-oriented: focused tests, expected RED, minimal implementation, GREEN,
+necessary refactor, and required validation. Do not add a final catch-all
+testing Task.
 
 ## FastAPI/Dishka Planning Rules
 

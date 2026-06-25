@@ -82,6 +82,31 @@ persistence, custom domain, audit/event, analytics/billing, or custom-code work,
 read `docs/decisions/mvp-boundaries.md`. Unresolved items in that decision record
 remain `product decision required`.
 
+## Task Sizing
+
+Each Task should be one cohesive vertical milestone that RALPHEX can finish in
+one iteration. A Task is not a micro-step by default; it usually covers 2-4
+tightly related observable results when they belong to one capability, one
+auth/publicness decision, one domain aggregate, and one family of tests.
+
+For a medium feature, aim for roughly 3-5 Task sections. For a large feature,
+aim for roughly 5-7 Task sections. Do not split every endpoint, method, or helper
+into its own Task when the work is one reviewable capability slice.
+
+It is acceptable to combine list/create plus patch/delete for one draft resource
+when owner checks, schemas, storage, use cases, validation, and tests are one
+cohesive slice.
+
+Split Tasks across different Product/Security Decisions, public and protected
+API, schema migration and behavioral API slices, unrelated domains, different
+persistence boundaries, or review-only work and production behavior.
+
+Success Criteria must enumerate every scenario inside the milestone. Actions
+remain TDD-oriented for behavior work: add the focused tests, observe the
+expected RED, make the minimal implementation, reach GREEN, refactor only as
+needed, and run the required validation. Do not add a final catch-all testing
+Task.
+
 ## Task Selection
 
 Task execution starts by reading the whole plan, the current progress log, and
