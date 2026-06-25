@@ -35,6 +35,7 @@ class StorageHelper:
         title: str = "Test showcase",
         draft_settings: JsonObject | None = None,
         published_snapshot: JsonObject | None = None,
+        public_id: str | None = None,
     ) -> None:
         await self.session.execute(
             insert(AdminShowcaseModel).values(
@@ -43,6 +44,7 @@ class StorageHelper:
                 title=title,
                 draft_settings=draft_settings or {},
                 published_snapshot=published_snapshot,
+                public_id=public_id,
             )
         )
 
@@ -224,6 +226,27 @@ class StorageHelper:
 
         return model.to_publication_state_domain()
 
+    async def deactivate_admin_showcase_publication(
+        self,
+        *,
+        showcase_id: str,
+        public_id: str,
+        version: int,
+    ) -> None:
+        await self.session.execute(
+            update(AdminShowcaseModel)
+            .where(AdminShowcaseModel.id == showcase_id)
+            .values(
+                publication_version=version,
+                active_published_snapshot_internal_id=None,
+                published_snapshot=None,
+            )
+        )
+        await self.deactivate_published_route_bindings(
+            showcase_id=showcase_id,
+            public_id=public_id,
+        )
+
     async def create_published_route_binding(
         self,
         *,
@@ -267,6 +290,22 @@ class StorageHelper:
         )
 
         return [model.to_domain() for model in result.all()]
+
+    async def deactivate_published_route_bindings(
+        self,
+        *,
+        showcase_id: str,
+        public_id: str,
+    ) -> None:
+        await self.session.execute(
+            update(PublishedRouteBindingModel)
+            .where(
+                PublishedRouteBindingModel.showcase_id == showcase_id,
+                PublishedRouteBindingModel.public_id == public_id,
+                PublishedRouteBindingModel.active.is_(True),
+            )
+            .values(active=False)
+        )
 
     async def list_showcase_audit_records(
         self,

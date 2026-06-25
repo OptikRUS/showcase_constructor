@@ -129,6 +129,16 @@ class PublishedShowcaseSnapshotFactoryKwargs(TypedDict):
     created_at: NotRequired[datetime | None]
 
 
+class PublishedPublicConfigSnapshotPayloadFactoryKwargs(TypedDict):
+    public_id: NotRequired[str]
+    affiliate_id: NotRequired[str]
+    type: NotRequired[str]
+    text_title: NotRequired[str]
+    custom_head_code: NotRequired[str | None]
+    custom_body_code: NotRequired[str | None]
+    extra: NotRequired[JsonObject | None]
+
+
 class FactoryHelper:
     @classmethod
     def admin_showcase(
@@ -396,7 +406,126 @@ class FactoryHelper:
             ),
             metrics_tool=PublicMetricsTool(enabled=True, metrics=("ym:123", "pixel:abc")),
             is_need_to_send_offers_display_and_positions=True,
+            custom_head_code="<script>window.publicHead = true</script>",
+            custom_body_code="<noscript>public body pixel</noscript>",
         )
+
+    @classmethod
+    def published_public_config_snapshot_payload(
+        cls,
+        **kwargs: Unpack[PublishedPublicConfigSnapshotPayloadFactoryKwargs],
+    ) -> JsonObject:
+        public_id = kwargs.get("public_id", "public-showcase-1")
+        payload: JsonObject = {
+            "id": public_id,
+            "affiliate_id": kwargs.get("affiliate_id", "affiliate-public-1"),
+            "type": kwargs.get("type", "popup_offers"),
+            "settings": {
+                "tracking_domain": "track.example.test",
+                "design_id": "default",
+                "color_scheme": "light",
+                "site_background_color": "#ffffff",
+                "widget_background_color": "#f6f7f9",
+                "offers_background_color": "#ffffff",
+                "text_color": "#101828",
+                "usp_text_color": "#175cd3",
+                "cta_color": "#12b76a",
+                "font_family": "Inter",
+                "text_title": kwargs.get("text_title", "Best offers"),
+                "text_subtitle": "Choose an offer",
+                "text_button": "Open",
+                "image_banner_desktop": "https://cdn.example.test/banner-desktop.png",
+                "image_banner_mobile": "https://cdn.example.test/banner-mobile.png",
+                "image_banner_mini": "https://cdn.example.test/banner-mini.png",
+                "offers_placement": "main",
+                "offers_mobile_placement": "bottom",
+                "usp_placement": "above_offers",
+                "alignment": "center",
+                "offset_horizontal": 16,
+                "offset_vertical": 24,
+                "sort_type": "manual",
+                "sort_period": "day",
+            },
+            "platform": {"id": "widgetmarket"},
+            "blocks": [
+                {
+                    "type": "offers",
+                    "title": "Offers",
+                    "offers": [
+                        {
+                            "id": "offer-public-1",
+                            "offer_categories": ["loans"],
+                            "logo_url": "https://cdn.example.test/logo.png",
+                            "rounded_logo_url": "https://cdn.example.test/logo-rounded.png",
+                            "name": "Fast Loan",
+                            "site_name": "Example Bank",
+                            "url": "https://cpa.example.test/click",
+                            "fields": [
+                                {"key": "amount", "value": "100000", "visible": True},
+                                {
+                                    "key": "draftSecret",
+                                    "value": "hidden-draft-value",
+                                    "visible": False,
+                                },
+                            ],
+                        }
+                    ],
+                }
+            ],
+            "widget_info": {
+                "type": "popup_offers",
+                "display_limit": 3,
+                "leads_id_enabled": True,
+                "offers": [
+                    {
+                        "id": "offer-public-1",
+                        "offer_categories": ["loans"],
+                        "logo_url": "https://cdn.example.test/logo.png",
+                        "rounded_logo_url": "https://cdn.example.test/logo-rounded.png",
+                        "name": "Fast Loan",
+                        "site_name": "Example Bank",
+                        "url": "https://cpa.example.test/click",
+                        "fields": [
+                            {"key": "amount", "value": "100000", "visible": True},
+                            {
+                                "key": "draftSecret",
+                                "value": "hidden-draft-value",
+                                "visible": False,
+                            },
+                        ],
+                    },
+                ],
+                "trigger_groups": [{"type": "page_open", "delay_secs": 2}],
+            },
+            "constant_url_params_tool": {
+                "enabled": True,
+                "params": [{"key": "aff_sub7", "value": "showcase"}],
+            },
+            "transferred_url_params_tool": {
+                "enabled": True,
+                "params": [{"key": "utm_source", "value": "aff_sub1"}],
+            },
+            "metrics_tool": {"enabled": True, "metrics": ["ym:123", "pixel:abc"]},
+            "is_need_to_send_offers_display_and_positions": True,
+        }
+        custom_head_code = kwargs.get(
+            "custom_head_code",
+            "<script>window.publicHead = true</script>",
+        )
+        custom_body_code = kwargs.get(
+            "custom_body_code",
+            "<noscript>public body pixel</noscript>",
+        )
+        if custom_head_code is not None:
+            payload["custom_head_code"] = custom_head_code
+        if custom_body_code is not None:
+            payload["custom_body_code"] = custom_body_code
+
+        extra = kwargs.get("extra")
+        if extra is not None:
+            payload.update(extra)
+
+        return payload
 
     @classmethod
     def widget_public_config_snapshot(cls) -> PublishedPublicConfigSnapshot:
@@ -414,6 +543,8 @@ class FactoryHelper:
             is_need_to_send_offers_display_and_positions=(
                 snapshot.is_need_to_send_offers_display_and_positions
             ),
+            custom_head_code=snapshot.custom_head_code,
+            custom_body_code=snapshot.custom_body_code,
         )
 
     @classmethod
@@ -433,4 +564,6 @@ class FactoryHelper:
             is_need_to_send_offers_display_and_positions=(
                 snapshot.is_need_to_send_offers_display_and_positions
             ),
+            custom_head_code=snapshot.custom_head_code,
+            custom_body_code=snapshot.custom_body_code,
         )

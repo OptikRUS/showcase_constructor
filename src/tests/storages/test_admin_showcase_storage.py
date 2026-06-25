@@ -4,6 +4,7 @@ from src.core.showcases.exceptions import (
     AdminShowcaseDraftBlockNotFoundError,
     AdminShowcaseDraftOfferNotFoundError,
     AdminShowcaseNotFoundError,
+    PublicShowcaseNotFoundError,
 )
 from src.core.showcases.schemas import (
     AdminShowcaseDraftBlockCreateParams,
@@ -233,6 +234,176 @@ class TestDatabaseAdminShowcaseStorage(FactoryFixture, StorageFixture):
         assert len(snapshots) == 1
         assert snapshots[0].snapshot == snapshot
         assert route_bindings[0].active is False
+
+    async def test_gets_active_public_config_snapshot_by_public_id_only(self) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-active-public-read-storage",
+            owner_partner_id="partner-1",
+            title="Active public read storage showcase",
+        )
+        storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
+        old_snapshot = self.factory.published_public_config_snapshot_payload(
+            public_id="public-active-read-storage",
+            text_title="Old inactive title",
+        )
+        active_snapshot = self.factory.published_public_config_snapshot_payload(
+            public_id="public-active-read-storage",
+            affiliate_id="affiliate-active-read-storage",
+            text_title="Active public title",
+            custom_head_code="<script>window.activeStorageHead = true</script>",
+            custom_body_code="<noscript>active storage body</noscript>",
+        )
+        await storage.create_published_snapshot(
+            showcase_id="showcase-active-public-read-storage",
+            public_id="public-active-read-storage",
+            version=1,
+            snapshot=old_snapshot,
+            created_by_user_id="admin-user-1",
+            created_by_partner_id="partner-1",
+        )
+        await storage.create_published_snapshot(
+            showcase_id="showcase-active-public-read-storage",
+            public_id="public-active-read-storage",
+            version=2,
+            snapshot=active_snapshot,
+            created_by_user_id="admin-user-1",
+            created_by_partner_id="partner-1",
+        )
+        await storage.activate_published_snapshot(
+            showcase_id="showcase-active-public-read-storage",
+            public_id="public-active-read-storage",
+            version=2,
+            snapshot=active_snapshot,
+        )
+
+        result = await storage.get_active_public_config_snapshot(
+            public_id="public-active-read-storage"
+        )
+
+        assert result.id == "public-active-read-storage"
+        assert result.affiliate_id == "affiliate-active-read-storage"
+        assert result.settings.text_title == "Active public title"
+        assert result.custom_head_code == "<script>window.activeStorageHead = true</script>"
+        assert result.custom_body_code == "<noscript>active storage body</noscript>"
+        assert result.blocks[0].offers[0].fields == (
+            self.factory.published_public_config_snapshot().blocks[0].offers[0].fields[0],
+        )
+        assert not hasattr(result, "internal_id")
+
+    async def test_get_active_public_config_snapshot_raises_for_unpublished_public_id(
+        self,
+    ) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-inactive-public-read-storage",
+            owner_partner_id="partner-1",
+            title="Inactive public read storage showcase",
+            public_id="public-inactive-read-storage",
+        )
+        storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
+        await storage.create_published_snapshot(
+            showcase_id="showcase-inactive-public-read-storage",
+            public_id="public-inactive-read-storage",
+            version=1,
+            snapshot=self.factory.published_public_config_snapshot_payload(
+                public_id="public-inactive-read-storage",
+            ),
+            created_by_user_id="admin-user-1",
+            created_by_partner_id="partner-1",
+        )
+
+        with pytest.raises(PublicShowcaseNotFoundError) as error:
+            await storage.get_active_public_config_snapshot(
+                public_id="public-inactive-read-storage"
+            )
+
+        assert error.value.detail == "PUBLIC_SHOWCASE_NOT_FOUND_ERROR"
+
+    async def test_resolves_active_public_config_snapshot_from_route_binding(self) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-resolve-public-read-storage",
+            owner_partner_id="partner-1",
+            title="Resolve public read storage showcase",
+        )
+        storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
+        snapshot = self.factory.published_public_config_snapshot_payload(
+            public_id="public-resolve-read-storage",
+            affiliate_id="affiliate-resolve-read-storage",
+            text_title="Resolved storage title",
+        )
+        await storage.create_published_snapshot(
+            showcase_id="showcase-resolve-public-read-storage",
+            public_id="public-resolve-read-storage",
+            version=1,
+            snapshot=snapshot,
+            created_by_user_id="admin-user-1",
+            created_by_partner_id="partner-1",
+        )
+        await storage.activate_published_snapshot(
+            showcase_id="showcase-resolve-public-read-storage",
+            public_id="public-resolve-read-storage",
+            version=1,
+            snapshot=snapshot,
+        )
+        await storage.create_published_route_binding(
+            showcase_id="showcase-resolve-public-read-storage",
+            public_id="public-resolve-read-storage",
+            host="resolve-storage.example.test",
+            path="/loans",
+        )
+
+        result = await storage.resolve_active_public_config_snapshot(
+            host="resolve-storage.example.test",
+            path="/loans",
+        )
+
+        assert result.id == "public-resolve-read-storage"
+        assert result.affiliate_id == "affiliate-resolve-read-storage"
+        assert result.settings.text_title == "Resolved storage title"
+
+    async def test_resolve_active_public_config_snapshot_ignores_inactive_binding(
+        self,
+    ) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-inactive-resolve-storage",
+            owner_partner_id="partner-1",
+            title="Inactive resolve storage showcase",
+        )
+        storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
+        snapshot = self.factory.published_public_config_snapshot_payload(
+            public_id="public-inactive-resolve-storage",
+        )
+        await storage.create_published_snapshot(
+            showcase_id="showcase-inactive-resolve-storage",
+            public_id="public-inactive-resolve-storage",
+            version=1,
+            snapshot=snapshot,
+            created_by_user_id="admin-user-1",
+            created_by_partner_id="partner-1",
+        )
+        await storage.activate_published_snapshot(
+            showcase_id="showcase-inactive-resolve-storage",
+            public_id="public-inactive-resolve-storage",
+            version=1,
+            snapshot=snapshot,
+        )
+        await storage.create_published_route_binding(
+            showcase_id="showcase-inactive-resolve-storage",
+            public_id="public-inactive-resolve-storage",
+            host="inactive-resolve-storage.example.test",
+            path="/loans",
+        )
+        await storage.deactivate_published_route_bindings(
+            showcase_id="showcase-inactive-resolve-storage",
+            public_id="public-inactive-resolve-storage",
+        )
+
+        with pytest.raises(PublicShowcaseNotFoundError) as error:
+            await storage.resolve_active_public_config_snapshot(
+                host="inactive-resolve-storage.example.test",
+                path="/loans",
+            )
+
+        assert error.value.detail == "PUBLIC_SHOWCASE_NOT_FOUND_ERROR"
 
     async def test_appends_safe_audit_record_without_raw_sensitive_metadata(self) -> None:
         await self.storage_helper.create_admin_showcase(

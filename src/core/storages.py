@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 
+from src.core.public_config.schemas import PublishedPublicConfigSnapshot
 from src.core.showcases.schemas import (
     AdminShowcase,
     AdminShowcaseDraft,
@@ -17,6 +18,23 @@ from src.core.showcases.schemas import (
     PublishedShowcaseSnapshot,
     ShowcaseAuditRecord,
 )
+
+
+class PublicShowcaseStorage(metaclass=ABCMeta):
+    @abstractmethod
+    async def get_active_public_config_snapshot(
+        self,
+        *,
+        public_id: str,
+    ) -> PublishedPublicConfigSnapshot: ...
+
+    @abstractmethod
+    async def resolve_active_public_config_snapshot(
+        self,
+        *,
+        host: str,
+        path: str,
+    ) -> PublishedPublicConfigSnapshot: ...
 
 
 class AdminShowcaseStorage(metaclass=ABCMeta):

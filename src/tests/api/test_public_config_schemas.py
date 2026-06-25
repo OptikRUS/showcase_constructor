@@ -94,6 +94,8 @@ class TestPublicConfigResponseSchema(FactoryFixture):
             },
             "metricsTool": {"enabled": True, "metrics": ["ym:123", "pixel:abc"]},
             "is_need_to_send_offers_display_and_positions": True,
+            "customHeadCode": "<script>window.publicHead = true</script>",
+            "customBodyCode": "<noscript>public body pixel</noscript>",
         }
 
     def test_serializes_widget_config_without_blocks(self) -> None:
@@ -176,6 +178,7 @@ class TestPublicConfigResponseSchema(FactoryFixture):
             ("privateStats", {"views": 42}),
             ("serviceSettings", {"token": "private-token"}),
             ("createdBy", "admin@example.test"),
+            ("customCodeReviewMetadata", {"status": "private"}),
         ],
     )
     def test_rejects_top_level_private_fields(

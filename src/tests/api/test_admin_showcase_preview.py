@@ -148,6 +148,8 @@ class TestAdminShowcasePreviewAPI(APIFixture, FactoryFixture, StorageFixture):
                 },
             ],
             "widgetInfo": None,
+            "customHeadCode": "<script>window.previewHead = true</script>",
+            "customBodyCode": "<noscript>preview body pixel</noscript>",
         }
         assert 'data-preview="true"' in payload["html"]
         assert 'data-preview-mode="mobile"' in payload["html"]

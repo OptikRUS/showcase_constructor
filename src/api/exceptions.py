@@ -10,7 +10,10 @@ from src.core.admin_auth.exceptions import (
     AdminResourceNotFoundError,
 )
 from src.core.exceptions import BaseExceptionError
-from src.core.showcases.exceptions import AdminShowcasePublicationValidationError
+from src.core.showcases.exceptions import (
+    AdminShowcasePublicationValidationError,
+    PublicShowcaseNotFoundError,
+)
 
 ExceptionHandler = Callable[[Request, Any], Coroutine[Any, Any, Response]]
 ExceptionHandlers = dict[int | type[Exception], ExceptionHandler]
@@ -36,6 +39,7 @@ exception_handlers: ExceptionHandlers = {
     AdminAuthenticationRequiredError: handler(status_code=status.HTTP_401_UNAUTHORIZED),
     AdminPermissionDeniedError: handler(status_code=status.HTTP_403_FORBIDDEN),
     AdminResourceNotFoundError: handler(status_code=status.HTTP_404_NOT_FOUND),
+    PublicShowcaseNotFoundError: handler(status_code=status.HTTP_404_NOT_FOUND),
     AdminShowcasePublicationValidationError: handler(
         status_code=status.HTTP_422_UNPROCESSABLE_CONTENT
     ),

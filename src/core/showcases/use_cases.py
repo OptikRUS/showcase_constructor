@@ -186,7 +186,7 @@ class PublishAdminShowcaseUseCase:
             offers=offers,
             public_id=public_id,
         )
-        snapshot = public_config_snapshot_to_json(snapshot=config, settings=draft.settings)
+        snapshot = public_config_snapshot_to_json(snapshot=config)
         await self.storage.append_showcase_audit_record(
             showcase_id=showcase_id,
             action="showcase_published",

@@ -106,3 +106,5 @@ class PublishedPublicConfigSnapshot:
     is_need_to_send_offers_display_and_positions: bool
     blocks: tuple[PublicBlock, ...] = ()
     widget_info: PublicWidgetInfo | None = None
+    custom_head_code: str | None = None
+    custom_body_code: str | None = None

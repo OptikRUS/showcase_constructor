@@ -20,3 +20,7 @@ class AdminShowcaseDraftOfferNotFoundError(AdminResourceNotFoundError):
 
 class AdminShowcasePublicationValidationError(BaseExceptionError):
     detail: str = "ADMIN_SHOWCASE_PUBLICATION_VALIDATION_ERROR"
+
+
+class PublicShowcaseNotFoundError(BaseExceptionError):
+    detail: str = "PUBLIC_SHOWCASE_NOT_FOUND_ERROR"

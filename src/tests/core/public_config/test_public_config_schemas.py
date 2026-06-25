@@ -48,6 +48,8 @@ class TestPublishedPublicConfigSnapshot(FactoryFixture):
         assert snapshot.transferred_url_params_tool.params[0].value == "aff_sub1"
         assert snapshot.metrics_tool.metrics == ("ym:123", "pixel:abc")
         assert snapshot.is_need_to_send_offers_display_and_positions is True
+        assert snapshot.custom_head_code == "<script>window.publicHead = true</script>"
+        assert snapshot.custom_body_code == "<noscript>public body pixel</noscript>"
         assert offer.id == "offer-public-1"
         assert offer.offer_categories == ("loans",)
         assert offer_field == PublicOfferField(key="amount", value="100000", visible=True)

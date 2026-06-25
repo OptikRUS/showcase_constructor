@@ -116,6 +116,8 @@ class PublicConfigResponse(PublicConfigBoundaryModel):
     )
     blocks: tuple[PublicBlockResponse, ...] = ()
     widget_info: PublicWidgetInfoResponse | None = None
+    custom_head_code: str | None = None
+    custom_body_code: str | None = None
 
     @classmethod
     def from_domain(cls, snapshot: PublishedPublicConfigSnapshot) -> Self:

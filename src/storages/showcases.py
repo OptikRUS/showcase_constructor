@@ -1,13 +1,16 @@
 from dataclasses import dataclass
 
-from sqlalchemy import delete, func, insert, literal, select, update
+from sqlalchemy import and_, delete, func, insert, literal, select, update
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.public_config.projections import public_config_snapshot_from_json
+from src.core.public_config.schemas import PublishedPublicConfigSnapshot
 from src.core.showcases.exceptions import (
     AdminShowcaseDraftBlockNotFoundError,
     AdminShowcaseDraftOfferNotFoundError,
     AdminShowcaseNotFoundError,
+    PublicShowcaseNotFoundError,
 )
 from src.core.showcases.schemas import (
     AdminShowcase,
@@ -27,7 +30,7 @@ from src.core.showcases.schemas import (
     PublishedShowcaseSnapshot,
     ShowcaseAuditRecord,
 )
-from src.core.storages import AdminShowcaseStorage
+from src.core.storages import AdminShowcaseStorage, PublicShowcaseStorage
 from src.storages.models import (
     AdminShowcaseDraftBlockModel,
     AdminShowcaseDraftOfferModel,
@@ -87,8 +90,64 @@ UNSAFE_AUDIT_METADATA_KEYS = frozenset(
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class DatabaseAdminShowcaseStorage(AdminShowcaseStorage):
+class DatabaseAdminShowcaseStorage(AdminShowcaseStorage, PublicShowcaseStorage):
     session: AsyncSession
+
+    async def get_active_public_config_snapshot(
+        self,
+        *,
+        public_id: str,
+    ) -> PublishedPublicConfigSnapshot:
+        snapshot = await self.session.scalar(
+            select(PublishedShowcaseSnapshotModel.snapshot)
+            .join(
+                AdminShowcaseModel,
+                AdminShowcaseModel.active_published_snapshot_internal_id
+                == PublishedShowcaseSnapshotModel.internal_id,
+            )
+            .where(
+                AdminShowcaseModel.public_id == public_id,
+                PublishedShowcaseSnapshotModel.public_id == public_id,
+            )
+        )
+
+        if snapshot is None:
+            raise PublicShowcaseNotFoundError
+
+        return public_config_snapshot_from_json(snapshot=snapshot)
+
+    async def resolve_active_public_config_snapshot(
+        self,
+        *,
+        host: str,
+        path: str,
+    ) -> PublishedPublicConfigSnapshot:
+        snapshot = await self.session.scalar(
+            select(PublishedShowcaseSnapshotModel.snapshot)
+            .join(
+                AdminShowcaseModel,
+                AdminShowcaseModel.active_published_snapshot_internal_id
+                == PublishedShowcaseSnapshotModel.internal_id,
+            )
+            .join(
+                PublishedRouteBindingModel,
+                and_(
+                    PublishedRouteBindingModel.showcase_id == AdminShowcaseModel.id,
+                    PublishedRouteBindingModel.public_id
+                    == PublishedShowcaseSnapshotModel.public_id,
+                ),
+            )
+            .where(
+                PublishedRouteBindingModel.host == host,
+                PublishedRouteBindingModel.path == path,
+                PublishedRouteBindingModel.active.is_(True),
+            )
+        )
+
+        if snapshot is None:
+            raise PublicShowcaseNotFoundError
+
+        return public_config_snapshot_from_json(snapshot=snapshot)
 
     async def get_by_id(self, *, showcase_id: str) -> AdminShowcase:
         model = await self.session.scalar(

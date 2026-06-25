@@ -22,6 +22,12 @@ class APIHelper:
     def get_public_config(self, public_id: str) -> Response:
         return self.client.get(f"/api/v1/public/showcases/{public_id}")
 
+    def resolve_public_config(self, *, host: str, path: str) -> Response:
+        return self.client.get(
+            "/api/v1/public/showcases/resolve",
+            params={"host": host, "path": path},
+        )
+
     def get_admin_auth_context(self, headers: Mapping[str, str] | None = None) -> Response:
         return self.client.get("/api/v1/admin/auth/context", headers=headers)
 

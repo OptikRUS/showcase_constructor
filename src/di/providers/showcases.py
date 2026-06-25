@@ -3,6 +3,10 @@ from uuid import UUID
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.public_config.use_cases import (
+    GetPublishedPublicConfigUseCase,
+    ResolvePublishedPublicConfigUseCase,
+)
 from src.core.showcases.cache import PublicShowcaseCacheInvalidator
 from src.core.showcases.use_cases import (
     BuildAdminShowcasePreviewUseCase,
@@ -18,7 +22,7 @@ from src.core.showcases.use_cases import (
     UnpublishAdminShowcaseUseCase,
     UpdateAdminShowcaseDraftSettingsUseCase,
 )
-from src.core.storages import AdminShowcaseStorage
+from src.core.storages import AdminShowcaseStorage, PublicShowcaseStorage
 from src.services.showcases import NoopPublicShowcaseCacheInvalidator
 from src.storages.showcases import DatabaseAdminShowcaseStorage
 
@@ -29,8 +33,26 @@ class ShowcaseProvider(Provider):
         return DatabaseAdminShowcaseStorage(session=session)
 
     @provide(scope=Scope.REQUEST)
+    def get_public_showcase_storage(self, session: AsyncSession) -> PublicShowcaseStorage:
+        return DatabaseAdminShowcaseStorage(session=session)
+
+    @provide(scope=Scope.REQUEST)
     def get_public_showcase_cache_invalidator(self) -> PublicShowcaseCacheInvalidator:
         return NoopPublicShowcaseCacheInvalidator()
+
+    @provide(scope=Scope.REQUEST)
+    def get_published_public_config_use_case(
+        self,
+        storage: PublicShowcaseStorage,
+    ) -> GetPublishedPublicConfigUseCase:
+        return GetPublishedPublicConfigUseCase(storage=storage)
+
+    @provide(scope=Scope.REQUEST)
+    def get_resolve_published_public_config_use_case(
+        self,
+        storage: PublicShowcaseStorage,
+    ) -> ResolvePublishedPublicConfigUseCase:
+        return ResolvePublishedPublicConfigUseCase(storage=storage)
 
     @provide(scope=Scope.REQUEST)
     def get_update_admin_showcase_draft_settings_use_case(

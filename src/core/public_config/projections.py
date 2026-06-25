@@ -65,7 +65,6 @@ def build_published_public_config(
 def public_config_snapshot_to_json(
     *,
     snapshot: PublishedPublicConfigSnapshot,
-    settings: JsonObject,
 ) -> JsonObject:
     data: JsonObject = {
         "id": snapshot.id,
@@ -92,11 +91,46 @@ def public_config_snapshot_to_json(
             if snapshot.widget_info is not None
             else None
         ),
-        "custom_head_code": _str_setting(settings=settings, key="custom_head_code"),
-        "custom_body_code": _str_setting(settings=settings, key="custom_body_code"),
+        "custom_head_code": snapshot.custom_head_code,
+        "custom_body_code": snapshot.custom_body_code,
     }
 
     return data
+
+
+def public_config_snapshot_from_json(
+    *,
+    snapshot: JsonObject,
+) -> PublishedPublicConfigSnapshot:
+    return PublishedPublicConfigSnapshot(
+        id=_str_value(snapshot.get("id")) or "",
+        affiliate_id=_str_value(snapshot.get("affiliate_id")) or "",
+        type=_str_value(snapshot.get("type")) or "showcase",
+        settings=_public_settings(
+            settings=_json_object_value(value=snapshot.get("settings")),
+        ),
+        platform=PublicPlatform(
+            id=_str_value(_json_object_value(value=snapshot.get("platform")).get("id"))
+            or "widgetmarket",
+        ),
+        constant_url_params_tool=_url_params_tool_from_json(
+            value=snapshot.get("constant_url_params_tool"),
+        ),
+        transferred_url_params_tool=_url_params_tool_from_json(
+            value=snapshot.get("transferred_url_params_tool"),
+        ),
+        metrics_tool=_metrics_tool_from_json(value=snapshot.get("metrics_tool")),
+        is_need_to_send_offers_display_and_positions=_bool_value(
+            snapshot.get("is_need_to_send_offers_display_and_positions")
+        ),
+        blocks=tuple(
+            _public_block_from_json(value=raw_block)
+            for raw_block in _json_list_value(value=snapshot.get("blocks"))
+        ),
+        widget_info=_public_widget_info_from_json(value=snapshot.get("widget_info")),
+        custom_head_code=_str_value(snapshot.get("custom_head_code")),
+        custom_body_code=_str_value(snapshot.get("custom_body_code")),
+    )
 
 
 def _build_public_config(
@@ -146,6 +180,8 @@ def _build_public_config(
             settings=draft.settings,
             offers=offers,
         ),
+        custom_head_code=_str_setting(settings=draft.settings, key="custom_head_code"),
+        custom_body_code=_str_setting(settings=draft.settings, key="custom_body_code"),
     )
 
 
@@ -335,6 +371,107 @@ def _metrics_tool(*, settings: JsonObject) -> PublicMetricsTool:
     )
 
 
+def _public_block_from_json(*, value: JsonValue) -> PublicBlock:
+    block = _json_object_value(value=value)
+
+    return PublicBlock(
+        type=_str_value(block.get("type")) or "",
+        title=_str_value(block.get("title")),
+        offers=tuple(
+            _public_offer_from_json(value=raw_offer)
+            for raw_offer in _json_list_value(value=block.get("offers"))
+        ),
+    )
+
+
+def _public_widget_info_from_json(*, value: JsonValue) -> PublicWidgetInfo | None:
+    widget_info = _json_object_value(value=value)
+    if not widget_info:
+        return None
+
+    return PublicWidgetInfo(
+        type=_str_value(widget_info.get("type")) or "",
+        display_limit=_int_value(widget_info.get("display_limit")) or 0,
+        leads_id_enabled=_bool_value(widget_info.get("leads_id_enabled")),
+        offers=tuple(
+            _public_offer_from_json(value=raw_offer)
+            for raw_offer in _json_list_value(value=widget_info.get("offers"))
+        ),
+        trigger_groups=tuple(
+            _public_trigger_group_from_json(value=raw_trigger_group)
+            for raw_trigger_group in _json_list_value(value=widget_info.get("trigger_groups"))
+        ),
+    )
+
+
+def _public_offer_from_json(*, value: JsonValue) -> PublicOffer:
+    offer = _json_object_value(value=value)
+
+    return PublicOffer(
+        id=_str_value(offer.get("id")) or "",
+        offer_categories=tuple(
+            category
+            for category in _json_list_value(value=offer.get("offer_categories"))
+            if isinstance(category, str)
+        ),
+        logo_url=_str_value(offer.get("logo_url")) or "",
+        rounded_logo_url=_str_value(offer.get("rounded_logo_url")) or "",
+        name=_str_value(offer.get("name")) or "",
+        site_name=_str_value(offer.get("site_name")) or "",
+        url=_str_value(offer.get("url")) or "",
+        fields=tuple(
+            field
+            for raw_field in _json_list_value(value=offer.get("fields"))
+            if (field := _public_offer_field_from_json(value=raw_field)) is not None
+        ),
+    )
+
+
+def _public_offer_field_from_json(*, value: JsonValue) -> PublicOfferField | None:
+    field = _json_object_value(value=value)
+    if not _bool_value(field.get("visible")):
+        return None
+
+    field_key = _str_value(field.get("key"))
+    field_value = _str_value(field.get("value"))
+    if field_key is None or field_value is None:
+        return None
+
+    return PublicOfferField(key=field_key, value=field_value, visible=True)
+
+
+def _public_trigger_group_from_json(*, value: JsonValue) -> PublicTriggerGroup:
+    trigger_group = _json_object_value(value=value)
+
+    return PublicTriggerGroup(
+        type=_str_value(trigger_group.get("type")) or "",
+        delay_secs=_int_value(trigger_group.get("delay_secs")),
+    )
+
+
+def _url_params_tool_from_json(*, value: JsonValue) -> PublicUrlParamsTool:
+    tool = _json_object_value(value=value)
+
+    return PublicUrlParamsTool(
+        enabled=_bool_value(tool.get("enabled")),
+        params=_url_params(value=tool.get("params")),
+    )
+
+
+def _metrics_tool_from_json(*, value: JsonValue) -> PublicMetricsTool:
+    tool = _json_object_value(value=value)
+    raw_metrics = tool.get("metrics")
+
+    return PublicMetricsTool(
+        enabled=_bool_value(tool.get("enabled")),
+        metrics=(
+            tuple(metric for metric in raw_metrics if isinstance(metric, str))
+            if isinstance(raw_metrics, list)
+            else ()
+        ),
+    )
+
+
 def _settings_to_json(*, settings: PublicConfigSettings) -> JsonObject:
     return {
         "tracking_domain": settings.tracking_domain,
@@ -443,3 +580,11 @@ def _int_value(value: JsonValue) -> int | None:
 
 def _bool_value(value: JsonValue) -> bool:
     return value if isinstance(value, bool) else False
+
+
+def _json_object_value(*, value: JsonValue) -> JsonObject:
+    return value if isinstance(value, dict) else {}
+
+
+def _json_list_value(*, value: JsonValue) -> list[JsonValue]:
+    return value if isinstance(value, list) else []

@@ -507,12 +507,12 @@ leaving unresolved host/path routing and cache-backend details explicit.
 
 **Actions:**
 
-- [ ] Add focused API/core/storage tests for public-id lookup, explicit
+- [x] Add focused API/core/storage tests for public-id lookup, explicit
   host/path resolve lookup, no-auth public access, missing/unpublished/inactive
   `404`, unsupported methods, and no public leakage of draft/private fields.
-- [ ] Run the narrowest relevant tests and confirm they fail for the expected
+- [x] Run the narrowest relevant tests and confirm they fail for the expected
   missing public router/use case/storage behavior.
-- [ ] Make the minimal production changes required for the tests to pass.
-- [ ] Re-run the focused tests and confirm they pass.
-- [ ] Perform only necessary safe refactoring and re-run the focused tests.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Make the minimal production changes required for the tests to pass.
+- [x] Re-run the focused tests and confirm they pass.
+- [x] Perform only necessary safe refactoring and re-run the focused tests.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
