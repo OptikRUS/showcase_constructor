@@ -29,7 +29,11 @@ from src.core.showcases.use_cases import (
 router = APIRouter(prefix="/api/v1/showcases", tags=["showcases"], route_class=DishkaRoute)
 
 
-@router.patch(path="/{showcase_id}", status_code=status.HTTP_200_OK)
+@router.patch(
+    path="/{showcase_id}",
+    status_code=status.HTTP_200_OK,
+    response_model_exclude_none=True,
+)
 async def patch_showcase_draft_settings(
     showcase_id: str,
     body: AdminShowcaseDraftPatchRequest,

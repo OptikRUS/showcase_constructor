@@ -195,6 +195,70 @@ class TestDatabaseAdminShowcaseStorage(FactoryFixture, StorageFixture):
         persisted = await storage.get_draft_by_id(showcase_id="showcase-1")
         assert persisted == result
 
+    async def test_updates_custom_code_draft_settings_without_changing_publication_rows(
+        self,
+    ) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-custom-code-storage",
+            owner_partner_id="partner-1",
+            title="Custom code storage showcase",
+            draft_settings={"text_title": "Draft title"},
+            published_snapshot={
+                "id": "public-custom-code-storage",
+                "settings": {"text_title": "Published title"},
+            },
+        )
+        storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
+        snapshot = await storage.create_published_snapshot(
+            showcase_id="showcase-custom-code-storage",
+            public_id="public-custom-code-storage",
+            version=1,
+            snapshot={
+                "id": "public-custom-code-storage",
+                "settings": {
+                    "text_title": "Published title",
+                    "custom_head_code": "<script>window.published = true</script>",
+                },
+            },
+            created_by_user_id="admin-user-1",
+            created_by_partner_id="partner-1",
+        )
+        route_binding = await storage.create_published_route_binding(
+            showcase_id="showcase-custom-code-storage",
+            public_id="public-custom-code-storage",
+            host="offers.example.test",
+            path="/custom-code",
+        )
+        params = AdminShowcaseDraftSettingsPatchParams(
+            settings={
+                "custom_head_code": "<script>window.draftHead = true</script>",
+                "custom_body_code": "<noscript>draft body</noscript>",
+            }
+        )
+
+        result = await storage.update_draft_settings(
+            showcase_id="showcase-custom-code-storage",
+            params=params,
+        )
+
+        assert result.settings == {
+            "text_title": "Draft title",
+            "custom_head_code": "<script>window.draftHead = true</script>",
+            "custom_body_code": "<noscript>draft body</noscript>",
+        }
+        assert result.published_snapshot == {
+            "id": "public-custom-code-storage",
+            "settings": {"text_title": "Published title"},
+        }
+        snapshots = await storage.list_published_snapshots(
+            showcase_id="showcase-custom-code-storage"
+        )
+        route_bindings = await storage.list_published_route_bindings(
+            showcase_id="showcase-custom-code-storage"
+        )
+        assert snapshots == [snapshot]
+        assert route_bindings == [route_binding]
+
     async def test_empty_draft_settings_patch_returns_unchanged_draft(self) -> None:
         await self.storage_helper.create_admin_showcase(
             id="showcase-settings-storage-empty-patch",

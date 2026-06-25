@@ -128,6 +128,73 @@ class TestAdminShowcaseDraftSettingsAPI(APIFixture, StorageFixture):
         }
         assert persisted.published_snapshot == published_snapshot
 
+    async def test_patches_custom_head_body_code_with_warning_and_audit(self) -> None:
+        published_snapshot: JsonObject = {
+            "id": "public-showcase-api-custom-code",
+            "settings": {
+                "text_title": "Published title",
+                "custom_head_code": "<script>window.publishedHead = true</script>",
+            },
+        }
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-api-custom-code",
+            owner_partner_id="partner-1",
+            title="Custom code showcase",
+            draft_settings={
+                "text_title": "Draft title",
+                "custom_head_code": "<script>window.oldHead = true</script>",
+            },
+            published_snapshot=published_snapshot,
+        )
+        await self.storage_helper.commit()
+
+        response = self.api.patch_admin_showcase_draft_settings(
+            showcase_id="showcase-api-custom-code",
+            json={
+                "customHeadCode": "<script>window.newHead = true</script>",
+                "customBodyCode": "<noscript>body pixel</noscript>",
+            },
+        )
+
+        assert response.status_code == codes.OK
+        assert response.json() == {
+            "id": "showcase-api-custom-code",
+            "title": "Custom code showcase",
+            "settings": {
+                "textTitle": "Draft title",
+                "customHeadCode": "<script>window.newHead = true</script>",
+                "customBodyCode": "<noscript>body pixel</noscript>",
+            },
+            "customCodeWarning": (
+                "Custom frontend code is stored as owner-controlled frontend data; "
+                "backend execution is disabled."
+            ),
+        }
+
+        persisted = await self.storage_helper.get_admin_showcase_draft(
+            showcase_id="showcase-api-custom-code"
+        )
+        assert persisted.settings == {
+            "text_title": "Draft title",
+            "custom_head_code": "<script>window.newHead = true</script>",
+            "custom_body_code": "<noscript>body pixel</noscript>",
+        }
+        assert persisted.published_snapshot == published_snapshot
+        audit_records = await self.storage_helper.list_showcase_audit_records(
+            showcase_id="showcase-api-custom-code"
+        )
+        assert len(audit_records) == 1
+        audit_record = audit_records[0]
+        assert audit_record.action == "custom_code_updated"
+        assert audit_record.actor_user_id == "admin-user-1"
+        assert audit_record.actor_partner_id == "partner-1"
+        assert audit_record.metadata == {
+            "changed_fields": ["customHeadCode", "customBodyCode"],
+            "custom_code_locations": ["head", "body"],
+        }
+        assert "window.newHead" not in str(audit_record.metadata)
+        assert "body pixel" not in str(audit_record.metadata)
+
     async def test_forbids_foreign_owner_draft_settings_patch(self) -> None:
         await self.storage_helper.create_admin_showcase(
             id="showcase-api-settings-foreign",
@@ -140,7 +207,7 @@ class TestAdminShowcaseDraftSettingsAPI(APIFixture, StorageFixture):
 
         response = self.api.patch_admin_showcase_draft_settings(
             showcase_id="showcase-api-settings-foreign",
-            json={"designId": "modern"},
+            json={"customHeadCode": "<script>window.foreign = true</script>"},
         )
 
         assert response.status_code == codes.FORBIDDEN
@@ -151,6 +218,10 @@ class TestAdminShowcaseDraftSettingsAPI(APIFixture, StorageFixture):
         )
         assert persisted.settings == {"design_id": "classic"}
         assert persisted.published_snapshot == {"id": "public-foreign"}
+        audit_records = await self.storage_helper.list_showcase_audit_records(
+            showcase_id="showcase-api-settings-foreign"
+        )
+        assert audit_records == []
 
     def test_returns_not_found_for_missing_showcase(self) -> None:
         response = self.api.patch_admin_showcase_draft_settings(
@@ -175,7 +246,7 @@ class TestAdminShowcaseDraftSettingsNoAuthAPI(APIFixture, StorageFixture):
 
         response = self.no_auth_api.patch_admin_showcase_draft_settings(
             showcase_id="showcase-api-settings-no-auth",
-            json={"designId": "modern"},
+            json={"customBodyCode": "<noscript>no auth</noscript>"},
         )
 
         assert response.status_code == codes.UNAUTHORIZED
@@ -186,3 +257,7 @@ class TestAdminShowcaseDraftSettingsNoAuthAPI(APIFixture, StorageFixture):
         )
         assert persisted.settings == {"design_id": "classic"}
         assert persisted.published_snapshot == {"id": "public-no-auth"}
+        audit_records = await self.storage_helper.list_showcase_audit_records(
+            showcase_id="showcase-api-settings-no-auth"
+        )
+        assert audit_records == []

@@ -15,6 +15,7 @@ from src.core.public_config.schemas import (
 )
 from src.core.showcases.schemas import (
     AdminShowcase,
+    AdminShowcaseDraft,
     AdminShowcaseDraftBlock,
     AdminShowcaseDraftBlockCreateParams,
     AdminShowcaseDraftBlockPatchParams,
@@ -22,6 +23,7 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraftOfferCreateParams,
     AdminShowcaseDraftOfferField,
     AdminShowcaseDraftOfferPatchParams,
+    AdminShowcaseDraftSettingsPatchParams,
     AdminShowcaseUpdateParams,
     JsonObject,
     JsonValue,
@@ -100,6 +102,19 @@ class AdminShowcaseDraftOfferPatchParamsFactoryKwargs(TypedDict):
     values: NotRequired[JsonObject]
 
 
+class AdminShowcaseDraftFactoryKwargs(TypedDict):
+    id: NotRequired[str]
+    owner_partner_id: NotRequired[str]
+    title: NotRequired[str]
+    settings: NotRequired[JsonObject]
+    published_snapshot: NotRequired[JsonObject | None]
+    custom_code_warning: NotRequired[str | None]
+
+
+class AdminShowcaseDraftSettingsPatchParamsFactoryKwargs(TypedDict):
+    settings: NotRequired[JsonObject]
+
+
 class FactoryHelper:
     @classmethod
     def admin_showcase(
@@ -122,6 +137,27 @@ class FactoryHelper:
         title: str = "Updated showcase",
     ) -> AdminShowcaseUpdateParams:
         return AdminShowcaseUpdateParams(title=title)
+
+    @classmethod
+    def admin_showcase_draft(
+        cls,
+        **kwargs: Unpack[AdminShowcaseDraftFactoryKwargs],
+    ) -> AdminShowcaseDraft:
+        return AdminShowcaseDraft(
+            id=kwargs.get("id", "showcase-1"),
+            owner_partner_id=kwargs.get("owner_partner_id", "partner-1"),
+            title=kwargs.get("title", "Test showcase"),
+            settings=kwargs.get("settings", {}),
+            published_snapshot=kwargs.get("published_snapshot"),
+            custom_code_warning=kwargs.get("custom_code_warning"),
+        )
+
+    @classmethod
+    def admin_showcase_draft_settings_patch_params(
+        cls,
+        **kwargs: Unpack[AdminShowcaseDraftSettingsPatchParamsFactoryKwargs],
+    ) -> AdminShowcaseDraftSettingsPatchParams:
+        return AdminShowcaseDraftSettingsPatchParams(settings=kwargs.get("settings", {}))
 
     @classmethod
     def admin_showcase_draft_block(

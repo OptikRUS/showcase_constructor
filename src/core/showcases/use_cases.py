@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from uuid import UUID
 
 from src.core.admin_auth.schemas import AdminActorContext
@@ -19,6 +19,19 @@ from src.core.showcases.schemas import (
     AdminShowcaseUpdateParams,
 )
 from src.core.storages import AdminShowcaseStorage
+
+CUSTOM_CODE_WARNING = (
+    "Custom frontend code is stored as owner-controlled frontend data; "
+    "backend execution is disabled."
+)
+CUSTOM_CODE_AUDIT_FIELDS = {
+    "custom_head_code": "customHeadCode",
+    "custom_body_code": "customBodyCode",
+}
+CUSTOM_CODE_AUDIT_LOCATIONS = {
+    "custom_head_code": "head",
+    "custom_body_code": "body",
+}
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -69,7 +82,38 @@ class UpdateAdminShowcaseDraftSettingsUseCase:
         if showcase.owner_partner_id != context.partner_id:
             raise ShowcaseAccessDeniedError
 
-        return await self.storage.update_draft_settings(showcase_id=showcase_id, params=params)
+        updated_draft = await self.storage.update_draft_settings(
+            showcase_id=showcase_id,
+            params=params,
+        )
+        custom_code_fields = _custom_code_fields(params=params)
+        if not custom_code_fields:
+            return updated_draft
+
+        await self.storage.append_showcase_audit_record(
+            showcase_id=showcase_id,
+            action="custom_code_updated",
+            actor_user_id=context.user_id,
+            actor_partner_id=context.partner_id,
+            metadata={
+                "changed_fields": [
+                    CUSTOM_CODE_AUDIT_FIELDS[field_name] for field_name in custom_code_fields
+                ],
+                "custom_code_locations": [
+                    CUSTOM_CODE_AUDIT_LOCATIONS[field_name] for field_name in custom_code_fields
+                ],
+            },
+        )
+
+        return replace(updated_draft, custom_code_warning=CUSTOM_CODE_WARNING)
+
+
+def _custom_code_fields(*, params: AdminShowcaseDraftSettingsPatchParams) -> list[str]:
+    return [
+        field_name
+        for field_name in CUSTOM_CODE_AUDIT_FIELDS
+        if field_name in params.settings
+    ]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

@@ -326,15 +326,15 @@ leaving unresolved host/path routing and cache-backend details explicit.
 
 **Actions:**
 
-- [ ] Add or update focused API/core/storage tests for owner custom-code draft
+- [x] Add or update focused API/core/storage tests for owner custom-code draft
   edits, warning response, audit append, no-auth, foreign-owner, missing
   resource, and published-snapshot separation.
-- [ ] Run the narrowest relevant tests and confirm they fail for the expected
+- [x] Run the narrowest relevant tests and confirm they fail for the expected
   missing schema fields, warning, audit, or storage behavior.
-- [ ] Make the minimal production changes required for the tests to pass.
-- [ ] Re-run the focused tests and confirm they pass.
-- [ ] Perform only necessary safe refactoring and re-run the focused tests.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Make the minimal production changes required for the tests to pass.
+- [x] Re-run the focused tests and confirm they pass.
+- [x] Perform only necessary safe refactoring and re-run the focused tests.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 3: Build draft-to-public projection and protected preview endpoint
 

@@ -30,6 +30,7 @@ class AdminShowcaseDraft:
     title: str
     settings: JsonObject
     published_snapshot: JsonObject | None
+    custom_code_warning: str | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

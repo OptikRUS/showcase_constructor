@@ -71,6 +71,8 @@ class AdminShowcaseDraftPatchRequest(BoundaryModel):
     meta_title: str | None = None
     meta_description: str | None = None
     fallback_text: str | None = None
+    custom_head_code: str | None = None
+    custom_body_code: str | None = None
 
     def to_domain(self) -> AdminShowcaseDraftSettingsPatchParams:
         settings = self.model_dump(
@@ -86,6 +88,7 @@ class AdminShowcaseDraftResponse(BoundaryModel):
     id: str
     title: str
     settings: JsonObject
+    custom_code_warning: str | None = None
 
     @classmethod
     def from_domain(cls, showcase: AdminShowcaseDraft) -> Self:
@@ -93,6 +96,7 @@ class AdminShowcaseDraftResponse(BoundaryModel):
             id=showcase.id,
             title=showcase.title,
             settings=_camelize_keys(showcase.settings),
+            custom_code_warning=showcase.custom_code_warning,
         )
 
 
