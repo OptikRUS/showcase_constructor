@@ -270,15 +270,15 @@ leaving unresolved host/path routing and cache-backend details explicit.
 
 **Actions:**
 
-- [ ] Add or update focused migration/storage tests for publication metadata,
+- [x] Add or update focused migration/storage tests for publication metadata,
   immutable snapshots, route bindings, and audit records.
-- [ ] Run the narrowest relevant storage/migration tests and confirm they fail
+- [x] Run the narrowest relevant storage/migration tests and confirm they fail
   for the expected missing tables, columns, storage methods, or helpers.
-- [ ] Make the minimal migration, model, storage, and helper changes required
+- [x] Make the minimal migration, model, storage, and helper changes required
   for the tests to pass.
-- [ ] Re-run the focused migration/storage tests and confirm they pass.
-- [ ] Perform only necessary safe refactoring and re-run the focused tests.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Re-run the focused migration/storage tests and confirm they pass.
+- [x] Perform only necessary safe refactoring and re-run the focused tests.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 2: Add owner-only custom head/body draft edit with admin warning and audit
 

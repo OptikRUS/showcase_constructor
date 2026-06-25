@@ -11,6 +11,10 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraftOfferPatchParams,
     AdminShowcaseDraftSettingsPatchParams,
     AdminShowcaseUpdateParams,
+    JsonObject,
+    PublishedRouteBinding,
+    PublishedShowcaseSnapshot,
+    ShowcaseAuditRecord,
 )
 
 
@@ -84,3 +88,57 @@ class AdminShowcaseStorage(metaclass=ABCMeta):
 
     @abstractmethod
     async def delete_draft_offer(self, *, showcase_id: str, offer_id: str) -> None: ...
+
+    @abstractmethod
+    async def create_published_snapshot(
+        self,
+        *,
+        showcase_id: str,
+        public_id: str,
+        version: int,
+        snapshot: JsonObject,
+        created_by_user_id: str,
+        created_by_partner_id: str,
+    ) -> PublishedShowcaseSnapshot: ...
+
+    @abstractmethod
+    async def list_published_snapshots(
+        self,
+        *,
+        showcase_id: str,
+    ) -> list[PublishedShowcaseSnapshot]: ...
+
+    @abstractmethod
+    async def create_published_route_binding(
+        self,
+        *,
+        showcase_id: str,
+        public_id: str,
+        host: str,
+        path: str,
+    ) -> PublishedRouteBinding: ...
+
+    @abstractmethod
+    async def list_published_route_bindings(
+        self,
+        *,
+        showcase_id: str,
+    ) -> list[PublishedRouteBinding]: ...
+
+    @abstractmethod
+    async def append_showcase_audit_record(
+        self,
+        *,
+        showcase_id: str,
+        action: str,
+        actor_user_id: str,
+        actor_partner_id: str,
+        metadata: JsonObject,
+    ) -> ShowcaseAuditRecord: ...
+
+    @abstractmethod
+    async def list_showcase_audit_records(
+        self,
+        *,
+        showcase_id: str,
+    ) -> list[ShowcaseAuditRecord]: ...

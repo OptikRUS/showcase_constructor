@@ -18,6 +18,141 @@ from src.tests.fixtures import FactoryFixture, StorageFixture
 
 
 class TestDatabaseAdminShowcaseStorage(FactoryFixture, StorageFixture):
+    async def test_creates_immutable_published_snapshots_with_public_metadata(self) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-publication-storage-1",
+            owner_partner_id="partner-1",
+            title="Publication storage showcase",
+        )
+        storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
+        first_snapshot: JsonObject = {
+            "id": "public-publication-storage-1",
+            "settings": {"text_title": "First published title"},
+            "blocks": [{"type": "offers", "title": "First offers"}],
+        }
+        second_snapshot: JsonObject = {
+            "id": "public-publication-storage-1",
+            "settings": {"text_title": "Second published title"},
+            "blocks": [{"type": "offers", "title": "Second offers"}],
+        }
+
+        first = await storage.create_published_snapshot(
+            showcase_id="showcase-publication-storage-1",
+            public_id="public-publication-storage-1",
+            version=1,
+            snapshot=first_snapshot,
+            created_by_user_id="admin-user-1",
+            created_by_partner_id="partner-1",
+        )
+        second = await storage.create_published_snapshot(
+            showcase_id="showcase-publication-storage-1",
+            public_id="public-publication-storage-1",
+            version=2,
+            snapshot=second_snapshot,
+            created_by_user_id="admin-user-2",
+            created_by_partner_id="partner-1",
+        )
+        persisted = await self.storage_helper.list_published_showcase_snapshots(
+            showcase_id="showcase-publication-storage-1"
+        )
+
+        assert first.showcase_id == "showcase-publication-storage-1"
+        assert first.public_id == "public-publication-storage-1"
+        assert first.version == 1
+        assert first.snapshot == first_snapshot
+        assert first.created_by_user_id == "admin-user-1"
+        assert first.created_by_partner_id == "partner-1"
+        assert first.created_at is not None
+        assert not hasattr(first, "internal_id")
+        assert second.version == 2
+        assert [snapshot.version for snapshot in persisted] == [1, 2]
+        assert [snapshot.snapshot for snapshot in persisted] == [
+            first_snapshot,
+            second_snapshot,
+        ]
+
+    async def test_creates_active_public_route_binding(self) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-route-binding-storage-1",
+            owner_partner_id="partner-1",
+            title="Route binding storage showcase",
+        )
+        storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
+
+        created = await storage.create_published_route_binding(
+            showcase_id="showcase-route-binding-storage-1",
+            public_id="public-route-binding-storage-1",
+            host="offers.example.test",
+            path="/loans",
+        )
+        persisted = await self.storage_helper.list_published_route_bindings(
+            showcase_id="showcase-route-binding-storage-1"
+        )
+
+        assert created.showcase_id == "showcase-route-binding-storage-1"
+        assert created.public_id == "public-route-binding-storage-1"
+        assert created.host == "offers.example.test"
+        assert created.path == "/loans"
+        assert created.active is True
+        assert created.created_at is not None
+        assert not hasattr(created, "internal_id")
+        assert persisted == [created]
+
+    async def test_appends_safe_audit_record_without_raw_sensitive_metadata(self) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-audit-storage-1",
+            owner_partner_id="partner-1",
+            title="Audit storage showcase",
+        )
+        storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
+        metadata: JsonObject = {
+            "changed_fields": ["customHeadCode", "customBodyCode"],
+            "customHeadCode": "<script>window.rawHead = true</script>",
+            "custom_body_code": "<script>window.rawBody = true</script>",
+            "published_snapshot": {"id": "public-audit-storage-1"},
+            "secret": "secret-value",
+            "email": "owner@example.test",
+            "nested": {
+                "kept": "safe",
+                "token": "token-value",
+                "password": "password-value",
+            },
+            "items": [
+                {"field": "title", "phone": "+100000000"},
+                "safe-list-value",
+            ],
+        }
+
+        created = await storage.append_showcase_audit_record(
+            showcase_id="showcase-audit-storage-1",
+            action="custom_code_updated",
+            actor_user_id="admin-user-1",
+            actor_partner_id="partner-1",
+            metadata=metadata,
+        )
+        persisted = await self.storage_helper.list_showcase_audit_records(
+            showcase_id="showcase-audit-storage-1"
+        )
+
+        assert created.showcase_id == "showcase-audit-storage-1"
+        assert created.action == "custom_code_updated"
+        assert created.actor_user_id == "admin-user-1"
+        assert created.actor_partner_id == "partner-1"
+        assert created.created_at is not None
+        assert not hasattr(created, "internal_id")
+        assert persisted == [created]
+        assert created.metadata == {
+            "changed_fields": ["customHeadCode", "customBodyCode"],
+            "nested": {"kept": "safe"},
+            "items": [
+                {"field": "title"},
+                "safe-list-value",
+            ],
+        }
+        assert "<script>" not in str(created.metadata)
+        assert "secret-value" not in str(created.metadata)
+        assert "owner@example.test" not in str(created.metadata)
+
     async def test_updates_draft_settings_without_changing_published_snapshot(self) -> None:
         published_snapshot: JsonObject = {
             "id": "public-showcase-1",

@@ -20,12 +20,20 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraftOfferPatchParams,
     AdminShowcaseDraftSettingsPatchParams,
     AdminShowcaseUpdateParams,
+    JsonObject,
+    JsonValue,
+    PublishedRouteBinding,
+    PublishedShowcaseSnapshot,
+    ShowcaseAuditRecord,
 )
 from src.core.storages import AdminShowcaseStorage
 from src.storages.models import (
     AdminShowcaseDraftBlockModel,
     AdminShowcaseDraftOfferModel,
     AdminShowcaseModel,
+    PublishedRouteBindingModel,
+    PublishedShowcaseSnapshotModel,
+    ShowcaseAuditRecordModel,
 )
 
 DRAFT_OFFER_UPDATE_FIELD_NAMES = (
@@ -45,6 +53,35 @@ DRAFT_OFFER_UPDATE_FIELD_NAMES = (
     "inn",
     "erid",
     "data",
+)
+
+UNSAFE_AUDIT_METADATA_KEY_PARTS = (
+    "accesskey",
+    "accesstoken",
+    "custombodycode",
+    "customheadcode",
+    "draftsettings",
+    "password",
+    "publishedsnapshot",
+    "rawpii",
+    "refreshtoken",
+    "secret",
+    "serversecret",
+    "snapshot",
+    "token",
+)
+UNSAFE_AUDIT_METADATA_KEYS = frozenset(
+    {
+        "body",
+        "custombody",
+        "customcode",
+        "customhead",
+        "draft",
+        "email",
+        "head",
+        "phone",
+        "pii",
+    }
 )
 
 
@@ -319,6 +356,156 @@ class DatabaseAdminShowcaseStorage(AdminShowcaseStorage):
 
         return model.to_draft_domain()
 
+    async def create_published_snapshot(
+        self,
+        *,
+        showcase_id: str,
+        public_id: str,
+        version: int,
+        snapshot: JsonObject,
+        created_by_user_id: str,
+        created_by_partner_id: str,
+    ) -> PublishedShowcaseSnapshot:
+        model = await self.session.scalar(
+            insert(PublishedShowcaseSnapshotModel)
+            .from_select(
+                [
+                    "showcase_internal_id",
+                    "showcase_id",
+                    "public_id",
+                    "version",
+                    "snapshot",
+                    "created_by_user_id",
+                    "created_by_partner_id",
+                ],
+                select(
+                    AdminShowcaseModel.internal_id,
+                    AdminShowcaseModel.id,
+                    literal(public_id),
+                    literal(version),
+                    literal(snapshot, type_=JSONB),
+                    literal(created_by_user_id),
+                    literal(created_by_partner_id),
+                ).where(AdminShowcaseModel.id == showcase_id),
+            )
+            .returning(PublishedShowcaseSnapshotModel)
+        )
+
+        if model is None:
+            raise AdminShowcaseNotFoundError
+
+        return model.to_domain()
+
+    async def list_published_snapshots(
+        self,
+        *,
+        showcase_id: str,
+    ) -> list[PublishedShowcaseSnapshot]:
+        result = await self.session.scalars(
+            select(PublishedShowcaseSnapshotModel)
+            .where(PublishedShowcaseSnapshotModel.showcase_id == showcase_id)
+            .order_by(PublishedShowcaseSnapshotModel.version)
+        )
+
+        return [model.to_domain() for model in result.all()]
+
+    async def create_published_route_binding(
+        self,
+        *,
+        showcase_id: str,
+        public_id: str,
+        host: str,
+        path: str,
+    ) -> PublishedRouteBinding:
+        model = await self.session.scalar(
+            insert(PublishedRouteBindingModel)
+            .from_select(
+                [
+                    "showcase_internal_id",
+                    "showcase_id",
+                    "public_id",
+                    "host",
+                    "path",
+                ],
+                select(
+                    AdminShowcaseModel.internal_id,
+                    AdminShowcaseModel.id,
+                    literal(public_id),
+                    literal(host),
+                    literal(path),
+                ).where(AdminShowcaseModel.id == showcase_id),
+            )
+            .returning(PublishedRouteBindingModel)
+        )
+
+        if model is None:
+            raise AdminShowcaseNotFoundError
+
+        return model.to_domain()
+
+    async def list_published_route_bindings(
+        self,
+        *,
+        showcase_id: str,
+    ) -> list[PublishedRouteBinding]:
+        result = await self.session.scalars(
+            select(PublishedRouteBindingModel)
+            .where(PublishedRouteBindingModel.showcase_id == showcase_id)
+            .order_by(PublishedRouteBindingModel.host, PublishedRouteBindingModel.path)
+        )
+
+        return [model.to_domain() for model in result.all()]
+
+    async def append_showcase_audit_record(
+        self,
+        *,
+        showcase_id: str,
+        action: str,
+        actor_user_id: str,
+        actor_partner_id: str,
+        metadata: JsonObject,
+    ) -> ShowcaseAuditRecord:
+        model = await self.session.scalar(
+            insert(ShowcaseAuditRecordModel)
+            .from_select(
+                [
+                    "showcase_internal_id",
+                    "showcase_id",
+                    "action",
+                    "actor_user_id",
+                    "actor_partner_id",
+                    "metadata",
+                ],
+                select(
+                    AdminShowcaseModel.internal_id,
+                    AdminShowcaseModel.id,
+                    literal(action),
+                    literal(actor_user_id),
+                    literal(actor_partner_id),
+                    literal(_safe_audit_metadata(metadata=metadata), type_=JSONB),
+                ).where(AdminShowcaseModel.id == showcase_id),
+            )
+            .returning(ShowcaseAuditRecordModel)
+        )
+
+        if model is None:
+            raise AdminShowcaseNotFoundError
+
+        return model.to_domain()
+
+    async def list_showcase_audit_records(
+        self,
+        *,
+        showcase_id: str,
+    ) -> list[ShowcaseAuditRecord]:
+        result = await self.session.scalars(
+            select(ShowcaseAuditRecordModel)
+            .where(ShowcaseAuditRecordModel.showcase_id == showcase_id)
+            .order_by(ShowcaseAuditRecordModel.created_at, ShowcaseAuditRecordModel.internal_id)
+        )
+
+        return [model.to_domain() for model in result.all()]
+
     async def _get_draft_block_by_id(
         self,
         *,
@@ -389,3 +576,32 @@ def _draft_offer_update_values(
             values[field_name] = params.values[field_name]
 
     return values
+
+
+def _safe_audit_metadata(*, metadata: JsonObject) -> JsonObject:
+    safe_metadata: JsonObject = {}
+
+    for key, value in metadata.items():
+        if _is_unsafe_audit_metadata_key(key=key):
+            continue
+        safe_metadata[key] = _safe_audit_metadata_value(value=value)
+
+    return safe_metadata
+
+
+def _safe_audit_metadata_value(*, value: JsonValue) -> JsonValue:
+    if isinstance(value, dict):
+        return _safe_audit_metadata(metadata=value)
+    if isinstance(value, list):
+        return [_safe_audit_metadata_value(value=item) for item in value]
+
+    return value
+
+
+def _is_unsafe_audit_metadata_key(*, key: str) -> bool:
+    normalized_key = key.replace("-", "").replace("_", "").lower()
+
+    if normalized_key in UNSAFE_AUDIT_METADATA_KEYS:
+        return True
+
+    return any(part in normalized_key for part in UNSAFE_AUDIT_METADATA_KEY_PARTS)

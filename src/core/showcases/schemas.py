@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TypedDict
+from typing import TYPE_CHECKING, TypedDict
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 type JsonPrimitive = str | int | float | bool | None
 type JsonValue = JsonPrimitive | list[JsonValue] | dict[str, JsonValue]
@@ -116,3 +119,34 @@ class AdminShowcaseDraftOfferCreateParams:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class AdminShowcaseDraftOfferPatchParams:
     values: JsonObject
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class PublishedShowcaseSnapshot:
+    showcase_id: str
+    public_id: str
+    version: int
+    snapshot: JsonObject
+    created_by_user_id: str
+    created_by_partner_id: str
+    created_at: datetime
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class PublishedRouteBinding:
+    showcase_id: str
+    public_id: str
+    host: str
+    path: str
+    active: bool
+    created_at: datetime
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ShowcaseAuditRecord:
+    showcase_id: str
+    action: str
+    actor_user_id: str
+    actor_partner_id: str
+    metadata: JsonObject
+    created_at: datetime

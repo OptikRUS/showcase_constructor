@@ -9,8 +9,25 @@ class TestDatabaseMigrations(StorageFixture):
         block_columns = await self.storage_helper.get_table_column_names(table_name="draft_blocks")
         offer_columns = await self.storage_helper.get_table_column_names(table_name="draft_offers")
 
-        assert version == "0002"
-        assert {"showcases", "draft_blocks", "draft_offers"}.issubset(table_names)
+        snapshot_columns = await self.storage_helper.get_table_column_names(
+            table_name="published_showcase_snapshots"
+        )
+        route_binding_columns = await self.storage_helper.get_table_column_names(
+            table_name="published_route_bindings"
+        )
+        audit_columns = await self.storage_helper.get_table_column_names(
+            table_name="showcase_audit_records"
+        )
+
+        assert version == "0003"
+        assert {
+            "showcases",
+            "draft_blocks",
+            "draft_offers",
+            "published_showcase_snapshots",
+            "published_route_bindings",
+            "showcase_audit_records",
+        }.issubset(table_names)
         assert {
             "internal_id",
             "id",
@@ -18,6 +35,9 @@ class TestDatabaseMigrations(StorageFixture):
             "title",
             "draft_settings",
             "published_snapshot",
+            "public_id",
+            "publication_version",
+            "active_published_snapshot_internal_id",
         }.issubset(showcase_columns)
         assert {
             "internal_id",
@@ -41,3 +61,34 @@ class TestDatabaseMigrations(StorageFixture):
             "categories",
             "cpa_url",
         }.issubset(offer_columns)
+        assert {
+            "internal_id",
+            "showcase_internal_id",
+            "showcase_id",
+            "public_id",
+            "version",
+            "snapshot",
+            "created_by_user_id",
+            "created_by_partner_id",
+            "created_at",
+        }.issubset(snapshot_columns)
+        assert {
+            "internal_id",
+            "showcase_internal_id",
+            "showcase_id",
+            "public_id",
+            "host",
+            "path",
+            "active",
+            "created_at",
+        }.issubset(route_binding_columns)
+        assert {
+            "internal_id",
+            "showcase_internal_id",
+            "showcase_id",
+            "action",
+            "actor_user_id",
+            "actor_partner_id",
+            "metadata",
+            "created_at",
+        }.issubset(audit_columns)

@@ -8,11 +8,17 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraftBlock,
     AdminShowcaseDraftOffer,
     JsonObject,
+    PublishedRouteBinding,
+    PublishedShowcaseSnapshot,
+    ShowcaseAuditRecord,
 )
 from src.storages.models import (
     AdminShowcaseDraftBlockModel,
     AdminShowcaseDraftOfferModel,
     AdminShowcaseModel,
+    PublishedRouteBindingModel,
+    PublishedShowcaseSnapshotModel,
+    ShowcaseAuditRecordModel,
 )
 
 
@@ -139,6 +145,45 @@ class StorageHelper:
                 AdminShowcaseDraftOfferModel.manual_order,
                 AdminShowcaseDraftOfferModel.offer_id,
             )
+        )
+
+        return [model.to_domain() for model in result.all()]
+
+    async def list_published_showcase_snapshots(
+        self,
+        *,
+        showcase_id: str,
+    ) -> list[PublishedShowcaseSnapshot]:
+        result = await self.session.scalars(
+            select(PublishedShowcaseSnapshotModel)
+            .where(PublishedShowcaseSnapshotModel.showcase_id == showcase_id)
+            .order_by(PublishedShowcaseSnapshotModel.version)
+        )
+
+        return [model.to_domain() for model in result.all()]
+
+    async def list_published_route_bindings(
+        self,
+        *,
+        showcase_id: str,
+    ) -> list[PublishedRouteBinding]:
+        result = await self.session.scalars(
+            select(PublishedRouteBindingModel)
+            .where(PublishedRouteBindingModel.showcase_id == showcase_id)
+            .order_by(PublishedRouteBindingModel.host, PublishedRouteBindingModel.path)
+        )
+
+        return [model.to_domain() for model in result.all()]
+
+    async def list_showcase_audit_records(
+        self,
+        *,
+        showcase_id: str,
+    ) -> list[ShowcaseAuditRecord]:
+        result = await self.session.scalars(
+            select(ShowcaseAuditRecordModel)
+            .where(ShowcaseAuditRecordModel.showcase_id == showcase_id)
+            .order_by(ShowcaseAuditRecordModel.created_at, ShowcaseAuditRecordModel.internal_id)
         )
 
         return [model.to_domain() for model in result.all()]
