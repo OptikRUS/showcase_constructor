@@ -11,11 +11,19 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraftBlockPatchParams,
     AdminShowcaseDraftOffer,
     AdminShowcaseDraftOfferCreateParams,
+    AdminShowcaseDraftOfferField,
     AdminShowcaseDraftOfferPatchParams,
     AdminShowcaseDraftSettingsPatchParams,
     JsonObject,
     JsonValue,
 )
+
+BLOCK_TITLE_MAX_LENGTH = 255
+OFFER_DISPLAY_NAME_MAX_LENGTH = 255
+OFFER_SITE_NAME_MAX_LENGTH = 255
+OFFER_LEGAL_ENTITY_MAX_LENGTH = 255
+OFFER_INN_MAX_LENGTH = 32
+OFFER_ERID_MAX_LENGTH = 128
 
 AdminShowcaseDraftBlockType = Literal[
     "hero",
@@ -98,7 +106,7 @@ class AdminShowcaseDraftBlockCreateRequest(BoundaryModel):
     type: AdminShowcaseDraftBlockType
     order: int
     visible: bool = True
-    title: str | None = None
+    title: str | None = Field(default=None, max_length=BLOCK_TITLE_MAX_LENGTH)
     subtitle: str | None = None
     desktop_settings: JsonObject = Field(default_factory=dict)
     mobile_settings: JsonObject = Field(default_factory=dict)
@@ -122,7 +130,7 @@ class AdminShowcaseDraftBlockPatchRequest(BoundaryModel):
 
     order: int = 0
     visible: bool = True
-    title: str | None = None
+    title: str | None = Field(default=None, max_length=BLOCK_TITLE_MAX_LENGTH)
     subtitle: str | None = None
     desktop_settings: JsonObject = Field(default_factory=dict)
     mobile_settings: JsonObject = Field(default_factory=dict)
@@ -164,6 +172,35 @@ class AdminShowcaseDraftBlockResponse(BoundaryModel):
         )
 
 
+class AdminShowcaseDraftOfferFieldRequest(BoundaryModel):
+    model_config = ConfigDict(extra="forbid")
+
+    key: str
+    value: str
+    visible: bool
+
+    def to_domain(self) -> AdminShowcaseDraftOfferField:
+        return {
+            "key": self.key,
+            "value": self.value,
+            "visible": self.visible,
+        }
+
+
+class AdminShowcaseDraftOfferFieldResponse(BoundaryModel):
+    key: str
+    value: str
+    visible: bool
+
+    @classmethod
+    def from_domain(cls, field: AdminShowcaseDraftOfferField) -> Self:
+        return cls(
+            key=field["key"],
+            value=field["value"],
+            visible=field["visible"],
+        )
+
+
 class AdminShowcaseDraftOfferCreateRequest(BoundaryModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -172,16 +209,16 @@ class AdminShowcaseDraftOfferCreateRequest(BoundaryModel):
     manual_order: int
     cta_text: str | None = None
     usp_text: str | None = None
-    fields: list[JsonValue] = Field(default_factory=list)
+    fields: list[AdminShowcaseDraftOfferFieldRequest] = Field(default_factory=list)
     categories: list[JsonValue] = Field(default_factory=list)
     logo_url: str | None = None
     rounded_logo_url: str | None = None
-    display_name: str | None = None
-    site_name: str | None = None
+    display_name: str | None = Field(default=None, max_length=OFFER_DISPLAY_NAME_MAX_LENGTH)
+    site_name: str | None = Field(default=None, max_length=OFFER_SITE_NAME_MAX_LENGTH)
     cpa_url: str | None = None
-    legal_entity: str | None = None
-    inn: str | None = None
-    erid: str | None = None
+    legal_entity: str | None = Field(default=None, max_length=OFFER_LEGAL_ENTITY_MAX_LENGTH)
+    inn: str | None = Field(default=None, max_length=OFFER_INN_MAX_LENGTH)
+    erid: str | None = Field(default=None, max_length=OFFER_ERID_MAX_LENGTH)
     data: JsonObject = Field(default_factory=dict)
 
     def to_domain(self) -> AdminShowcaseDraftOfferCreateParams:
@@ -191,7 +228,7 @@ class AdminShowcaseDraftOfferCreateRequest(BoundaryModel):
             manual_order=self.manual_order,
             cta_text=self.cta_text,
             usp_text=self.usp_text,
-            fields=self.fields,
+            fields=[field.to_domain() for field in self.fields],
             categories=self.categories,
             logo_url=self.logo_url,
             rounded_logo_url=self.rounded_logo_url,
@@ -213,16 +250,16 @@ class AdminShowcaseDraftOfferPatchRequest(BoundaryModel):
     manual_order: int = 0
     cta_text: str | None = None
     usp_text: str | None = None
-    fields: list[JsonValue] = Field(default_factory=list)
+    fields: list[AdminShowcaseDraftOfferFieldRequest] = Field(default_factory=list)
     categories: list[JsonValue] = Field(default_factory=list)
     logo_url: str | None = None
     rounded_logo_url: str | None = None
-    display_name: str | None = None
-    site_name: str | None = None
+    display_name: str | None = Field(default=None, max_length=OFFER_DISPLAY_NAME_MAX_LENGTH)
+    site_name: str | None = Field(default=None, max_length=OFFER_SITE_NAME_MAX_LENGTH)
     cpa_url: str | None = None
-    legal_entity: str | None = None
-    inn: str | None = None
-    erid: str | None = None
+    legal_entity: str | None = Field(default=None, max_length=OFFER_LEGAL_ENTITY_MAX_LENGTH)
+    inn: str | None = Field(default=None, max_length=OFFER_INN_MAX_LENGTH)
+    erid: str | None = Field(default=None, max_length=OFFER_ERID_MAX_LENGTH)
     data: JsonObject = Field(default_factory=dict)
 
     def to_domain(self) -> AdminShowcaseDraftOfferPatchParams:
@@ -231,6 +268,8 @@ class AdminShowcaseDraftOfferPatchRequest(BoundaryModel):
             include=self.model_fields_set,
             by_alias=False,
         )
+        if "fields" in values:
+            values["fields"] = [field.to_domain() for field in self.fields]
 
         return AdminShowcaseDraftOfferPatchParams(values=cast("JsonObject", values))
 
@@ -242,7 +281,7 @@ class AdminShowcaseDraftOfferResponse(BoundaryModel):
     manual_order: int
     cta_text: str | None
     usp_text: str | None
-    fields: list[JsonValue]
+    fields: list[AdminShowcaseDraftOfferFieldResponse]
     categories: list[JsonValue]
     logo_url: str | None
     rounded_logo_url: str | None
@@ -263,7 +302,10 @@ class AdminShowcaseDraftOfferResponse(BoundaryModel):
             manual_order=offer.manual_order,
             cta_text=offer.cta_text,
             usp_text=offer.usp_text,
-            fields=offer.fields,
+            fields=[
+                AdminShowcaseDraftOfferFieldResponse.from_domain(field=field)
+                for field in offer.fields
+            ],
             categories=offer.categories,
             logo_url=offer.logo_url,
             rounded_logo_url=offer.rounded_logo_url,

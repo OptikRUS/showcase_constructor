@@ -12,6 +12,10 @@ class TestAdminShowcaseLifecycleRouteExposure(APIFixture):
             ("OPTIONS", "/api/v1/showcases"),
             ("HEAD", "/api/v1/showcases/showcase-1"),
             ("OPTIONS", "/api/v1/showcases/showcase-1"),
+            ("HEAD", "/api/v1/showcases/showcase-1/blocks"),
+            ("OPTIONS", "/api/v1/showcases/showcase-1/blocks"),
+            ("HEAD", "/api/v1/showcases/showcase-1/offers"),
+            ("OPTIONS", "/api/v1/showcases/showcase-1/offers"),
             ("POST", "/api/v1/showcases/showcase-1/unarchive"),
         ],
     )

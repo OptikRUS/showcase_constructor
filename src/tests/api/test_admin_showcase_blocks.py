@@ -2,8 +2,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
 from httpx2 import codes
+from pydantic import ValidationError
 
+from src.api.showcases.schemas import (
+    AdminShowcaseDraftBlockCreateRequest,
+    AdminShowcaseDraftBlockPatchRequest,
+)
 from src.tests.fixtures import APIFixture, FactoryFixture, StorageFixture
 
 if TYPE_CHECKING:
@@ -11,6 +17,64 @@ if TYPE_CHECKING:
 
 
 class TestAdminShowcaseBlocksAPI(APIFixture, FactoryFixture, StorageFixture):
+    async def test_accepts_empty_patch_without_mutating_draft_block(self) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-api-blocks-empty-patch",
+            owner_partner_id="partner-1",
+            title="Empty block patch showcase",
+        )
+        await self.storage_helper.create_admin_showcase_draft_block(
+            block=self.factory.admin_showcase_draft_block(
+                id="block-api-empty-patch",
+                showcase_id="showcase-api-blocks-empty-patch",
+                type="offers",
+                order=10,
+                visible=True,
+                title="Original block",
+                subtitle="Original subtitle",
+                desktop_settings={"columns": 3},
+                mobile_settings={"columns": 1},
+                data={"layout": "cards"},
+            )
+        )
+        await self.storage_helper.commit()
+
+        response = self.api.patch_admin_showcase_block(
+            showcase_id="showcase-api-blocks-empty-patch",
+            block_id="block-api-empty-patch",
+            json={},
+        )
+
+        assert response.status_code == codes.OK
+        assert response.json() == {
+            "id": "block-api-empty-patch",
+            "type": "offers",
+            "order": 10,
+            "visible": True,
+            "title": "Original block",
+            "subtitle": "Original subtitle",
+            "desktopSettings": {"columns": 3},
+            "mobileSettings": {"columns": 1},
+            "data": {"layout": "cards"},
+        }
+        persisted_blocks = await self.storage_helper.list_admin_showcase_draft_blocks(
+            showcase_id="showcase-api-blocks-empty-patch"
+        )
+        assert persisted_blocks == [
+            self.factory.admin_showcase_draft_block(
+                id="block-api-empty-patch",
+                showcase_id="showcase-api-blocks-empty-patch",
+                type="offers",
+                order=10,
+                visible=True,
+                title="Original block",
+                subtitle="Original subtitle",
+                desktop_settings={"columns": 3},
+                mobile_settings={"columns": 1},
+                data={"layout": "cards"},
+            )
+        ]
+
     async def test_creates_and_lists_draft_blocks(self) -> None:
         published_snapshot: JsonObject = {
             "id": "public-showcase-api-blocks-1",
@@ -368,3 +432,32 @@ class TestAdminShowcaseBlocksNoAuthAPI(APIFixture, StorageFixture):
             showcase_id="showcase-api-blocks-no-auth"
         )
         assert persisted_blocks == []
+
+
+class TestAdminShowcaseBlockSchemaValidation:
+    @pytest.mark.parametrize(
+        ("schema", "payload"),
+        [
+            (
+                AdminShowcaseDraftBlockCreateRequest,
+                {
+                    "type": "hero",
+                    "order": 1,
+                    "title": "x" * 256,
+                },
+            ),
+            (
+                AdminShowcaseDraftBlockPatchRequest,
+                {
+                    "title": "x" * 256,
+                },
+            ),
+        ],
+    )
+    def test_rejects_overlong_block_title(
+        self,
+        schema: type[AdminShowcaseDraftBlockCreateRequest | AdminShowcaseDraftBlockPatchRequest],
+        payload: dict[str, object],
+    ) -> None:
+        with pytest.raises(ValidationError):
+            schema.model_validate(payload)

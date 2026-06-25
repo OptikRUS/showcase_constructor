@@ -20,6 +20,7 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraftBlockPatchParams,
     AdminShowcaseDraftOffer,
     AdminShowcaseDraftOfferCreateParams,
+    AdminShowcaseDraftOfferField,
     AdminShowcaseDraftOfferPatchParams,
     AdminShowcaseUpdateParams,
     JsonObject,
@@ -63,7 +64,7 @@ class AdminShowcaseDraftOfferFactoryKwargs(TypedDict):
     manual_order: NotRequired[int]
     cta_text: NotRequired[str | None]
     usp_text: NotRequired[str | None]
-    fields: NotRequired[list[JsonValue]]
+    fields: NotRequired[list[AdminShowcaseDraftOfferField]]
     categories: NotRequired[list[JsonValue]]
     logo_url: NotRequired[str | None]
     rounded_logo_url: NotRequired[str | None]
@@ -82,7 +83,7 @@ class AdminShowcaseDraftOfferCreateParamsFactoryKwargs(TypedDict):
     manual_order: NotRequired[int]
     cta_text: NotRequired[str | None]
     usp_text: NotRequired[str | None]
-    fields: NotRequired[list[JsonValue]]
+    fields: NotRequired[list[AdminShowcaseDraftOfferField]]
     categories: NotRequired[list[JsonValue]]
     logo_url: NotRequired[str | None]
     rounded_logo_url: NotRequired[str | None]

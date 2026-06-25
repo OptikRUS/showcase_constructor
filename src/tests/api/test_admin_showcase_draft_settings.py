@@ -11,6 +11,42 @@ if TYPE_CHECKING:
 
 
 class TestAdminShowcaseDraftSettingsAPI(APIFixture, StorageFixture):
+    async def test_accepts_empty_patch_without_mutating_draft_settings(self) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-api-settings-empty-patch",
+            owner_partner_id="partner-1",
+            title="Empty patch showcase",
+            draft_settings={
+                "design_id": "classic",
+                "text_title": "Original draft title",
+            },
+            published_snapshot={"id": "public-settings-empty-patch"},
+        )
+        await self.storage_helper.commit()
+
+        response = self.api.patch_admin_showcase_draft_settings(
+            showcase_id="showcase-api-settings-empty-patch",
+            json={},
+        )
+
+        assert response.status_code == codes.OK
+        assert response.json() == {
+            "id": "showcase-api-settings-empty-patch",
+            "title": "Empty patch showcase",
+            "settings": {
+                "designId": "classic",
+                "textTitle": "Original draft title",
+            },
+        }
+        persisted = await self.storage_helper.get_admin_showcase_draft(
+            showcase_id="showcase-api-settings-empty-patch"
+        )
+        assert persisted.settings == {
+            "design_id": "classic",
+            "text_title": "Original draft title",
+        }
+        assert persisted.published_snapshot == {"id": "public-settings-empty-patch"}
+
     async def test_patches_draft_settings_only(self) -> None:
         published_snapshot: JsonObject = {
             "id": "public-showcase-api-settings-1",

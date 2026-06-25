@@ -17,6 +17,7 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraft,
     AdminShowcaseDraftBlock,
     AdminShowcaseDraftOffer,
+    AdminShowcaseDraftOfferField,
     JsonObject,
     JsonValue,
 )
@@ -132,7 +133,11 @@ class AdminShowcaseDraftOfferModel(Base):
     manual_order: Mapped[int] = mapped_column(Integer, nullable=False)
     cta_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     usp_text: Mapped[str | None] = mapped_column(Text, nullable=True)
-    fields: Mapped[list[JsonValue]] = mapped_column(JSONB, nullable=False, default=list)
+    fields: Mapped[list[AdminShowcaseDraftOfferField]] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=list,
+    )
     categories: Mapped[list[JsonValue]] = mapped_column(JSONB, nullable=False, default=list)
     logo_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     rounded_logo_url: Mapped[str | None] = mapped_column(Text, nullable=True)

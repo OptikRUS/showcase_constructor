@@ -60,6 +60,35 @@ class TestDatabaseAdminShowcaseStorage(FactoryFixture, StorageFixture):
         persisted = await storage.get_draft_by_id(showcase_id="showcase-1")
         assert persisted == result
 
+    async def test_empty_draft_settings_patch_returns_unchanged_draft(self) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-settings-storage-empty-patch",
+            owner_partner_id="partner-1",
+            title="Empty settings patch showcase",
+            draft_settings={
+                "design_id": "classic",
+                "text_title": "Original draft title",
+            },
+            published_snapshot={"id": "public-settings-storage-empty-patch"},
+        )
+        storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
+        params = AdminShowcaseDraftSettingsPatchParams(settings={})
+
+        result = await storage.update_draft_settings(
+            showcase_id="showcase-settings-storage-empty-patch",
+            params=params,
+        )
+
+        assert result.settings == {
+            "design_id": "classic",
+            "text_title": "Original draft title",
+        }
+        assert result.published_snapshot == {"id": "public-settings-storage-empty-patch"}
+        persisted = await storage.get_draft_by_id(
+            showcase_id="showcase-settings-storage-empty-patch"
+        )
+        assert persisted == result
+
     async def test_raises_not_found_when_updating_missing_draft_settings(self) -> None:
         storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
         params = AdminShowcaseDraftSettingsPatchParams(settings={"design_id": "modern"})
@@ -68,6 +97,39 @@ class TestDatabaseAdminShowcaseStorage(FactoryFixture, StorageFixture):
             await storage.update_draft_settings(showcase_id="missing-showcase", params=params)
 
         assert error.value.detail == "ADMIN_SHOWCASE_NOT_FOUND_ERROR"
+
+    async def test_empty_draft_block_patch_returns_unchanged_block(self) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-blocks-storage-empty-patch",
+            owner_partner_id="partner-1",
+            title="Empty block patch showcase",
+        )
+        block = self.factory.admin_showcase_draft_block(
+            id="block-storage-empty-patch",
+            showcase_id="showcase-blocks-storage-empty-patch",
+            type="offers",
+            order=10,
+            visible=True,
+            title="Original block",
+            subtitle="Original subtitle",
+            desktop_settings={"columns": 3},
+            mobile_settings={"columns": 1},
+            data={"layout": "cards"},
+        )
+        await self.storage_helper.create_admin_showcase_draft_block(block=block)
+        storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
+
+        result = await storage.patch_draft_block(
+            showcase_id="showcase-blocks-storage-empty-patch",
+            block_id="block-storage-empty-patch",
+            params=AdminShowcaseDraftBlockPatchParams(values={}),
+        )
+
+        assert result == block
+        persisted_blocks = await storage.list_draft_blocks(
+            showcase_id="showcase-blocks-storage-empty-patch"
+        )
+        assert persisted_blocks == [block]
 
     async def test_creates_and_lists_draft_blocks_ordered_by_draft_order(self) -> None:
         await self.storage_helper.create_admin_showcase(
@@ -239,6 +301,68 @@ class TestDatabaseAdminShowcaseStorage(FactoryFixture, StorageFixture):
 
         assert patch_error.value.detail == "ADMIN_SHOWCASE_DRAFT_BLOCK_NOT_FOUND_ERROR"
         assert delete_error.value.detail == "ADMIN_SHOWCASE_DRAFT_BLOCK_NOT_FOUND_ERROR"
+
+    async def test_creates_unassigned_offer_and_clears_block_assignment(self) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-offers-storage-null-block",
+            owner_partner_id="partner-1",
+            title="Nullable block offer showcase",
+        )
+        await self.storage_helper.create_admin_showcase_draft_offer(
+            offer=self.factory.admin_showcase_draft_offer(
+                id="offer-storage-null-block-target",
+                showcase_id="showcase-offers-storage-null-block",
+                block_id="block-storage-original",
+            )
+        )
+        storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
+
+        created = await storage.create_draft_offer(
+            showcase_id="showcase-offers-storage-null-block",
+            offer_id="offer-storage-null-block-created",
+            params=self.factory.admin_showcase_draft_offer_create_params(block_id=None),
+        )
+        patched = await storage.patch_draft_offer(
+            showcase_id="showcase-offers-storage-null-block",
+            offer_id="offer-storage-null-block-target",
+            params=AdminShowcaseDraftOfferPatchParams(values={"block_id": None}),
+        )
+
+        assert created.block_id is None
+        assert patched.block_id is None
+        offers = await storage.list_draft_offers(showcase_id="showcase-offers-storage-null-block")
+        offers_by_id = {offer.id: offer for offer in offers}
+        assert offers_by_id["offer-storage-null-block-created"].block_id is None
+        assert offers_by_id["offer-storage-null-block-target"].block_id is None
+
+    async def test_empty_draft_offer_patch_returns_unchanged_offer(self) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-offers-storage-empty-patch",
+            owner_partner_id="partner-1",
+            title="Empty offer patch showcase",
+        )
+        offer = self.factory.admin_showcase_draft_offer(
+            id="offer-storage-empty-patch",
+            showcase_id="showcase-offers-storage-empty-patch",
+            block_id=None,
+            enabled=False,
+            manual_order=10,
+            fields=[{"key": "rate", "value": "12%", "visible": False}],
+        )
+        await self.storage_helper.create_admin_showcase_draft_offer(offer=offer)
+        storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
+
+        result = await storage.patch_draft_offer(
+            showcase_id="showcase-offers-storage-empty-patch",
+            offer_id="offer-storage-empty-patch",
+            params=AdminShowcaseDraftOfferPatchParams(values={}),
+        )
+
+        assert result == offer
+        persisted_offers = await storage.list_draft_offers(
+            showcase_id="showcase-offers-storage-empty-patch"
+        )
+        assert persisted_offers == [offer]
 
     async def test_creates_and_lists_draft_offers_ordered_by_block_and_manual_order(self) -> None:
         await self.storage_helper.create_admin_showcase(

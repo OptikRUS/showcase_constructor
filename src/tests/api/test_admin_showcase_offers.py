@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
 from httpx2 import codes
+from pydantic import ValidationError
 
+from src.api.showcases.schemas import AdminShowcaseDraftOfferCreateRequest
 from src.tests.fixtures import APIFixture, FactoryFixture, StorageFixture
 
 if TYPE_CHECKING:
@@ -11,6 +14,161 @@ if TYPE_CHECKING:
 
 
 class TestAdminShowcaseOffersAPI(APIFixture, FactoryFixture, StorageFixture):
+    async def test_rejects_malformed_offer_fields(self) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-api-offers-invalid-fields",
+            owner_partner_id="partner-1",
+            title="Invalid fields showcase",
+        )
+        await self.storage_helper.create_admin_showcase_draft_block(
+            block=self.factory.admin_showcase_draft_block(
+                id="block-api-offers-invalid-fields",
+                showcase_id="showcase-api-offers-invalid-fields",
+            )
+        )
+        await self.storage_helper.create_admin_showcase_draft_offer(
+            offer=self.factory.admin_showcase_draft_offer(
+                id="offer-api-invalid-fields-target",
+                showcase_id="showcase-api-offers-invalid-fields",
+                block_id="block-api-offers-invalid-fields",
+                fields=[{"key": "rate", "value": "12%", "visible": True}],
+            )
+        )
+        await self.storage_helper.commit()
+
+        create_response = self.api.create_admin_showcase_offer(
+            showcase_id="showcase-api-offers-invalid-fields",
+            json={
+                "blockId": "block-api-offers-invalid-fields",
+                "manualOrder": 1,
+                "fields": ["not-an-offer-field"],
+            },
+        )
+        patch_response = self.api.patch_admin_showcase_offer(
+            showcase_id="showcase-api-offers-invalid-fields",
+            offer_id="offer-api-invalid-fields-target",
+            json={"fields": [{"key": "rate", "value": "12%"}]},
+        )
+
+        assert create_response.status_code == codes.UNPROCESSABLE_ENTITY
+        assert patch_response.status_code == codes.UNPROCESSABLE_ENTITY
+        persisted_offers = await self.storage_helper.list_admin_showcase_draft_offers(
+            showcase_id="showcase-api-offers-invalid-fields"
+        )
+        assert persisted_offers == [
+            self.factory.admin_showcase_draft_offer(
+                id="offer-api-invalid-fields-target",
+                showcase_id="showcase-api-offers-invalid-fields",
+                block_id="block-api-offers-invalid-fields",
+                fields=[{"key": "rate", "value": "12%", "visible": True}],
+            )
+        ]
+
+    async def test_creates_unassigned_offer_and_clears_block_assignment(self) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-api-offers-null-block",
+            owner_partner_id="partner-1",
+            title="Nullable block showcase",
+        )
+        await self.storage_helper.create_admin_showcase_draft_block(
+            block=self.factory.admin_showcase_draft_block(
+                id="block-api-offers-null-block",
+                showcase_id="showcase-api-offers-null-block",
+            )
+        )
+        await self.storage_helper.create_admin_showcase_draft_offer(
+            offer=self.factory.admin_showcase_draft_offer(
+                id="offer-api-null-block-target",
+                showcase_id="showcase-api-offers-null-block",
+                block_id="block-api-offers-null-block",
+            )
+        )
+        await self.storage_helper.commit()
+
+        create_response = self.api.create_admin_showcase_offer(
+            showcase_id="showcase-api-offers-null-block",
+            json={
+                "blockId": None,
+                "manualOrder": 1,
+                "displayName": "Unassigned draft offer",
+            },
+        )
+        patch_response = self.api.patch_admin_showcase_offer(
+            showcase_id="showcase-api-offers-null-block",
+            offer_id="offer-api-null-block-target",
+            json={"blockId": None},
+        )
+
+        assert create_response.status_code == codes.CREATED
+        created_payload = create_response.json()
+        assert created_payload["blockId"] is None
+        assert patch_response.status_code == codes.OK
+        assert patch_response.json()["blockId"] is None
+        persisted_offers = await self.storage_helper.list_admin_showcase_draft_offers(
+            showcase_id="showcase-api-offers-null-block"
+        )
+        persisted_by_id = {offer.id: offer for offer in persisted_offers}
+        assert persisted_by_id[created_payload["id"]].block_id is None
+        assert persisted_by_id["offer-api-null-block-target"].block_id is None
+
+    async def test_accepts_empty_patch_without_mutating_draft_offer(self) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-api-offers-empty-patch",
+            owner_partner_id="partner-1",
+            title="Empty offer patch showcase",
+        )
+        await self.storage_helper.create_admin_showcase_draft_offer(
+            offer=self.factory.admin_showcase_draft_offer(
+                id="offer-api-empty-patch",
+                showcase_id="showcase-api-offers-empty-patch",
+                block_id=None,
+                enabled=False,
+                manual_order=10,
+                fields=[{"key": "rate", "value": "12%", "visible": False}],
+            )
+        )
+        await self.storage_helper.commit()
+
+        response = self.api.patch_admin_showcase_offer(
+            showcase_id="showcase-api-offers-empty-patch",
+            offer_id="offer-api-empty-patch",
+            json={},
+        )
+
+        assert response.status_code == codes.OK
+        assert response.json() == {
+            "id": "offer-api-empty-patch",
+            "blockId": None,
+            "enabled": False,
+            "manualOrder": 10,
+            "ctaText": "Open offer",
+            "uspText": "Fast approval",
+            "fields": [{"key": "rate", "value": "12%", "visible": False}],
+            "categories": [],
+            "logoUrl": "https://cdn.example.test/logo.png",
+            "roundedLogoUrl": "https://cdn.example.test/logo-rounded.png",
+            "displayName": "Fast Loan",
+            "siteName": "Example Bank",
+            "cpaUrl": "https://cpa.example.test/click",
+            "legalEntity": "Example Bank LLC",
+            "inn": "1234567890",
+            "erid": None,
+            "data": {},
+        }
+        persisted_offers = await self.storage_helper.list_admin_showcase_draft_offers(
+            showcase_id="showcase-api-offers-empty-patch"
+        )
+        assert persisted_offers == [
+            self.factory.admin_showcase_draft_offer(
+                id="offer-api-empty-patch",
+                showcase_id="showcase-api-offers-empty-patch",
+                block_id=None,
+                enabled=False,
+                manual_order=10,
+                fields=[{"key": "rate", "value": "12%", "visible": False}],
+            )
+        ]
+
     async def test_creates_and_lists_draft_offers(self) -> None:
         published_snapshot: JsonObject = {
             "id": "public-showcase-api-offers-1",
@@ -529,3 +687,28 @@ class TestAdminShowcaseOffersNoAuthAPI(APIFixture, StorageFixture):
             showcase_id="showcase-api-offers-no-auth"
         )
         assert persisted_offers == []
+
+
+class TestAdminShowcaseOfferSchemaValidation:
+    @pytest.mark.parametrize(
+        ("field_name", "field_value"),
+        [
+            ("displayName", "x" * 256),
+            ("siteName", "x" * 256),
+            ("legalEntity", "x" * 256),
+            ("inn", "x" * 33),
+            ("erid", "x" * 129),
+        ],
+    )
+    def test_rejects_overlong_offer_bounded_fields(
+        self,
+        field_name: str,
+        field_value: str,
+    ) -> None:
+        with pytest.raises(ValidationError):
+            AdminShowcaseDraftOfferCreateRequest.model_validate(
+                {
+                    "manualOrder": 1,
+                    field_name: field_value,
+                }
+            )

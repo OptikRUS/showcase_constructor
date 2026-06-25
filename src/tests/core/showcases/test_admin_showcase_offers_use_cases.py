@@ -128,6 +128,40 @@ class TestCreateAdminShowcaseOfferUseCase(FactoryFixture):
             params=params,
         )
 
+    async def test_creates_unassigned_draft_offer_without_block_validation(self) -> None:
+        storage = AsyncMock(spec=AdminShowcaseStorage)
+        storage.get_by_id.return_value = self.factory.admin_showcase(
+            id="showcase-offers-core-create-null-block",
+            owner_partner_id="partner-1",
+        )
+        params = self.factory.admin_showcase_draft_offer_create_params(block_id=None)
+        offer_id = UUID("00000000-0000-0000-0000-000000000011")
+        created_offer = self.factory.admin_showcase_draft_offer(
+            id=str(offer_id),
+            showcase_id="showcase-offers-core-create-null-block",
+            block_id=None,
+        )
+        storage.create_draft_offer.return_value = created_offer
+        use_case = CreateAdminShowcaseOfferUseCase(storage=storage, offer_id=offer_id)
+        context = AdminActorContext(user_id="admin-user-1", partner_id="partner-1")
+
+        result = await use_case.execute(
+            showcase_id="showcase-offers-core-create-null-block",
+            params=params,
+            context=context,
+        )
+
+        assert result == created_offer
+        storage.get_by_id.assert_awaited_once_with(
+            showcase_id="showcase-offers-core-create-null-block"
+        )
+        storage.list_draft_blocks.assert_not_awaited()
+        storage.create_draft_offer.assert_awaited_once_with(
+            showcase_id="showcase-offers-core-create-null-block",
+            offer_id=str(offer_id),
+            params=params,
+        )
+
     async def test_forbids_creating_foreign_draft_offer(self) -> None:
         storage = AsyncMock(spec=AdminShowcaseStorage)
         storage.get_by_id.return_value = self.factory.admin_showcase(
@@ -239,6 +273,40 @@ class TestPatchAdminShowcaseOfferUseCase(FactoryFixture):
         storage.patch_draft_offer.assert_awaited_once_with(
             showcase_id="showcase-offers-core-patch",
             offer_id="offer-core-patch",
+            params=params,
+        )
+
+    async def test_clears_block_assignment_without_block_validation(self) -> None:
+        storage = AsyncMock(spec=AdminShowcaseStorage)
+        storage.get_by_id.return_value = self.factory.admin_showcase(
+            id="showcase-offers-core-patch-null-block",
+            owner_partner_id="partner-1",
+        )
+        params = self.factory.admin_showcase_draft_offer_patch_params(values={"block_id": None})
+        patched_offer = self.factory.admin_showcase_draft_offer(
+            id="offer-core-patch-null-block",
+            showcase_id="showcase-offers-core-patch-null-block",
+            block_id=None,
+        )
+        storage.patch_draft_offer.return_value = patched_offer
+        use_case = PatchAdminShowcaseOfferUseCase(storage=storage)
+        context = AdminActorContext(user_id="admin-user-1", partner_id="partner-1")
+
+        result = await use_case.execute(
+            showcase_id="showcase-offers-core-patch-null-block",
+            offer_id="offer-core-patch-null-block",
+            params=params,
+            context=context,
+        )
+
+        assert result == patched_offer
+        storage.get_by_id.assert_awaited_once_with(
+            showcase_id="showcase-offers-core-patch-null-block"
+        )
+        storage.list_draft_blocks.assert_not_awaited()
+        storage.patch_draft_offer.assert_awaited_once_with(
+            showcase_id="showcase-offers-core-patch-null-block",
+            offer_id="offer-core-patch-null-block",
             params=params,
         )
 

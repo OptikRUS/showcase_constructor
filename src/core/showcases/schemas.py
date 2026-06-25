@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TypedDict
 
 type JsonPrimitive = str | int | float | bool | None
 type JsonValue = JsonPrimitive | list[JsonValue] | dict[str, JsonValue]
@@ -64,6 +65,12 @@ class AdminShowcaseDraftBlockPatchParams:
     values: JsonObject
 
 
+class AdminShowcaseDraftOfferField(TypedDict):
+    key: str
+    value: str
+    visible: bool
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class AdminShowcaseDraftOffer:
     id: str
@@ -73,7 +80,7 @@ class AdminShowcaseDraftOffer:
     manual_order: int
     cta_text: str | None
     usp_text: str | None
-    fields: list[JsonValue]
+    fields: list[AdminShowcaseDraftOfferField]
     categories: list[JsonValue]
     logo_url: str | None
     rounded_logo_url: str | None
@@ -93,7 +100,7 @@ class AdminShowcaseDraftOfferCreateParams:
     manual_order: int
     cta_text: str | None
     usp_text: str | None
-    fields: list[JsonValue]
+    fields: list[AdminShowcaseDraftOfferField]
     categories: list[JsonValue]
     logo_url: str | None
     rounded_logo_url: str | None
