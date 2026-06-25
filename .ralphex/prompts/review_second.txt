@@ -49,13 +49,40 @@ Classify every finding as exactly one:
 - simplification
 - false positive
 
+## Completion Gate
+
+Before any `<<<RALPHEX:REVIEW_DONE>>>`:
+- Confirm that every mandatory reviewer agent listed in Step 2 returned a
+  result. Missing, failed, or inconclusive mandatory reviewer output blocks
+  review success.
+- Confirm there is no unresolved blocking Product/Security Decision. Product
+  decisions are not code-fixable by the review pass.
+- Run `rtk git status --short` and require empty output.
+- Confirm current HEAD contains all review-fix changes. Uncommitted review fixes
+  are not a reproducible review result.
+
+If this review pass made any code, test, prompt, or plan-file changes:
+- Put all and only those review-fix changes in one scoped commit.
+- Verify `rtk git status --short` is empty after the commit.
+- Verify current HEAD contains the review-fix commit.
+- Stop without `<<<RALPHEX:REVIEW_DONE>>>`; the next independent critical/major
+  review pass must complete before success can be reported.
+
+Do not move or archive plan files during review completion. Plan archival belongs
+to the orchestrator.
+
 ## Signal Logic
 
-# If no in-scope critical/major issues were found, output exactly:
+# If no in-scope critical/major issues were found and the Completion Gate passed,
+# output exactly:
 # <<<RALPHEX:REVIEW_DONE>>>
 
 # If issues were found and fixed, stop without REVIEW_DONE so another review can run.
-# If issues require product decisions or plan amendment, output exactly:
+# If a mandatory reviewer result is missing, or issues require product decisions
+# or plan amendment, output a structured verdict and put
+# <<<RALPHEX:TASK_FAILED>>> on the final line:
+# BLOCKED: <missing reviewer result | product decision required | plan amendment required>
+# - <specific unresolved blocker>
 # <<<RALPHEX:TASK_FAILED>>>
 
 # OUTPUT FORMAT: Plain text. No markdown formatting.

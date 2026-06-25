@@ -91,6 +91,9 @@ rtk uv run pytest -vv -x src/tests/path/test_file.py::TestClass::test_name
 - Завершённые планы хранить в `docs/plans/completed/<plan-name>.md`.
 - Каталог `docs/plans/backlog/completed/` запрещён. Если он появился, переместить
   файлы в `docs/plans/completed/` и удалить пустой invalid subtree.
+- Planning agents создают или меняют только целевой plan-файл. Они не перемещают,
+  не архивируют и не исправляют unrelated plans; такие lifecycle/hygiene проблемы
+  фиксируются как blocker.
 - Не создавать новые plan-файлы в корне `docs/plans/`, если пользователь явно
   не попросил legacy/root path.
 - `.ralphex/config` считается локальной runtime-конфигурацией и не должен
@@ -219,6 +222,13 @@ Reference:
 - FastAPI интеграция: `setup_dishka_fastapi(...)`; для endpoints с DI использовать `DishkaRoute`.
 - DI-managed DB session является Unit of Work: транзакция начинается и завершается только в provider.
 - `session.commit()`/`session.begin()` в storage/use case запрещены.
+- Publication version выделяется атомарно в PostgreSQL внутри write boundary.
+- Unique public IDs и route bindings защищаются DB-level уникальностью и атомарной
+  записью; небезопасный check-then-write/check-then-bind запрещён.
+- Audit mutations и publication/public visibility mutations выполняются в одной
+  Unit of Work.
+- Real cache invalidation для persisted/public-read данных выполняется after commit
+  или через outbox semantics, а не до durable DB commit.
 
 Reference: `docs/references/examples/di.md`.
 
@@ -261,6 +271,9 @@ Reference:
   добавлен для нового домена.
 - Блоки Arrange/Act/Assert разделяются пустыми строками.
 - Переменные по роли: `container`, `app`, `use_case`, не `c`, `a`, `uc`.
+- Независимые pytest-процессы нельзя запускать параллельно против одной общей
+  PostgreSQL migration/test database. Использовать изолированные DB или
+  последовательный запуск.
 
 Reference: `docs/references/examples/tests.md`.
 
@@ -308,3 +321,5 @@ Reference: `docs/references/examples/tests.md`.
 - [ ] Именование соответствует конвенциям проекта.
 - [ ] Нет мёртвого кода.
 - [ ] Архитектурные слои не нарушены.
+- [ ] `rtk git status --short` проверен; dirty worktree и uncommitted review fixes
+      блокируют completion.

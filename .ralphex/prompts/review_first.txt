@@ -69,6 +69,39 @@ Severity:
 - minor if only documentation or test clarity is missing;
 - false positive if the branch does not mutate counters/metrics.
 
+## Publication / public-read safety review
+
+For any branch that adds or changes publication, public-read snapshots,
+host/path routing, public offer payloads, or custom-code delivery, verify:
+- stale in-memory `publication_version` values cannot affect responses or
+  persisted state after writes;
+- two concurrent publish attempts from the same source version cannot both
+  create active public versions or silently overwrite each other;
+- public-id reservation and route binding are atomic, not existence-check before
+  insert/bind;
+- active and inactive host-path binding reuse is covered for the same showcase
+  and for a different showcase;
+- host/path values are canonicalized before comparison, storage, and lookup;
+- audit failure before and after state mutation cannot leave a published state
+  without the required audit trail;
+- cache invalidation happens only after the DB commit is durable, or the branch
+  documents and tests an explicit alternative ordering;
+- malformed persisted snapshots fail closed on the public-read path;
+- public offer identifiers come from the intended source and do not expose
+  internal-only identifiers unless the plan explicitly allows them;
+- custom-code paths enforce size limits, audit exposure, and PII controls.
+
+Severity/classification:
+- critical/major for races, stale publication state, unsafe public identifiers,
+  route hijacking, audit gaps, cache/DB ordering bugs, malformed public data, or
+  PII exposure that can affect public reads;
+- missing test coverage when the code appears correct but the focused
+  publication/public-read regression is absent;
+- product decision required when identifier exposure, custom-code limits, audit
+  visibility, or PII controls are not settled by the plan;
+- false positive if the branch does not touch publication, public-read
+  snapshots, host/path routing, public offers, or custom-code delivery.
+
 ## Step 2: Launch Review Agents
 
 # Launch all available reviewer agents in parallel:
@@ -99,6 +132,8 @@ Severity:
 # - Do not fix product decisions, optional performance improvements,
 #   simplifications, auth/data contract changes, public field changes, DB schema
 #   changes, or global architecture changes without a plan amendment.
+# - A blocking product decision finding is not code-fixable and prevents clean
+#   review success until the plan is amended or the decision is resolved.
 # - Pre-existing issues may be reported, but only fix them if they block current validation.
 # - Run required tests/lint after fixes.
 

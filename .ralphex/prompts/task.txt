@@ -31,10 +31,13 @@
 # - Do not modify global git, codex, or ralphex settings.
 # - Do not modify files outside the current git repository.
 # - Do not modify secrets or tokens.
+# - Do not fix unrelated plan lifecycle artifacts; report them as blockers.
 
 # CRITICAL CONSTRAINT:
 # Complete ONE Task section per iteration. Complete all checkboxes in that
 # section, then stop. Do not continue to the next section.
+# Do not use repository hygiene, completed-plan routing, or unrelated lifecycle
+# artifacts as permission to edit files outside the selected Task section.
 
 # STEP 0 - ANNOUNCE:
 # Before starting work, output a brief overview explaining:
@@ -67,6 +70,13 @@
 #   explicitly requires them.
 # - For storage/persistence changes, keep transactions in the DI provider and
 #   do not call `session.commit()` or `session.begin()` from storages or use cases.
+# - Check-then-insert and check-then-bind are not safe for unique public
+#   identifiers or route bindings. Use PostgreSQL-enforced uniqueness and an
+#   atomic write path.
+# - Allocate publication versions atomically in PostgreSQL.
+# - Keep audit writes, snapshot activation, and public visibility changes in
+#   one Unit of Work, or document the explicit consistency alternative in the
+#   Task result before proceeding.
 # - Do not create standalone `src/tests/config`, `src/tests/di`, or
 #   `src/tests/migrations` tests for settings, DI, Alembic commands, or other
 #   infrastructure mechanics; use shared fixtures and layer-level integration
@@ -77,6 +87,7 @@
 #   non-mutating/error paths when relevant.
 # - Implement all checkboxes under the current Task section.
 # - Write tests for behavior changes before production changes.
+# - Concurrent publish behavior must have a focused regression test.
 # - For protected API behavior, use `self.api` for authenticated requests and a
 #   separate `Test*NoAuthAPI` class with `self.no_auth_api` for no-auth scenarios.
 # - Keep one commit per Task only when the active RALPHEX loop requires commits.
@@ -85,15 +96,16 @@
 
 # STEP 2 - VALIDATE:
 # - Run the validation commands specified in the plan.
+# - Do not run independent pytest processes in parallel against the same shared
+#   PostgreSQL test database.
 # - Fix failures and repeat until all required validation passes, or report a blocker.
 
 # STEP 3 - COMPLETE:
 # - Update {{PLAN_FILE}} by changing completed checkboxes in the current Task
 #   section from [ ] to [x].
 # - If the active RALPHEX loop requires commits, commit code plus the updated plan.
-# - Verify `docs/plans/backlog/completed/` does not exist. If it exists, move
-#   contained plans to `docs/plans/completed/`, remove the empty invalid
-#   directory, and keep the diff scoped to that cleanup.
+# - Verify `docs/plans/backlog/completed/` does not exist. If it exists, report
+#   a blocker instead of moving, editing, archiving, or fixing unrelated plans.
 # - Re-run the deterministic unchecked-checkbox scan.
 # - If no unchecked checkboxes remain, output exactly: <<<RALPHEX:ALL_TASKS_DONE>>>
 # - If unchecked checkboxes remain, stop here.

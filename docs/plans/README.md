@@ -7,13 +7,17 @@ This directory contains executable RALPHEX plan files for `showcase_constructor`
 - Read `AGENTS.md` before writing or executing a plan.
 - Keep one feature, refactor, or documentation workflow per plan file.
 - Store new plans as `docs/plans/backlog/<feature-name>.md`.
-- Let RALPHEX move completed plans to `docs/plans/completed/`.
+- Only the orchestrator archives completed plans to `docs/plans/completed/`.
 - Keep RALPHEX `plans_dir` pointed at `docs/plans`, not
   `docs/plans/backlog`; otherwise completed plans are archived into the invalid
   `docs/plans/backlog/completed/` subtree.
 - Treat any existing `docs/plans/backlog/completed/` directory as a repository
-  hygiene failure: move contained plans to `docs/plans/completed/` and remove
-  the empty invalid directory.
+  hygiene failure. Planning, task, and review agents report it as a blocker
+  instead of moving or editing unrelated plans.
+- Active failed plans remain in `docs/plans/backlog/` until the orchestrator
+  explicitly archives them.
+- The orchestrator archives only after review fixes are committed and
+  `rtk git status --short` is clean.
 - Use `rtk` for shell commands.
 - Do not add dependencies unless the plan explicitly updates both `pyproject.toml`
   and `uv.lock`.
@@ -35,6 +39,10 @@ the task text is not visible in the prompt, recover it from the first
 Existing plan files are style examples only, not fallback task descriptions.
 Do not use active, completed, backlog, or untracked plan files as the source
 task. Only this README may be read before resolving the current request.
+
+Make-plan changes only the newly created `docs/plans/backlog/<feature-name>.md`
+plan file. Unrelated plan lifecycle or hygiene problems are blockers for the
+plan-creation run, not cleanup work for the planning agent.
 
 Plans should include compact implementation sketches when they reduce ambiguity
 for non-trivial code changes. Sketches are not final code. They must point to
@@ -113,6 +121,10 @@ Task execution starts by reading the whole plan, the current progress log, and
 `rtk git status --short`. Only after that should an executor scan for the first
 unchecked checkbox and select the nearest preceding `### Task N:` section.
 
+Task agents update only the selected plan's current Task checkboxes and the
+current task implementation. They do not move active, failed, or completed plan
+files.
+
 If the focused RED test for the selected Task is already green before production
 changes, do not invent a production diff. Mark the path as `coverage-only` when
 extra coverage is useful, or `stale plan` when the plan no longer matches code.
@@ -123,6 +135,10 @@ Reviewer agents are read-only and finding-only. They may inspect diffs, source,
 plans, and docs, but must not edit files, create DB schema changes, add indexes,
 change public fields, change auth/data contracts, add global architecture rules,
 or commit.
+
+Review agents and review-fix passes do not archive or move plan files. A dirty
+worktree, uncommitted review fixes, or unrelated plan lifecycle artifact blocks
+review completion until the orchestrator handles it.
 
 Every review finding must be classified before action as exactly one of:
 `correctness/security defect`, `missing test coverage`, `product decision required`,

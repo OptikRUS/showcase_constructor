@@ -17,6 +17,9 @@
   unit-тестов infrastructure mechanics. Settings, DI и Alembic wiring проверяются
   через shared fixtures, API/storage integration tests и migration smoke в
   `src/tests/storages/`.
+- Publication/public-read tests must cover concurrent publish behavior, malformed persisted
+  snapshot mapping, and database-backed public identifier/route binding conflicts when those
+  paths exist.
 - Если нужного `conftest.py`, `fixtures.py` или helper ещё нет, сначала создать/расширить эту
   инфраструктуру по этому reference, затем писать API/Core/Storage tests.
 - Запрещено переносить fixtures в `src/tests/api/*`, `src/tests/core/*`, `src/tests/storages/*`
@@ -421,6 +424,91 @@ class TestDatabaseEntityStorage(FactoryFixture, StorageFixture):
         with pytest.raises(EntityNotFoundError):
             await self.storage.get_by_id(entity_id=999)
 ```
+
+### Publication state-machine regression tests
+
+These examples use placeholder names. Keep the same shape for any feature that
+publishes a persisted snapshot to a public read path.
+
+```python
+import asyncio
+
+import pytest
+
+from src.core.publication.exceptions import (
+    MalformedSnapshotError,
+    PublicIdentifierConflictError,
+    RouteBindingConflictError,
+)
+from src.core.publication.use_cases import PublishEntityUseCase, ReadPublicEntityUseCase
+from src.storages.publication_storage import DatabasePublicationStorage
+from src.tests.fixtures import FactoryFixture, StorageFixture
+
+
+class TestPublishEntityUseCase(FactoryFixture, StorageFixture):
+    @pytest.fixture(autouse=True)
+    def _use_case(self) -> None:
+        storage = DatabasePublicationStorage(session=self.storage_helper.session)
+        self.use_case = PublishEntityUseCase(storage=storage)
+
+    async def test_concurrent_publish_allocates_unique_versions(self) -> None:
+        params = self.factory.publish_params(entity_id=1, source_version=3)
+
+        results = await asyncio.gather(
+            self.storage_helper.publish_entity_in_new_uow(params=params),
+            self.storage_helper.publish_entity_in_new_uow(params=params),
+        )
+
+        assert sorted(result.version for result in results) == [1, 2]
+
+    async def test_public_id_conflict_comes_from_reservation(self) -> None:
+        await self.storage_helper.insert_public_identifier(public_id="public-1", entity_id=1)
+
+        with pytest.raises(PublicIdentifierConflictError):
+            await self.use_case.execute(
+                params=self.factory.publish_params(public_id="public-1", entity_id=2),
+            )
+
+    async def test_active_route_binding_conflict_comes_from_database(self) -> None:
+        await self.storage_helper.insert_route_binding(
+            canonical_host="example.com",
+            canonical_path="/a",
+            entity_id=1,
+        )
+
+        with pytest.raises(RouteBindingConflictError):
+            await self.use_case.execute(
+                params=self.factory.publish_params(
+                    canonical_host="example.com",
+                    canonical_path="/a",
+                    entity_id=2,
+                ),
+            )
+
+
+class TestReadPublicEntityUseCase(FactoryFixture, StorageFixture):
+    @pytest.fixture(autouse=True)
+    def _use_case(self) -> None:
+        storage = DatabasePublicationStorage(session=self.storage_helper.session)
+        self.use_case = ReadPublicEntityUseCase(storage=storage)
+
+    async def test_malformed_persisted_snapshot_is_not_silently_mapped(self) -> None:
+        await self.storage_helper.insert_active_snapshot(
+            entity_id=1,
+            payload={"status": "unknown", "missing_required_field": True},
+        )
+
+        with pytest.raises(MalformedSnapshotError):
+            await self.use_case.execute(public_id="public-1")
+```
+
+When the product rule allows only one publish from the same source version, the
+concurrent test should assert one success and one domain conflict instead of two
+versions. It must still prove that PostgreSQL never persists duplicate
+publication versions, partial active pointers, or audit rows outside the same
+Unit of Work. Helper methods used for concurrency must open independent
+request/UoW sessions; do not run parallel publish calls through one shared
+`AsyncSession`.
 
 ### Migration smoke test (src/tests/storages/test_database_migrations.py)
 

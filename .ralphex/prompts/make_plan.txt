@@ -39,6 +39,12 @@ Exception: `docs/plans/README.md` may be read before task resolution for format 
 Never modify an existing plan unless the current task description explicitly
 names that plan file or clearly asks to revise it.
 
+During plan creation, create or update only the new plan file under
+`docs/plans/backlog/`. Do not move, rename, fix, archive, reformat, or edit
+active, backlog, completed, or untracked plan files as cleanup for the new plan.
+If repository hygiene is already broken, record the exact problem as a blocker
+instead of repairing it.
+
 Superpowers skills are advisory only for this prompt.
 Do not use `docs/superpowers/plans/...`.
 After reading any required skill, write only:
@@ -72,15 +78,16 @@ Before printing `PLAN_CREATED`, verify:
 - the created plan file exists;
 - the Goal/Context clearly match the current task description;
 - the plan file path is under `docs/plans/backlog/`;
-- `docs/plans/backlog/completed/` does not exist; if it exists, move contained
-  plans to `docs/plans/completed/` and remove the empty invalid directory before
-  reporting success;
+- `docs/plans/backlog/completed/` does not exist; if it exists, do not move or
+  edit anything inside it; record a repository hygiene blocker instead of
+  reporting the plan ready;
 - API/auth/user-visible data plans contain `## Product/Security Decisions`;
 - no file under `docs/superpowers/plans/` was created;
-- no unrelated existing plan file was modified;
+- no unrelated existing plan file was modified, moved, renamed, archived, or
+  fixed;
 - checkboxes appear only inside Task sections;
 - `Validation Commands` are exactly the four `rtk make ...` commands above;
-- `rtk git status --short` shows only intended plan/prompt/doc changes.
+- `rtk git status --short` shows only the new plan file.
 
 ## Preparation before writing the plan
 
@@ -95,10 +102,14 @@ Before creating the plan file:
 6. If the task touches FastAPI routes, auth, permissions, method exposure,
    schema-visible fields, or user-visible data, define Product/Security Decisions
    before Tasks: method auth matrix, public `GET`/`HEAD`/`OPTIONS`, protected
-   methods, public response fields, and identifier exposure rationale.
+   methods, public response fields, and identifier exposure rationale. For
+   publish/public plans, also define concurrent version allocation, public-id
+   reservation, route-binding conflicts, and audit/cache ordering before Tasks.
 7. If publicness, auth matrix, or identifier exposure is not confirmed by the
    requirement, existing contract, or explicit user decision, record
    `product decision required` and do not plan implementation that decides it.
+   Do not create dependent implementation Tasks while any required
+   Product/Security Decision remains unresolved.
 8. For auth/current-context work, verify where raw credentials are parsed. Keep
    JWT subject validation, blank/missing credential rejection, and auth exceptions
    in `src/api/auth/*`; do not invent core schema factories such as `from_raw()`
@@ -161,6 +172,9 @@ Use this structure:
 - Protected methods: `<which methods require token/session auth>`.
 - Public data: `<response fields that may be exposed publicly>`.
 - Identifier exposure: `<whether ids/email/username/profile identifiers are allowed and why>`.
+- Publish/public decisions: `<concurrent version allocation, public-id
+  reservation, route-binding conflicts, audit/cache ordering, or not
+  applicable>`.
 - Product decision required: `<none, or exact unresolved question>`.
 
 ## Implementation Notes
@@ -257,6 +271,10 @@ and protected API, schema migration and behavioral API slices, unrelated
 domains, different persistence boundaries, or review-only work and production
 behavior.
 
+A single Task that changes state machine, storage, API, audit, and cache
+together is too broad even when it supports one feature. Split that work into
+several Tasks with separate success criteria and validation.
+
 ## Task rules
 
 1. Task headings must use `### Task N: <cohesive vertical milestone>`.
@@ -280,6 +298,8 @@ behavior.
     protected API, schema migration and behavioral API slices, unrelated
     domains, different persistence boundaries, or review-only work and
     production behavior.
+14. Always split any Task that would simultaneously change state machine,
+    storage, API, audit, and cache behavior.
 
 ## Final self-check
 
@@ -290,5 +310,9 @@ Before saving:
 - validation commands are exactly the four `rtk make ...` commands;
 - all Tasks have concrete success criteria and checkbox actions;
 - checkboxes appear only inside Task sections;
+- unresolved `product decision required` entries do not have dependent
+  implementation Tasks;
+- publish/public plans cover concurrent version allocation, public-id
+  reservation, route-binding conflicts, and audit/cache ordering;
 - no Task assumes unverified codebase facts;
 - no Task introduces unrelated refactoring or architecture churn.

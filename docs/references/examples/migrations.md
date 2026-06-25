@@ -9,6 +9,70 @@
 
 **Запрещено:** `20260512_0001_create_entities.py` — дата в имени файла не используется.
 
+## Publication/public-read database invariants
+
+Publication migrations encode concurrency guarantees in PostgreSQL, not only in
+Python code. Use domain-specific names in real migrations, but keep these
+invariants:
+
+```python
+def upgrade() -> None:
+    op.create_table(
+        "publication_counters",
+        sa.Column("entity_id", sa.BigInteger(), nullable=False),
+        sa.Column("next_version", sa.BigInteger(), nullable=False),
+        sa.PrimaryKeyConstraint("entity_id", name="pk_publication_counters"),
+    )
+    op.create_table(
+        "publication_snapshots",
+        sa.Column("id", sa.BigInteger(), nullable=False),
+        sa.Column("entity_id", sa.BigInteger(), nullable=False),
+        sa.Column("version", sa.BigInteger(), nullable=False),
+        sa.Column("payload", sa.JSON(), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.PrimaryKeyConstraint("id", name="pk_publication_snapshots"),
+        sa.UniqueConstraint("entity_id", "version", name="uq_publication_snapshots_version"),
+    )
+    op.create_table(
+        "active_publications",
+        sa.Column("entity_id", sa.BigInteger(), nullable=False),
+        sa.Column("snapshot_id", sa.BigInteger(), nullable=False),
+        sa.Column("version", sa.BigInteger(), nullable=False),
+        sa.PrimaryKeyConstraint("entity_id", name="pk_active_publications"),
+    )
+    op.create_table(
+        "public_identifiers",
+        sa.Column("id", sa.BigInteger(), nullable=False),
+        sa.Column("public_id", sa.String(), nullable=False),
+        sa.Column("entity_id", sa.BigInteger(), nullable=False),
+        sa.PrimaryKeyConstraint("id", name="pk_public_identifiers"),
+        sa.UniqueConstraint("public_id", name="uq_public_identifiers_public_id"),
+    )
+    op.create_table(
+        "route_bindings",
+        sa.Column("id", sa.BigInteger(), nullable=False),
+        sa.Column("canonical_host", sa.String(), nullable=False),
+        sa.Column("canonical_path", sa.String(), nullable=False),
+        sa.Column("entity_id", sa.BigInteger(), nullable=False),
+        sa.Column("active", sa.Boolean(), nullable=False),
+        sa.PrimaryKeyConstraint("id", name="pk_route_bindings"),
+    )
+    op.create_index(
+        "uq_route_bindings_active_host_path",
+        "route_bindings",
+        ["canonical_host", "canonical_path"],
+        unique=True,
+        postgresql_where=sa.text("active"),
+    )
+```
+
+`publication_snapshots` is append-only; add new rows for new versions. Route
+bindings store canonical host/path values and use a unique active binding index
+so reuse attempts for the same or another entity fail through the database.
+Audit/event tables for publication mutations belong in the same migration slice
+as the mutation tables when the feature requires audit rollback with the same
+Unit of Work.
+
 ## src/migrations/commands.py
 
 ```python
