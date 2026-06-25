@@ -1,10 +1,18 @@
 from dataclasses import dataclass, replace
+from secrets import token_urlsafe
 from uuid import UUID
 
 from src.core.admin_auth.schemas import AdminActorContext
-from src.core.public_config.projections import build_preview_public_config, render_preview_html
+from src.core.public_config.projections import (
+    build_preview_public_config,
+    build_published_public_config,
+    public_config_snapshot_to_json,
+    render_preview_html,
+)
+from src.core.showcases.cache import PublicShowcaseCacheInvalidator
 from src.core.showcases.exceptions import (
     AdminShowcaseDraftBlockNotFoundError,
+    AdminShowcasePublicationValidationError,
     ShowcaseAccessDeniedError,
 )
 from src.core.showcases.schemas import (
@@ -19,7 +27,9 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraftSettingsPatchParams,
     AdminShowcasePreview,
     AdminShowcasePreviewMode,
+    AdminShowcasePublication,
     AdminShowcaseUpdateParams,
+    JsonObject,
 )
 from src.core.storages import AdminShowcaseStorage
 
@@ -144,12 +154,159 @@ class BuildAdminShowcasePreviewUseCase:
         )
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class PublishAdminShowcaseUseCase:
+    storage: AdminShowcaseStorage
+    cache_invalidator: PublicShowcaseCacheInvalidator
+
+    async def execute(
+        self,
+        *,
+        showcase_id: str,
+        context: AdminActorContext,
+    ) -> AdminShowcasePublication:
+        showcase = await self.storage.get_by_id(showcase_id=showcase_id)
+
+        if showcase.owner_partner_id != context.partner_id:
+            raise ShowcaseAccessDeniedError
+
+        draft = await self.storage.get_draft_by_id(showcase_id=showcase_id)
+        blocks = await self.storage.list_draft_blocks(showcase_id=showcase_id)
+        offers = await self.storage.list_draft_offers(showcase_id=showcase_id)
+        _validate_publishable_draft(draft=draft, offers=offers)
+
+        public_id = await self.storage.ensure_showcase_public_id(
+            showcase_id=showcase_id,
+            public_id_candidate=_new_public_id_candidate(),
+        )
+        version = showcase.publication_version + 1
+        config = build_published_public_config(
+            draft=draft,
+            blocks=blocks,
+            offers=offers,
+            public_id=public_id,
+        )
+        snapshot = public_config_snapshot_to_json(snapshot=config, settings=draft.settings)
+        await self.storage.append_showcase_audit_record(
+            showcase_id=showcase_id,
+            action="showcase_published",
+            actor_user_id=context.user_id,
+            actor_partner_id=context.partner_id,
+            metadata={"public_id": public_id, "version": version},
+        )
+        created_snapshot = await self.storage.create_published_snapshot(
+            showcase_id=showcase_id,
+            public_id=public_id,
+            version=version,
+            snapshot=snapshot,
+            created_by_user_id=context.user_id,
+            created_by_partner_id=context.partner_id,
+        )
+        state = await self.storage.activate_published_snapshot(
+            showcase_id=showcase_id,
+            public_id=public_id,
+            version=version,
+            snapshot=created_snapshot.snapshot,
+        )
+        await self.cache_invalidator.invalidate_public_showcase(public_id=public_id)
+
+        return AdminShowcasePublication(
+            id=state.id,
+            public_id=public_id,
+            version=state.version,
+            published=True,
+        )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class UnpublishAdminShowcaseUseCase:
+    storage: AdminShowcaseStorage
+    cache_invalidator: PublicShowcaseCacheInvalidator
+
+    async def execute(
+        self,
+        *,
+        showcase_id: str,
+        context: AdminActorContext,
+    ) -> AdminShowcasePublication:
+        showcase = await self.storage.get_by_id(showcase_id=showcase_id)
+
+        if showcase.owner_partner_id != context.partner_id:
+            raise ShowcaseAccessDeniedError
+
+        if showcase.public_id is None or showcase.published_snapshot is None:
+            raise AdminShowcasePublicationValidationError(
+                detail="ADMIN_SHOWCASE_PUBLICATION_NOT_ACTIVE"
+            )
+
+        version = showcase.publication_version + 1
+        await self.storage.append_showcase_audit_record(
+            showcase_id=showcase_id,
+            action="showcase_unpublished",
+            actor_user_id=context.user_id,
+            actor_partner_id=context.partner_id,
+            metadata={"public_id": showcase.public_id, "version": version},
+        )
+        state = await self.storage.deactivate_published_showcase(
+            showcase_id=showcase_id,
+            version=version,
+        )
+        await self.storage.deactivate_published_route_bindings(
+            showcase_id=showcase_id,
+            public_id=showcase.public_id,
+        )
+        await self.cache_invalidator.invalidate_public_showcase(public_id=showcase.public_id)
+
+        return AdminShowcasePublication(
+            id=state.id,
+            public_id=showcase.public_id,
+            version=state.version,
+            published=False,
+        )
+
+
 def _custom_code_fields(*, params: AdminShowcaseDraftSettingsPatchParams) -> list[str]:
     return [
         field_name
         for field_name in CUSTOM_CODE_AUDIT_FIELDS
         if field_name in params.settings
     ]
+
+
+def _validate_publishable_draft(
+    *,
+    draft: AdminShowcaseDraft,
+    offers: list[AdminShowcaseDraftOffer],
+) -> None:
+    if _str_setting(settings=draft.settings, key="affiliate_id") is None:
+        raise AdminShowcasePublicationValidationError(
+            detail="ADMIN_SHOWCASE_PUBLICATION_REQUIRES_AFFILIATE_ID"
+        )
+    if _str_setting(settings=draft.settings, key="type") is None:
+        raise AdminShowcasePublicationValidationError(
+            detail="ADMIN_SHOWCASE_PUBLICATION_REQUIRES_TYPE"
+        )
+    if not any(offer.enabled for offer in offers) and _configured_fallback(draft=draft) is None:
+        raise AdminShowcasePublicationValidationError(
+            detail="ADMIN_SHOWCASE_PUBLICATION_REQUIRES_AVAILABLE_OFFER_OR_FALLBACK"
+        )
+
+
+def _configured_fallback(*, draft: AdminShowcaseDraft) -> str | None:
+    fallback_text = _str_setting(settings=draft.settings, key="fallback_text")
+    if fallback_text is None or not fallback_text.strip():
+        return None
+
+    return fallback_text
+
+
+def _str_setting(*, settings: JsonObject, key: str) -> str | None:
+    value = settings.get(key)
+    return value if isinstance(value, str) and value.strip() else None
+
+
+def _new_public_id_candidate() -> str:
+    return token_urlsafe(24)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

@@ -14,6 +14,7 @@ from src.api.showcases.schemas import (
     AdminShowcaseDraftResponse,
     AdminShowcasePreviewRequest,
     AdminShowcasePreviewResponse,
+    AdminShowcasePublicationResponse,
 )
 from src.core.admin_auth.schemas import AdminActorContext
 from src.core.showcases.use_cases import (
@@ -26,6 +27,8 @@ from src.core.showcases.use_cases import (
     ListAdminShowcaseOffersUseCase,
     PatchAdminShowcaseBlockUseCase,
     PatchAdminShowcaseOfferUseCase,
+    PublishAdminShowcaseUseCase,
+    UnpublishAdminShowcaseUseCase,
     UpdateAdminShowcaseDraftSettingsUseCase,
 )
 
@@ -68,6 +71,30 @@ async def preview_showcase(
     )
 
     return AdminShowcasePreviewResponse.from_domain(result=result)
+
+
+@router.post(path="/{showcase_id}/publish", status_code=status.HTTP_200_OK)
+async def publish_showcase(
+    showcase_id: str,
+    user: JwtUserDeps,
+    use_case: FromDishka[PublishAdminShowcaseUseCase],
+) -> AdminShowcasePublicationResponse:
+    context = AdminActorContext(user_id=user.user_id, partner_id=user.partner_id)
+    result = await use_case.execute(showcase_id=showcase_id, context=context)
+
+    return AdminShowcasePublicationResponse.from_domain(result=result)
+
+
+@router.post(path="/{showcase_id}/unpublish", status_code=status.HTTP_200_OK)
+async def unpublish_showcase(
+    showcase_id: str,
+    user: JwtUserDeps,
+    use_case: FromDishka[UnpublishAdminShowcaseUseCase],
+) -> AdminShowcasePublicationResponse:
+    context = AdminActorContext(user_id=user.user_id, partner_id=user.partner_id)
+    result = await use_case.execute(showcase_id=showcase_id, context=context)
+
+    return AdminShowcasePublicationResponse.from_domain(result=result)
 
 
 @router.get(path="/{showcase_id}/blocks", status_code=status.HTTP_200_OK)

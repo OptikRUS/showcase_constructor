@@ -19,6 +19,9 @@ class AdminShowcase:
     id: str
     owner_partner_id: str
     title: str
+    public_id: str | None = None
+    publication_version: int = 0
+    published_snapshot: JsonObject | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -47,6 +50,23 @@ class AdminShowcasePreview:
     mode: AdminShowcasePreviewMode
     config: PublishedPublicConfigSnapshot
     html: str | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AdminShowcasePublication:
+    id: str
+    public_id: str
+    version: int
+    published: bool
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AdminShowcasePublicationState:
+    id: str
+    public_id: str | None
+    version: int
+    active: bool
+    snapshot: JsonObject | None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

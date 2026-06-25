@@ -22,6 +22,7 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraftBlock,
     AdminShowcaseDraftOffer,
     AdminShowcaseDraftOfferField,
+    AdminShowcasePublicationState,
     JsonObject,
     JsonValue,
     PublishedRouteBinding,
@@ -66,6 +67,9 @@ class AdminShowcaseModel(Base):
             id=self.id,
             owner_partner_id=self.owner_partner_id,
             title=self.title,
+            public_id=self.public_id,
+            publication_version=self.publication_version,
+            published_snapshot=self.published_snapshot,
         )
 
     def to_draft_domain(self) -> AdminShowcaseDraft:
@@ -75,6 +79,15 @@ class AdminShowcaseModel(Base):
             title=self.title,
             settings=self.draft_settings,
             published_snapshot=self.published_snapshot,
+        )
+
+    def to_publication_state_domain(self) -> AdminShowcasePublicationState:
+        return AdminShowcasePublicationState(
+            id=self.id,
+            public_id=self.public_id,
+            version=self.publication_version,
+            active=self.active_published_snapshot_internal_id is not None,
+            snapshot=self.published_snapshot,
         )
 
 

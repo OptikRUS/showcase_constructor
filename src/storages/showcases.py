@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from sqlalchemy import delete, insert, literal, select, update
+from sqlalchemy import delete, func, insert, literal, select, update
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,6 +19,7 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraftOfferCreateParams,
     AdminShowcaseDraftOfferPatchParams,
     AdminShowcaseDraftSettingsPatchParams,
+    AdminShowcasePublicationState,
     AdminShowcaseUpdateParams,
     JsonObject,
     JsonValue,
@@ -396,6 +397,85 @@ class DatabaseAdminShowcaseStorage(AdminShowcaseStorage):
 
         return model.to_domain()
 
+    async def ensure_showcase_public_id(
+        self,
+        *,
+        showcase_id: str,
+        public_id_candidate: str,
+    ) -> str:
+        public_id = await self.session.scalar(
+            update(AdminShowcaseModel)
+            .where(AdminShowcaseModel.id == showcase_id)
+            .values(
+                public_id=func.coalesce(
+                    AdminShowcaseModel.public_id,
+                    literal(public_id_candidate),
+                )
+            )
+            .returning(AdminShowcaseModel.public_id)
+        )
+
+        if public_id is None:
+            raise AdminShowcaseNotFoundError
+
+        return public_id
+
+    async def activate_published_snapshot(
+        self,
+        *,
+        showcase_id: str,
+        public_id: str,
+        version: int,
+        snapshot: JsonObject,
+    ) -> AdminShowcasePublicationState:
+        snapshot_internal_id = (
+            select(PublishedShowcaseSnapshotModel.internal_id)
+            .where(
+                PublishedShowcaseSnapshotModel.showcase_id == showcase_id,
+                PublishedShowcaseSnapshotModel.public_id == public_id,
+                PublishedShowcaseSnapshotModel.version == version,
+            )
+            .scalar_subquery()
+        )
+        model = await self.session.scalar(
+            update(AdminShowcaseModel)
+            .where(AdminShowcaseModel.id == showcase_id)
+            .values(
+                public_id=public_id,
+                publication_version=version,
+                active_published_snapshot_internal_id=snapshot_internal_id,
+                published_snapshot=snapshot,
+            )
+            .returning(AdminShowcaseModel)
+        )
+
+        if model is None:
+            raise AdminShowcaseNotFoundError
+
+        return model.to_publication_state_domain()
+
+    async def deactivate_published_showcase(
+        self,
+        *,
+        showcase_id: str,
+        version: int,
+    ) -> AdminShowcasePublicationState:
+        model = await self.session.scalar(
+            update(AdminShowcaseModel)
+            .where(AdminShowcaseModel.id == showcase_id)
+            .values(
+                publication_version=version,
+                active_published_snapshot_internal_id=None,
+                published_snapshot=None,
+            )
+            .returning(AdminShowcaseModel)
+        )
+
+        if model is None:
+            raise AdminShowcaseNotFoundError
+
+        return model.to_publication_state_domain()
+
     async def list_published_snapshots(
         self,
         *,
@@ -455,6 +535,22 @@ class DatabaseAdminShowcaseStorage(AdminShowcaseStorage):
         )
 
         return [model.to_domain() for model in result.all()]
+
+    async def deactivate_published_route_bindings(
+        self,
+        *,
+        showcase_id: str,
+        public_id: str,
+    ) -> None:
+        await self.session.execute(
+            update(PublishedRouteBindingModel)
+            .where(
+                PublishedRouteBindingModel.showcase_id == showcase_id,
+                PublishedRouteBindingModel.public_id == public_id,
+                PublishedRouteBindingModel.active.is_(True),
+            )
+            .values(active=False)
+        )
 
     async def append_showcase_audit_record(
         self,

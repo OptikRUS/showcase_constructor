@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from typing import NotRequired, TypedDict, Unpack
 
 from src.core.public_config.schemas import (
@@ -24,9 +25,12 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraftOfferField,
     AdminShowcaseDraftOfferPatchParams,
     AdminShowcaseDraftSettingsPatchParams,
+    AdminShowcasePublication,
+    AdminShowcasePublicationState,
     AdminShowcaseUpdateParams,
     JsonObject,
     JsonValue,
+    PublishedShowcaseSnapshot,
 )
 
 
@@ -115,6 +119,16 @@ class AdminShowcaseDraftSettingsPatchParamsFactoryKwargs(TypedDict):
     settings: NotRequired[JsonObject]
 
 
+class PublishedShowcaseSnapshotFactoryKwargs(TypedDict):
+    showcase_id: NotRequired[str]
+    public_id: NotRequired[str]
+    version: NotRequired[int]
+    snapshot: NotRequired[JsonObject | None]
+    created_by_user_id: NotRequired[str]
+    created_by_partner_id: NotRequired[str]
+    created_at: NotRequired[datetime | None]
+
+
 class FactoryHelper:
     @classmethod
     def admin_showcase(
@@ -123,11 +137,17 @@ class FactoryHelper:
         id: str = "showcase-1",
         owner_partner_id: str = "partner-1",
         title: str = "Test showcase",
+        public_id: str | None = None,
+        publication_version: int = 0,
+        published_snapshot: JsonObject | None = None,
     ) -> AdminShowcase:
         return AdminShowcase(
             id=id,
             owner_partner_id=owner_partner_id,
             title=title,
+            public_id=public_id,
+            publication_version=publication_version,
+            published_snapshot=published_snapshot,
         )
 
     @classmethod
@@ -158,6 +178,56 @@ class FactoryHelper:
         **kwargs: Unpack[AdminShowcaseDraftSettingsPatchParamsFactoryKwargs],
     ) -> AdminShowcaseDraftSettingsPatchParams:
         return AdminShowcaseDraftSettingsPatchParams(settings=kwargs.get("settings", {}))
+
+    @classmethod
+    def admin_showcase_publication(
+        cls,
+        *,
+        id: str = "showcase-1",
+        public_id: str = "public-showcase-1",
+        version: int = 1,
+        published: bool = True,
+    ) -> AdminShowcasePublication:
+        return AdminShowcasePublication(
+            id=id,
+            public_id=public_id,
+            version=version,
+            published=published,
+        )
+
+    @classmethod
+    def admin_showcase_publication_state(
+        cls,
+        *,
+        id: str = "showcase-1",
+        public_id: str | None = "public-showcase-1",
+        version: int = 1,
+        active: bool = True,
+        snapshot: JsonObject | None = None,
+    ) -> AdminShowcasePublicationState:
+        return AdminShowcasePublicationState(
+            id=id,
+            public_id=public_id,
+            version=version,
+            active=active,
+            snapshot=snapshot,
+        )
+
+    @classmethod
+    def published_showcase_snapshot(
+        cls,
+        **kwargs: Unpack[PublishedShowcaseSnapshotFactoryKwargs],
+    ) -> PublishedShowcaseSnapshot:
+        public_id = kwargs.get("public_id", "public-showcase-1")
+        return PublishedShowcaseSnapshot(
+            showcase_id=kwargs.get("showcase_id", "showcase-1"),
+            public_id=public_id,
+            version=kwargs.get("version", 1),
+            snapshot=kwargs.get("snapshot") or {"id": public_id},
+            created_by_user_id=kwargs.get("created_by_user_id", "admin-user-1"),
+            created_by_partner_id=kwargs.get("created_by_partner_id", "partner-1"),
+            created_at=kwargs.get("created_at") or datetime(2026, 1, 1, tzinfo=UTC),
+        )
 
     @classmethod
     def admin_showcase_draft_block(

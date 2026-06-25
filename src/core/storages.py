@@ -10,6 +10,7 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraftOfferCreateParams,
     AdminShowcaseDraftOfferPatchParams,
     AdminShowcaseDraftSettingsPatchParams,
+    AdminShowcasePublicationState,
     AdminShowcaseUpdateParams,
     JsonObject,
     PublishedRouteBinding,
@@ -102,6 +103,32 @@ class AdminShowcaseStorage(metaclass=ABCMeta):
     ) -> PublishedShowcaseSnapshot: ...
 
     @abstractmethod
+    async def ensure_showcase_public_id(
+        self,
+        *,
+        showcase_id: str,
+        public_id_candidate: str,
+    ) -> str: ...
+
+    @abstractmethod
+    async def activate_published_snapshot(
+        self,
+        *,
+        showcase_id: str,
+        public_id: str,
+        version: int,
+        snapshot: JsonObject,
+    ) -> AdminShowcasePublicationState: ...
+
+    @abstractmethod
+    async def deactivate_published_showcase(
+        self,
+        *,
+        showcase_id: str,
+        version: int,
+    ) -> AdminShowcasePublicationState: ...
+
+    @abstractmethod
     async def list_published_snapshots(
         self,
         *,
@@ -124,6 +151,14 @@ class AdminShowcaseStorage(metaclass=ABCMeta):
         *,
         showcase_id: str,
     ) -> list[PublishedRouteBinding]: ...
+
+    @abstractmethod
+    async def deactivate_published_route_bindings(
+        self,
+        *,
+        showcase_id: str,
+        public_id: str,
+    ) -> None: ...
 
     @abstractmethod
     async def append_showcase_audit_record(

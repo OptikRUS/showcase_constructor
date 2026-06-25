@@ -1,4 +1,5 @@
 from src.core.admin_auth.exceptions import AdminPermissionDeniedError, AdminResourceNotFoundError
+from src.core.exceptions import BaseExceptionError
 
 
 class ShowcaseAccessDeniedError(AdminPermissionDeniedError):
@@ -15,3 +16,7 @@ class AdminShowcaseDraftBlockNotFoundError(AdminResourceNotFoundError):
 
 class AdminShowcaseDraftOfferNotFoundError(AdminResourceNotFoundError):
     detail: str = "ADMIN_SHOWCASE_DRAFT_OFFER_NOT_FOUND_ERROR"
+
+
+class AdminShowcasePublicationValidationError(BaseExceptionError):
+    detail: str = "ADMIN_SHOWCASE_PUBLICATION_VALIDATION_ERROR"

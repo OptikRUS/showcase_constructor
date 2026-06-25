@@ -1,12 +1,13 @@
 from dataclasses import dataclass
 
-from sqlalchemy import insert, select, text
+from sqlalchemy import insert, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.showcases.schemas import (
     AdminShowcaseDraft,
     AdminShowcaseDraftBlock,
     AdminShowcaseDraftOffer,
+    AdminShowcasePublicationState,
     JsonObject,
     PublishedRouteBinding,
     PublishedShowcaseSnapshot,
@@ -161,6 +162,98 @@ class StorageHelper:
         )
 
         return [model.to_domain() for model in result.all()]
+
+    async def create_active_published_showcase_snapshot(
+        self,
+        *,
+        showcase_id: str,
+        public_id: str,
+        version: int,
+        snapshot: JsonObject,
+        created_by_user_id: str = "admin-user-1",
+        created_by_partner_id: str = "partner-1",
+    ) -> PublishedShowcaseSnapshot:
+        showcase_internal_id = (
+            select(AdminShowcaseModel.internal_id)
+            .where(AdminShowcaseModel.id == showcase_id)
+            .scalar_subquery()
+        )
+        snapshot_model = await self.session.scalar(
+            insert(PublishedShowcaseSnapshotModel)
+            .values(
+                showcase_internal_id=showcase_internal_id,
+                showcase_id=showcase_id,
+                public_id=public_id,
+                version=version,
+                snapshot=snapshot,
+                created_by_user_id=created_by_user_id,
+                created_by_partner_id=created_by_partner_id,
+            )
+            .returning(PublishedShowcaseSnapshotModel)
+        )
+
+        if snapshot_model is None:
+            message = f"Published snapshot for {showcase_id!r} was not created"
+            raise RuntimeError(message)
+
+        await self.session.execute(
+            update(AdminShowcaseModel)
+            .where(AdminShowcaseModel.id == showcase_id)
+            .values(
+                public_id=public_id,
+                publication_version=version,
+                active_published_snapshot_internal_id=snapshot_model.internal_id,
+                published_snapshot=snapshot,
+            )
+        )
+
+        return snapshot_model.to_domain()
+
+    async def get_admin_showcase_publication_state(
+        self,
+        *,
+        showcase_id: str,
+    ) -> AdminShowcasePublicationState:
+        model = await self.session.scalar(
+            select(AdminShowcaseModel).where(AdminShowcaseModel.id == showcase_id)
+        )
+
+        if model is None:
+            message = f"Admin showcase {showcase_id!r} was not found"
+            raise RuntimeError(message)
+
+        return model.to_publication_state_domain()
+
+    async def create_published_route_binding(
+        self,
+        *,
+        showcase_id: str,
+        public_id: str,
+        host: str,
+        path: str,
+    ) -> PublishedRouteBinding:
+        showcase_internal_id = (
+            select(AdminShowcaseModel.internal_id)
+            .where(AdminShowcaseModel.id == showcase_id)
+            .scalar_subquery()
+        )
+        model = await self.session.scalar(
+            insert(PublishedRouteBindingModel)
+            .values(
+                showcase_internal_id=showcase_internal_id,
+                showcase_id=showcase_id,
+                public_id=public_id,
+                host=host,
+                path=path,
+            )
+            .returning(PublishedRouteBindingModel)
+        )
+
+        if model is None:
+            message = f"Published route binding for {showcase_id!r} was not created"
+            raise RuntimeError(message)
+
+        return model.to_domain()
 
     async def list_published_route_bindings(
         self,

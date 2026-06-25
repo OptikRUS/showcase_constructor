@@ -41,6 +41,12 @@ class APIHelper:
     ) -> Response:
         return self.client.post(f"/api/v1/showcases/{showcase_id}/preview", json=json)
 
+    def publish_admin_showcase(self, *, showcase_id: str) -> Response:
+        return self.client.post(f"/api/v1/showcases/{showcase_id}/publish")
+
+    def unpublish_admin_showcase(self, *, showcase_id: str) -> Response:
+        return self.client.post(f"/api/v1/showcases/{showcase_id}/unpublish")
+
     def list_admin_showcase_blocks(self, *, showcase_id: str) -> Response:
         return self.client.get(f"/api/v1/showcases/{showcase_id}/blocks")
 

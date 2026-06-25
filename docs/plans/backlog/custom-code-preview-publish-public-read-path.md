@@ -445,18 +445,18 @@ leaving unresolved host/path routing and cache-backend details explicit.
 
 **Actions:**
 
-- [ ] Add focused API/core/storage tests for publish validation, immutable
+- [x] Add focused API/core/storage tests for publish validation, immutable
   snapshot creation, version/author/time metadata, stable public id, audit,
   cache invalidation boundary, and atomic old-or-new visibility.
-- [ ] Add focused API/core/storage tests for unpublish behavior, audit,
+- [x] Add focused API/core/storage tests for unpublish behavior, audit,
   cache invalidation boundary, preserved snapshot history, and no partial state
   change on failures.
-- [ ] Run the narrowest relevant tests and confirm they fail for the expected
+- [x] Run the narrowest relevant tests and confirm they fail for the expected
   missing publish/unpublish behavior.
-- [ ] Make the minimal production changes required for the tests to pass.
-- [ ] Re-run the focused tests and confirm they pass.
-- [ ] Perform only necessary safe refactoring and re-run the focused tests.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Make the minimal production changes required for the tests to pass.
+- [x] Re-run the focused tests and confirm they pass.
+- [x] Perform only necessary safe refactoring and re-run the focused tests.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 5: Expose public published config by public id and explicit resolve binding
 

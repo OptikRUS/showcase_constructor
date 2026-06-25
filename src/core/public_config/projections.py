@@ -36,6 +36,77 @@ def build_preview_public_config(
     blocks: list[AdminShowcaseDraftBlock],
     offers: list[AdminShowcaseDraftOffer],
 ) -> PublishedPublicConfigSnapshot:
+    return _build_public_config(
+        draft=draft,
+        blocks=blocks,
+        offers=offers,
+        snapshot_id=f"preview-{draft.id}",
+        affiliate_id=_str_setting(settings=draft.settings, key="affiliate_id")
+        or f"preview-{draft.id}",
+    )
+
+
+def build_published_public_config(
+    *,
+    draft: AdminShowcaseDraft,
+    blocks: list[AdminShowcaseDraftBlock],
+    offers: list[AdminShowcaseDraftOffer],
+    public_id: str,
+) -> PublishedPublicConfigSnapshot:
+    return _build_public_config(
+        draft=draft,
+        blocks=blocks,
+        offers=offers,
+        snapshot_id=public_id,
+        affiliate_id=_str_setting(settings=draft.settings, key="affiliate_id") or public_id,
+    )
+
+
+def public_config_snapshot_to_json(
+    *,
+    snapshot: PublishedPublicConfigSnapshot,
+    settings: JsonObject,
+) -> JsonObject:
+    data: JsonObject = {
+        "id": snapshot.id,
+        "affiliate_id": snapshot.affiliate_id,
+        "type": snapshot.type,
+        "settings": _settings_to_json(settings=snapshot.settings),
+        "platform": {"id": snapshot.platform.id},
+        "constant_url_params_tool": _url_params_tool_to_json(
+            tool=snapshot.constant_url_params_tool
+        ),
+        "transferred_url_params_tool": _url_params_tool_to_json(
+            tool=snapshot.transferred_url_params_tool
+        ),
+        "metrics_tool": {
+            "enabled": snapshot.metrics_tool.enabled,
+            "metrics": list(snapshot.metrics_tool.metrics),
+        },
+        "is_need_to_send_offers_display_and_positions": (
+            snapshot.is_need_to_send_offers_display_and_positions
+        ),
+        "blocks": [_block_to_json(block=block) for block in snapshot.blocks],
+        "widget_info": (
+            _widget_info_to_json(widget_info=snapshot.widget_info)
+            if snapshot.widget_info is not None
+            else None
+        ),
+        "custom_head_code": _str_setting(settings=settings, key="custom_head_code"),
+        "custom_body_code": _str_setting(settings=settings, key="custom_body_code"),
+    }
+
+    return data
+
+
+def _build_public_config(
+    *,
+    draft: AdminShowcaseDraft,
+    blocks: list[AdminShowcaseDraftBlock],
+    offers: list[AdminShowcaseDraftOffer],
+    snapshot_id: str,
+    affiliate_id: str,
+) -> PublishedPublicConfigSnapshot:
     public_offers_by_block_id = _public_offers_by_block_id(offers=offers)
     public_blocks = tuple(
         PublicBlock(
@@ -49,9 +120,8 @@ def build_preview_public_config(
     config_type = _str_setting(settings=draft.settings, key="type") or "showcase"
 
     return PublishedPublicConfigSnapshot(
-        id=f"preview-{draft.id}",
-        affiliate_id=_str_setting(settings=draft.settings, key="affiliate_id")
-        or f"preview-{draft.id}",
+        id=snapshot_id,
+        affiliate_id=affiliate_id,
         type=config_type,
         settings=_public_settings(settings=draft.settings),
         platform=PublicPlatform(
@@ -263,6 +333,92 @@ def _metrics_tool(*, settings: JsonObject) -> PublicMetricsTool:
         enabled=_bool_value(raw_tool.get("enabled")),
         metrics=metrics,
     )
+
+
+def _settings_to_json(*, settings: PublicConfigSettings) -> JsonObject:
+    return {
+        "tracking_domain": settings.tracking_domain,
+        "design_id": settings.design_id,
+        "color_scheme": settings.color_scheme,
+        "site_background_color": settings.site_background_color,
+        "widget_background_color": settings.widget_background_color,
+        "offers_background_color": settings.offers_background_color,
+        "text_color": settings.text_color,
+        "usp_text_color": settings.usp_text_color,
+        "cta_color": settings.cta_color,
+        "font_family": settings.font_family,
+        "text_title": settings.text_title,
+        "text_subtitle": settings.text_subtitle,
+        "text_button": settings.text_button,
+        "image_banner_desktop": settings.image_banner_desktop,
+        "image_banner_mobile": settings.image_banner_mobile,
+        "image_banner_mini": settings.image_banner_mini,
+        "offers_placement": settings.offers_placement,
+        "offers_mobile_placement": settings.offers_mobile_placement,
+        "usp_placement": settings.usp_placement,
+        "alignment": settings.alignment,
+        "offset_horizontal": settings.offset_horizontal,
+        "offset_vertical": settings.offset_vertical,
+        "sort_type": settings.sort_type,
+        "sort_period": settings.sort_period,
+    }
+
+
+def _block_to_json(*, block: PublicBlock) -> JsonObject:
+    return {
+        "type": block.type,
+        "title": block.title,
+        "offers": [_offer_to_json(offer=offer) for offer in block.offers],
+    }
+
+
+def _widget_info_to_json(*, widget_info: PublicWidgetInfo) -> JsonObject:
+    return {
+        "type": widget_info.type,
+        "display_limit": widget_info.display_limit,
+        "leads_id_enabled": widget_info.leads_id_enabled,
+        "offers": [_offer_to_json(offer=offer) for offer in widget_info.offers],
+        "trigger_groups": [
+            {
+                "type": trigger_group.type,
+                "delay_secs": trigger_group.delay_secs,
+            }
+            for trigger_group in widget_info.trigger_groups
+        ],
+    }
+
+
+def _offer_to_json(*, offer: PublicOffer) -> JsonObject:
+    return {
+        "id": offer.id,
+        "offer_categories": list(offer.offer_categories),
+        "logo_url": offer.logo_url,
+        "rounded_logo_url": offer.rounded_logo_url,
+        "name": offer.name,
+        "site_name": offer.site_name,
+        "url": offer.url,
+        "fields": [
+            {
+                "key": field.key,
+                "value": field.value,
+                "visible": field.visible,
+            }
+            for field in offer.fields
+        ],
+    }
+
+
+def _url_params_tool_to_json(*, tool: PublicUrlParamsTool) -> JsonObject:
+    return {
+        "enabled": tool.enabled,
+        "params": [
+            {
+                "key": param.key,
+                "value": param.value,
+            }
+            for param in tool.params
+        ],
+    }
 
 
 def _str_setting(*, settings: JsonObject, key: str) -> str | None:

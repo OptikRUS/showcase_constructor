@@ -17,6 +17,7 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraftSettingsPatchParams,
     AdminShowcasePreview,
     AdminShowcasePreviewMode,
+    AdminShowcasePublication,
     JsonObject,
     JsonValue,
 )
@@ -122,6 +123,22 @@ class AdminShowcasePreviewResponse(BoundaryModel):
             mode=result.mode,
             config=PublicConfigResponse.from_domain(snapshot=result.config),
             html=result.html,
+        )
+
+
+class AdminShowcasePublicationResponse(BoundaryModel):
+    id: str
+    public_id: str
+    version: int
+    published: bool
+
+    @classmethod
+    def from_domain(cls, result: AdminShowcasePublication) -> Self:
+        return cls(
+            id=result.id,
+            public_id=result.public_id,
+            version=result.version,
+            published=result.published,
         )
 
 

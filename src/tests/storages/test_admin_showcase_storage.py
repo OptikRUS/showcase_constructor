@@ -98,6 +98,142 @@ class TestDatabaseAdminShowcaseStorage(FactoryFixture, StorageFixture):
         assert not hasattr(created, "internal_id")
         assert persisted == [created]
 
+    async def test_assigns_stable_public_id_and_switches_active_published_snapshot(
+        self,
+    ) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-active-publication-storage",
+            owner_partner_id="partner-1",
+            title="Active publication storage showcase",
+        )
+        storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
+        first_snapshot: JsonObject = {
+            "id": "public-active-publication-storage",
+            "settings": {"text_title": "First active title"},
+        }
+        second_snapshot: JsonObject = {
+            "id": "public-active-publication-storage",
+            "settings": {"text_title": "Second active title"},
+        }
+
+        public_id = await storage.ensure_showcase_public_id(
+            showcase_id="showcase-active-publication-storage",
+            public_id_candidate="public-active-publication-storage",
+        )
+        stable_public_id = await storage.ensure_showcase_public_id(
+            showcase_id="showcase-active-publication-storage",
+            public_id_candidate="ignored-public-id",
+        )
+        await storage.create_published_snapshot(
+            showcase_id="showcase-active-publication-storage",
+            public_id=public_id,
+            version=1,
+            snapshot=first_snapshot,
+            created_by_user_id="admin-user-1",
+            created_by_partner_id="partner-1",
+        )
+        first_state = await storage.activate_published_snapshot(
+            showcase_id="showcase-active-publication-storage",
+            public_id=public_id,
+            version=1,
+            snapshot=first_snapshot,
+        )
+        await storage.create_published_snapshot(
+            showcase_id="showcase-active-publication-storage",
+            public_id=public_id,
+            version=2,
+            snapshot=second_snapshot,
+            created_by_user_id="admin-user-2",
+            created_by_partner_id="partner-1",
+        )
+        second_state = await storage.activate_published_snapshot(
+            showcase_id="showcase-active-publication-storage",
+            public_id=public_id,
+            version=2,
+            snapshot=second_snapshot,
+        )
+        snapshots = await storage.list_published_snapshots(
+            showcase_id="showcase-active-publication-storage"
+        )
+
+        assert public_id == "public-active-publication-storage"
+        assert stable_public_id == public_id
+        assert first_state.public_id == public_id
+        assert first_state.version == 1
+        assert first_state.active is True
+        assert first_state.snapshot == first_snapshot
+        assert second_state.public_id == public_id
+        assert second_state.version == 2
+        assert second_state.active is True
+        assert second_state.snapshot == second_snapshot
+        assert [snapshot.version for snapshot in snapshots] == [1, 2]
+        assert [snapshot.snapshot for snapshot in snapshots] == [
+            first_snapshot,
+            second_snapshot,
+        ]
+
+    async def test_deactivates_public_visibility_without_deleting_snapshot_history(
+        self,
+    ) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-unpublish-storage",
+            owner_partner_id="partner-1",
+            title="Unpublish storage showcase",
+        )
+        storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
+        snapshot: JsonObject = {
+            "id": "public-unpublish-storage",
+            "settings": {"text_title": "Active title"},
+        }
+        public_id = await storage.ensure_showcase_public_id(
+            showcase_id="showcase-unpublish-storage",
+            public_id_candidate="public-unpublish-storage",
+        )
+        await storage.create_published_snapshot(
+            showcase_id="showcase-unpublish-storage",
+            public_id=public_id,
+            version=1,
+            snapshot=snapshot,
+            created_by_user_id="admin-user-1",
+            created_by_partner_id="partner-1",
+        )
+        await storage.activate_published_snapshot(
+            showcase_id="showcase-unpublish-storage",
+            public_id=public_id,
+            version=1,
+            snapshot=snapshot,
+        )
+        route_binding = await storage.create_published_route_binding(
+            showcase_id="showcase-unpublish-storage",
+            public_id=public_id,
+            host="unpublish-storage.example.test",
+            path="/offers",
+        )
+
+        state = await storage.deactivate_published_showcase(
+            showcase_id="showcase-unpublish-storage",
+            version=2,
+        )
+        await storage.deactivate_published_route_bindings(
+            showcase_id="showcase-unpublish-storage",
+            public_id=public_id,
+        )
+        snapshots = await storage.list_published_snapshots(
+            showcase_id="showcase-unpublish-storage"
+        )
+        route_bindings = await storage.list_published_route_bindings(
+            showcase_id="showcase-unpublish-storage"
+        )
+
+        assert route_binding.active is True
+        assert state.public_id == public_id
+        assert state.version == 2
+        assert state.active is False
+        assert state.snapshot is None
+        assert len(snapshots) == 1
+        assert snapshots[0].snapshot == snapshot
+        assert route_bindings[0].active is False
+
     async def test_appends_safe_audit_record_without_raw_sensitive_metadata(self) -> None:
         await self.storage_helper.create_admin_showcase(
             id="showcase-audit-storage-1",
