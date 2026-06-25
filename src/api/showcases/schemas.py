@@ -4,6 +4,7 @@ from pydantic import ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 from src.api.boundary import BoundaryModel
+from src.api.public_config.schemas import PublicConfigResponse
 from src.core.showcases.schemas import (
     AdminShowcaseDraft,
     AdminShowcaseDraftBlock,
@@ -14,6 +15,8 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraftOfferField,
     AdminShowcaseDraftOfferPatchParams,
     AdminShowcaseDraftSettingsPatchParams,
+    AdminShowcasePreview,
+    AdminShowcasePreviewMode,
     JsonObject,
     JsonValue,
 )
@@ -97,6 +100,28 @@ class AdminShowcaseDraftResponse(BoundaryModel):
             title=showcase.title,
             settings=_camelize_keys(showcase.settings),
             custom_code_warning=showcase.custom_code_warning,
+        )
+
+
+class AdminShowcasePreviewRequest(BoundaryModel):
+    model_config = ConfigDict(extra="forbid")
+
+    mode: AdminShowcasePreviewMode = "desktop"
+
+
+class AdminShowcasePreviewResponse(BoundaryModel):
+    preview: bool
+    mode: AdminShowcasePreviewMode
+    config: PublicConfigResponse
+    html: str | None = None
+
+    @classmethod
+    def from_domain(cls, result: AdminShowcasePreview) -> Self:
+        return cls(
+            preview=result.preview,
+            mode=result.mode,
+            config=PublicConfigResponse.from_domain(snapshot=result.config),
+            html=result.html,
         )
 
 

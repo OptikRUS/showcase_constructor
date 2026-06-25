@@ -380,15 +380,15 @@ leaving unresolved host/path routing and cache-backend details explicit.
 
 **Actions:**
 
-- [ ] Add focused API/core tests for preview mode handling, draft projection,
+- [x] Add focused API/core tests for preview mode handling, draft projection,
   explicit preview marker, optional HTML output, owner auth failures, and no
   published-snapshot mutation.
-- [ ] Run the narrowest relevant tests and confirm they fail for the expected
+- [x] Run the narrowest relevant tests and confirm they fail for the expected
   missing endpoint/use case/projection behavior.
-- [ ] Make the minimal production changes required for the tests to pass.
-- [ ] Re-run the focused tests and confirm they pass.
-- [ ] Perform only necessary safe refactoring and re-run the focused tests.
-- [ ] Run `rtk make quality`, fix all failures, and repeat until successful.
+- [x] Make the minimal production changes required for the tests to pass.
+- [x] Re-run the focused tests and confirm they pass.
+- [x] Perform only necessary safe refactoring and re-run the focused tests.
+- [x] Run `rtk make quality`, fix all failures, and repeat until successful.
 
 ### Task 4: Publish and unpublish immutable snapshots with audit and cache boundary
 

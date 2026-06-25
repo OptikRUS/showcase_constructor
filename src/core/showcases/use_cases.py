@@ -2,6 +2,7 @@ from dataclasses import dataclass, replace
 from uuid import UUID
 
 from src.core.admin_auth.schemas import AdminActorContext
+from src.core.public_config.projections import build_preview_public_config, render_preview_html
 from src.core.showcases.exceptions import (
     AdminShowcaseDraftBlockNotFoundError,
     ShowcaseAccessDeniedError,
@@ -16,6 +17,8 @@ from src.core.showcases.schemas import (
     AdminShowcaseDraftOfferCreateParams,
     AdminShowcaseDraftOfferPatchParams,
     AdminShowcaseDraftSettingsPatchParams,
+    AdminShowcasePreview,
+    AdminShowcasePreviewMode,
     AdminShowcaseUpdateParams,
 )
 from src.core.storages import AdminShowcaseStorage
@@ -106,6 +109,39 @@ class UpdateAdminShowcaseDraftSettingsUseCase:
         )
 
         return replace(updated_draft, custom_code_warning=CUSTOM_CODE_WARNING)
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BuildAdminShowcasePreviewUseCase:
+    storage: AdminShowcaseStorage
+
+    async def execute(
+        self,
+        *,
+        showcase_id: str,
+        mode: AdminShowcasePreviewMode,
+        context: AdminActorContext,
+    ) -> AdminShowcasePreview:
+        showcase = await self.storage.get_by_id(showcase_id=showcase_id)
+
+        if showcase.owner_partner_id != context.partner_id:
+            raise ShowcaseAccessDeniedError
+
+        draft = await self.storage.get_draft_by_id(showcase_id=showcase_id)
+        blocks = await self.storage.list_draft_blocks(showcase_id=showcase_id)
+        offers = await self.storage.list_draft_offers(showcase_id=showcase_id)
+        config = build_preview_public_config(draft=draft, blocks=blocks, offers=offers)
+
+        return AdminShowcasePreview(
+            preview=True,
+            mode=mode,
+            config=config,
+            html=render_preview_html(
+                config=config,
+                mode=mode,
+                settings=draft.settings,
+            ),
+        )
 
 
 def _custom_code_fields(*, params: AdminShowcaseDraftSettingsPatchParams) -> list[str]:

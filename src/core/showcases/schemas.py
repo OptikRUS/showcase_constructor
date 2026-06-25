@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, Literal, TypedDict
 
 if TYPE_CHECKING:
     from datetime import datetime
 
+    from src.core.public_config.schemas import PublishedPublicConfigSnapshot
+
 type JsonPrimitive = str | int | float | bool | None
 type JsonValue = JsonPrimitive | list[JsonValue] | dict[str, JsonValue]
 type JsonObject = dict[str, JsonValue]
+type AdminShowcasePreviewMode = Literal["desktop", "mobile"]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -36,6 +39,14 @@ class AdminShowcaseDraft:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class AdminShowcaseDraftSettingsPatchParams:
     settings: JsonObject
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AdminShowcasePreview:
+    preview: bool
+    mode: AdminShowcasePreviewMode
+    config: PublishedPublicConfigSnapshot
+    html: str | None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

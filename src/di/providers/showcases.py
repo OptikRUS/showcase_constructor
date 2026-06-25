@@ -4,6 +4,7 @@ from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.showcases.use_cases import (
+    BuildAdminShowcasePreviewUseCase,
     CreateAdminShowcaseBlockUseCase,
     CreateAdminShowcaseOfferUseCase,
     DeleteAdminShowcaseBlockUseCase,
@@ -29,6 +30,13 @@ class ShowcaseProvider(Provider):
         storage: AdminShowcaseStorage,
     ) -> UpdateAdminShowcaseDraftSettingsUseCase:
         return UpdateAdminShowcaseDraftSettingsUseCase(storage=storage)
+
+    @provide(scope=Scope.REQUEST)
+    def get_build_admin_showcase_preview_use_case(
+        self,
+        storage: AdminShowcaseStorage,
+    ) -> BuildAdminShowcasePreviewUseCase:
+        return BuildAdminShowcasePreviewUseCase(storage=storage)
 
     @provide(scope=Scope.REQUEST)
     def get_list_admin_showcase_blocks_use_case(

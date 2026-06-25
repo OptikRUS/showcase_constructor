@@ -12,9 +12,12 @@ from src.api.showcases.schemas import (
     AdminShowcaseDraftOfferResponse,
     AdminShowcaseDraftPatchRequest,
     AdminShowcaseDraftResponse,
+    AdminShowcasePreviewRequest,
+    AdminShowcasePreviewResponse,
 )
 from src.core.admin_auth.schemas import AdminActorContext
 from src.core.showcases.use_cases import (
+    BuildAdminShowcasePreviewUseCase,
     CreateAdminShowcaseBlockUseCase,
     CreateAdminShowcaseOfferUseCase,
     DeleteAdminShowcaseBlockUseCase,
@@ -48,6 +51,23 @@ async def patch_showcase_draft_settings(
     )
 
     return AdminShowcaseDraftResponse.from_domain(showcase=showcase)
+
+
+@router.post(path="/{showcase_id}/preview", status_code=status.HTTP_200_OK)
+async def preview_showcase(
+    showcase_id: str,
+    body: AdminShowcasePreviewRequest,
+    user: JwtUserDeps,
+    use_case: FromDishka[BuildAdminShowcasePreviewUseCase],
+) -> AdminShowcasePreviewResponse:
+    context = AdminActorContext(user_id=user.user_id, partner_id=user.partner_id)
+    result = await use_case.execute(
+        showcase_id=showcase_id,
+        mode=body.mode,
+        context=context,
+    )
+
+    return AdminShowcasePreviewResponse.from_domain(result=result)
 
 
 @router.get(path="/{showcase_id}/blocks", status_code=status.HTTP_200_OK)
