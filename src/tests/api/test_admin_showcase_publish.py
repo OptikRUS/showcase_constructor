@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, cast
 import pytest
 from httpx2 import codes
 
+from src.core.showcases.exceptions import PublicShowcaseNotFoundError
 from src.storages.showcases import DatabaseAdminShowcaseStorage
 from src.tests.fixtures import APIFixture, FactoryFixture, StorageFixture
 
@@ -207,6 +208,60 @@ class TestAdminShowcasePublishAPI(APIFixture, FactoryFixture, StorageFixture):
         assert first_snapshot_settings["text_title"] == "First published title"
         assert second_snapshot_settings["text_title"] == "Second published title"
 
+    async def test_publish_retries_public_id_collision_without_partial_state(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-public-id-owner-api",
+            owner_partner_id="partner-1",
+            title="Existing public id owner",
+            public_id="public-id-collision-api",
+        )
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-public-id-retry-api",
+            owner_partner_id="partner-1",
+            title="Public id retry API showcase",
+            draft_settings={
+                "affiliate_id": "affiliate-public-id-retry-api",
+                "type": "showcase",
+                "fallback_text": "Fallback only",
+            },
+        )
+        await self.storage_helper.commit()
+        public_id_candidates = iter(
+            [
+                "public-id-collision-api",
+                "public-id-retry-api",
+            ]
+        )
+
+        monkeypatch.setattr(
+            "src.core.showcases.use_cases._new_public_id_candidate",
+            lambda: next(public_id_candidates),
+        )
+
+        response = self.api.publish_admin_showcase(showcase_id="showcase-public-id-retry-api")
+
+        assert response.status_code == codes.OK
+        assert response.json()["publicId"] == "public-id-retry-api"
+        state = await self.storage_helper.get_admin_showcase_publication_state(
+            showcase_id="showcase-public-id-retry-api"
+        )
+        snapshots = await self.storage_helper.list_published_showcase_snapshots(
+            showcase_id="showcase-public-id-retry-api"
+        )
+        audit_records = await self.storage_helper.list_showcase_audit_records(
+            showcase_id="showcase-public-id-retry-api"
+        )
+        assert state.public_id == "public-id-retry-api"
+        assert state.active is True
+        assert [snapshot.public_id for snapshot in snapshots] == ["public-id-retry-api"]
+        assert audit_records[0].metadata == {
+            "public_id": "public-id-retry-api",
+            "version": 1,
+        }
+
     async def test_publish_validation_failure_preserves_old_visibility(self) -> None:
         await self.storage_helper.create_admin_showcase(
             id="showcase-publish-validation-api",
@@ -264,6 +319,90 @@ class TestAdminShowcasePublishAPI(APIFixture, FactoryFixture, StorageFixture):
         assert state.version == 1
         assert len(snapshots) == 1
         assert [record.action for record in audit_records] == ["showcase_published"]
+
+    @pytest.mark.parametrize(
+        ("case_id", "draft_settings", "expected_detail"),
+        [
+            (
+                "missing-affiliate",
+                {
+                    "type": "showcase",
+                    "affiliate_id": " ",
+                    "fallback_text": "Fallback only",
+                },
+                "ADMIN_SHOWCASE_PUBLICATION_REQUIRES_AFFILIATE_ID",
+            ),
+            (
+                "missing-type",
+                {
+                    "affiliate_id": "affiliate-publish-validation-metadata-api",
+                    "type": "",
+                    "fallback_text": "Fallback only",
+                },
+                "ADMIN_SHOWCASE_PUBLICATION_REQUIRES_TYPE",
+            ),
+        ],
+    )
+    async def test_publish_metadata_validation_failure_preserves_old_visibility(
+        self,
+        case_id: str,
+        draft_settings: JsonObject,
+        expected_detail: str,
+    ) -> None:
+        showcase_id = f"showcase-publish-validation-metadata-{case_id}-api"
+        public_id = f"public-publish-validation-metadata-{case_id}-api"
+        old_snapshot = self.factory.published_public_config_snapshot_payload(
+            public_id=public_id,
+            text_title="Still active title",
+        )
+        await self.storage_helper.create_admin_showcase(
+            id=showcase_id,
+            owner_partner_id="partner-1",
+            title="Publish validation metadata API showcase",
+            draft_settings=draft_settings,
+        )
+        await self.storage_helper.create_active_published_showcase_snapshot(
+            showcase_id=showcase_id,
+            public_id=public_id,
+            version=1,
+            snapshot=old_snapshot,
+        )
+        await self.storage_helper.create_admin_showcase_draft_block(
+            block=self.factory.admin_showcase_draft_block(
+                id=f"block-publish-validation-metadata-{case_id}-api",
+                showcase_id=showcase_id,
+                title="Validation metadata offers",
+            )
+        )
+        await self.storage_helper.create_admin_showcase_draft_offer(
+            offer=self.factory.admin_showcase_draft_offer(
+                id=f"offer-publish-validation-metadata-{case_id}-api",
+                showcase_id=showcase_id,
+                block_id=f"block-publish-validation-metadata-{case_id}-api",
+                enabled=True,
+            )
+        )
+        await self.storage_helper.commit()
+
+        response = self.api.publish_admin_showcase(showcase_id=showcase_id)
+
+        assert response.status_code == codes.UNPROCESSABLE_ENTITY
+        assert response.json() == {"detail": expected_detail}
+        state = await self.storage_helper.get_admin_showcase_publication_state(
+            showcase_id=showcase_id
+        )
+        snapshots = await self.storage_helper.list_published_showcase_snapshots(
+            showcase_id=showcase_id
+        )
+        audit_records = await self.storage_helper.list_showcase_audit_records(
+            showcase_id=showcase_id
+        )
+        assert state.public_id == public_id
+        assert state.version == 1
+        assert state.active is True
+        assert state.snapshot == old_snapshot
+        assert len(snapshots) == 1
+        assert audit_records == []
 
     async def test_publish_audit_failure_rolls_back_new_visibility(
         self,
@@ -336,6 +475,66 @@ class TestAdminShowcasePublishAPI(APIFixture, FactoryFixture, StorageFixture):
         assert state_settings["text_title"] == "First audit title"
         assert [snapshot.version for snapshot in snapshots] == [1]
         assert [record.action for record in audit_records] == ["showcase_published"]
+
+    async def test_first_publish_audit_failure_rolls_back_public_id(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-publish-first-audit-failure-api",
+            owner_partner_id="partner-1",
+            title="First publish audit failure showcase",
+            draft_settings={
+                "affiliate_id": "affiliate-publish-first-audit-failure-api",
+                "type": "showcase",
+                "fallback_text": "Fallback only",
+            },
+        )
+        await self.storage_helper.commit()
+
+        monkeypatch.setattr(
+            "src.core.showcases.use_cases._new_public_id_candidate",
+            lambda: "public-publish-first-audit-failure-api",
+        )
+
+        async def fail_append_showcase_audit_record(
+            self: DatabaseAdminShowcaseStorage,
+            **kwargs: object,
+        ) -> object:
+            _ = self, kwargs
+            message = "audit append failed"
+            raise RuntimeError(message)
+
+        monkeypatch.setattr(
+            DatabaseAdminShowcaseStorage,
+            "append_showcase_audit_record",
+            fail_append_showcase_audit_record,
+        )
+
+        with pytest.raises(RuntimeError, match="audit append failed"):
+            self.api.publish_admin_showcase(
+                showcase_id="showcase-publish-first-audit-failure-api"
+            )
+
+        state = await self.storage_helper.get_admin_showcase_publication_state(
+            showcase_id="showcase-publish-first-audit-failure-api"
+        )
+        snapshots = await self.storage_helper.list_published_showcase_snapshots(
+            showcase_id="showcase-publish-first-audit-failure-api"
+        )
+        audit_records = await self.storage_helper.list_showcase_audit_records(
+            showcase_id="showcase-publish-first-audit-failure-api"
+        )
+        public_storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
+        assert state.public_id is None
+        assert state.version == 0
+        assert state.active is False
+        assert snapshots == []
+        assert audit_records == []
+        with pytest.raises(PublicShowcaseNotFoundError):
+            await public_storage.get_active_public_config_snapshot(
+                public_id="public-publish-first-audit-failure-api"
+            )
 
     async def test_forbids_foreign_owner_publish_without_mutation(self) -> None:
         await self.storage_helper.create_admin_showcase(
@@ -448,6 +647,68 @@ class TestAdminShowcaseUnpublishAPI(APIFixture, FactoryFixture, StorageFixture):
             "version": 2,
         }
         assert "unpublishHead" not in str(audit_records[-1].metadata)
+
+    async def test_unpublish_audit_failure_preserves_active_visibility(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        old_snapshot = self.factory.published_public_config_snapshot_payload(
+            public_id="public-unpublish-audit-failure-api",
+            text_title="Active before failed unpublish",
+        )
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-unpublish-audit-failure-api",
+            owner_partner_id="partner-1",
+            title="Unpublish audit failure showcase",
+        )
+        await self.storage_helper.create_active_published_showcase_snapshot(
+            showcase_id="showcase-unpublish-audit-failure-api",
+            public_id="public-unpublish-audit-failure-api",
+            version=1,
+            snapshot=old_snapshot,
+        )
+        await self.storage_helper.create_published_route_binding(
+            showcase_id="showcase-unpublish-audit-failure-api",
+            public_id="public-unpublish-audit-failure-api",
+            host="unpublish-audit-failure.example.test",
+            path="/offers",
+        )
+        await self.storage_helper.commit()
+
+        async def fail_append_showcase_audit_record(
+            self: DatabaseAdminShowcaseStorage,
+            **kwargs: object,
+        ) -> object:
+            _ = self, kwargs
+            message = "audit append failed"
+            raise RuntimeError(message)
+
+        monkeypatch.setattr(
+            DatabaseAdminShowcaseStorage,
+            "append_showcase_audit_record",
+            fail_append_showcase_audit_record,
+        )
+
+        with pytest.raises(RuntimeError, match="audit append failed"):
+            self.api.unpublish_admin_showcase(
+                showcase_id="showcase-unpublish-audit-failure-api"
+            )
+
+        state = await self.storage_helper.get_admin_showcase_publication_state(
+            showcase_id="showcase-unpublish-audit-failure-api"
+        )
+        route_bindings = await self.storage_helper.list_published_route_bindings(
+            showcase_id="showcase-unpublish-audit-failure-api"
+        )
+        audit_records = await self.storage_helper.list_showcase_audit_records(
+            showcase_id="showcase-unpublish-audit-failure-api"
+        )
+        assert state.public_id == "public-unpublish-audit-failure-api"
+        assert state.version == 1
+        assert state.active is True
+        assert state.snapshot == old_snapshot
+        assert route_bindings[0].active is True
+        assert audit_records == []
 
     async def test_forbids_foreign_owner_unpublish_without_mutation(self) -> None:
         old_snapshot: JsonObject = {

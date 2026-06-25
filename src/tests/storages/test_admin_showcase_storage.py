@@ -405,6 +405,41 @@ class TestDatabaseAdminShowcaseStorage(FactoryFixture, StorageFixture):
 
         assert error.value.detail == "PUBLIC_SHOWCASE_NOT_FOUND_ERROR"
 
+    async def test_reuses_inactive_route_binding_for_same_public_route(self) -> None:
+        await self.storage_helper.create_admin_showcase(
+            id="showcase-route-binding-reuse-storage",
+            owner_partner_id="partner-1",
+            title="Route binding reuse storage showcase",
+        )
+        storage = DatabaseAdminShowcaseStorage(session=self.storage_helper.session)
+        created = await storage.create_published_route_binding(
+            showcase_id="showcase-route-binding-reuse-storage",
+            public_id="public-route-binding-reuse-storage",
+            host="reuse-storage.example.test",
+            path="/offers",
+        )
+        await storage.deactivate_published_route_bindings(
+            showcase_id="showcase-route-binding-reuse-storage",
+            public_id="public-route-binding-reuse-storage",
+        )
+
+        reused = await storage.create_published_route_binding(
+            showcase_id="showcase-route-binding-reuse-storage",
+            public_id="public-route-binding-reuse-storage",
+            host="reuse-storage.example.test",
+            path="/offers",
+        )
+        route_bindings = await storage.list_published_route_bindings(
+            showcase_id="showcase-route-binding-reuse-storage"
+        )
+
+        assert created.active is True
+        assert reused.active is True
+        assert len(route_bindings) == 1
+        assert route_bindings[0].active is True
+        assert route_bindings[0].host == "reuse-storage.example.test"
+        assert route_bindings[0].path == "/offers"
+
     async def test_appends_safe_audit_record_without_raw_sensitive_metadata(self) -> None:
         await self.storage_helper.create_admin_showcase(
             id="showcase-audit-storage-1",

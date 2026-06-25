@@ -45,6 +45,7 @@ CUSTOM_CODE_AUDIT_LOCATIONS = {
     "custom_head_code": "head",
     "custom_body_code": "body",
 }
+PUBLIC_ID_GENERATION_ATTEMPTS = 5
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -175,10 +176,7 @@ class PublishAdminShowcaseUseCase:
         offers = await self.storage.list_draft_offers(showcase_id=showcase_id)
         _validate_publishable_draft(draft=draft, offers=offers)
 
-        public_id = await self.storage.ensure_showcase_public_id(
-            showcase_id=showcase_id,
-            public_id_candidate=_new_public_id_candidate(),
-        )
+        public_id = showcase.public_id or await _new_showcase_public_id(storage=self.storage)
         version = showcase.publication_version + 1
         config = build_published_public_config(
             draft=draft,
@@ -271,6 +269,20 @@ def _custom_code_fields(*, params: AdminShowcaseDraftSettingsPatchParams) -> lis
         for field_name in CUSTOM_CODE_AUDIT_FIELDS
         if field_name in params.settings
     ]
+
+
+async def _new_showcase_public_id(
+    *,
+    storage: AdminShowcaseStorage,
+) -> str:
+    for _ in range(PUBLIC_ID_GENERATION_ATTEMPTS):
+        public_id_candidate = _new_public_id_candidate()
+        if not await storage.public_id_exists(public_id=public_id_candidate):
+            return public_id_candidate
+
+    raise AdminShowcasePublicationValidationError(
+        detail="ADMIN_SHOWCASE_PUBLIC_ID_COLLISION"
+    )
 
 
 def _validate_publishable_draft(

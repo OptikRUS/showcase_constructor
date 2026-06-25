@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING, cast
-from unittest.mock import ANY, AsyncMock
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -28,6 +28,7 @@ class TestPublishAdminShowcaseUseCase(FactoryFixture):
         storage.get_by_id.return_value = self.factory.admin_showcase(
             id="showcase-publish-core",
             owner_partner_id="partner-1",
+            public_id="public-publish-core",
             publication_version=0,
         )
         storage.get_draft_by_id.return_value = self.factory.admin_showcase_draft(
@@ -73,8 +74,6 @@ class TestPublishAdminShowcaseUseCase(FactoryFixture):
                 enabled=False,
             ),
         ]
-        storage.ensure_showcase_public_id.return_value = "public-publish-core"
-
         async def create_published_snapshot(**kwargs: object) -> object:
             return self.factory.published_showcase_snapshot(
                 showcase_id=str(kwargs["showcase_id"]),
@@ -113,10 +112,8 @@ class TestPublishAdminShowcaseUseCase(FactoryFixture):
         storage.get_draft_by_id.assert_awaited_once_with(showcase_id="showcase-publish-core")
         storage.list_draft_blocks.assert_awaited_once_with(showcase_id="showcase-publish-core")
         storage.list_draft_offers.assert_awaited_once_with(showcase_id="showcase-publish-core")
-        storage.ensure_showcase_public_id.assert_awaited_once_with(
-            showcase_id="showcase-publish-core",
-            public_id_candidate=ANY,
-        )
+        storage.public_id_exists.assert_not_awaited()
+        storage.ensure_showcase_public_id.assert_not_awaited()
         create_kwargs = storage.create_published_snapshot.await_args.kwargs
         assert create_kwargs["showcase_id"] == "showcase-publish-core"
         assert create_kwargs["public_id"] == "public-publish-core"
@@ -156,6 +153,7 @@ class TestPublishAdminShowcaseUseCase(FactoryFixture):
         storage.get_by_id.return_value = self.factory.admin_showcase(
             id="showcase-publish-core-fallback",
             owner_partner_id="partner-1",
+            public_id="public-publish-core-fallback",
         )
         storage.get_draft_by_id.return_value = self.factory.admin_showcase_draft(
             id="showcase-publish-core-fallback",
@@ -168,7 +166,6 @@ class TestPublishAdminShowcaseUseCase(FactoryFixture):
         )
         storage.list_draft_blocks.return_value = []
         storage.list_draft_offers.return_value = []
-        storage.ensure_showcase_public_id.return_value = "public-publish-core-fallback"
         storage.create_published_snapshot.return_value = self.factory.published_showcase_snapshot(
             showcase_id="showcase-publish-core-fallback",
             public_id="public-publish-core-fallback",
@@ -194,6 +191,8 @@ class TestPublishAdminShowcaseUseCase(FactoryFixture):
 
         assert result.public_id == "public-publish-core-fallback"
         assert result.version == 1
+        storage.public_id_exists.assert_not_awaited()
+        storage.ensure_showcase_public_id.assert_not_awaited()
         storage.create_published_snapshot.assert_awaited_once()
         storage.append_showcase_audit_record.assert_awaited_once()
         cache_invalidator.invalidate_public_showcase.assert_awaited_once_with(
@@ -268,6 +267,7 @@ class TestPublishAdminShowcaseUseCase(FactoryFixture):
         storage.get_by_id.return_value = self.factory.admin_showcase(
             id="showcase-publish-core-audit-failure",
             owner_partner_id="partner-1",
+            public_id="public-publish-core-audit-failure",
         )
         storage.get_draft_by_id.return_value = self.factory.admin_showcase_draft(
             id="showcase-publish-core-audit-failure",
@@ -280,7 +280,6 @@ class TestPublishAdminShowcaseUseCase(FactoryFixture):
         )
         storage.list_draft_blocks.return_value = []
         storage.list_draft_offers.return_value = []
-        storage.ensure_showcase_public_id.return_value = "public-publish-core-audit-failure"
         storage.create_published_snapshot.return_value = self.factory.published_showcase_snapshot(
             showcase_id="showcase-publish-core-audit-failure",
             public_id="public-publish-core-audit-failure",
@@ -301,6 +300,8 @@ class TestPublishAdminShowcaseUseCase(FactoryFixture):
 
         storage.create_published_snapshot.assert_not_awaited()
         storage.activate_published_snapshot.assert_not_awaited()
+        storage.public_id_exists.assert_not_awaited()
+        storage.ensure_showcase_public_id.assert_not_awaited()
         storage.append_showcase_audit_record.assert_awaited_once()
         cache_invalidator.invalidate_public_showcase.assert_not_awaited()
 

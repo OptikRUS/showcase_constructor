@@ -129,6 +129,9 @@ class AdminShowcaseStorage(metaclass=ABCMeta):
     ) -> str: ...
 
     @abstractmethod
+    async def public_id_exists(self, *, public_id: str) -> bool: ...
+
+    @abstractmethod
     async def activate_published_snapshot(
         self,
         *,

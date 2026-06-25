@@ -22,5 +22,9 @@ class AdminShowcasePublicationValidationError(BaseExceptionError):
     detail: str = "ADMIN_SHOWCASE_PUBLICATION_VALIDATION_ERROR"
 
 
+class AdminShowcasePublicIdCollisionError(BaseExceptionError):
+    detail: str = "ADMIN_SHOWCASE_PUBLIC_ID_COLLISION_ERROR"
+
+
 class PublicShowcaseNotFoundError(BaseExceptionError):
     detail: str = "PUBLIC_SHOWCASE_NOT_FOUND_ERROR"

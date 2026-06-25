@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from sqlalchemy import and_, delete, func, insert, literal, select, update
+from sqlalchemy import and_, delete, insert, literal, select, update
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,6 +10,7 @@ from src.core.showcases.exceptions import (
     AdminShowcaseDraftBlockNotFoundError,
     AdminShowcaseDraftOfferNotFoundError,
     AdminShowcaseNotFoundError,
+    AdminShowcasePublicIdCollisionError,
     PublicShowcaseNotFoundError,
 )
 from src.core.showcases.schemas import (
@@ -462,22 +463,48 @@ class DatabaseAdminShowcaseStorage(AdminShowcaseStorage, PublicShowcaseStorage):
         showcase_id: str,
         public_id_candidate: str,
     ) -> str:
+        current_public_id = await self.session.scalar(
+            select(AdminShowcaseModel.public_id).where(AdminShowcaseModel.id == showcase_id)
+        )
+
+        if current_public_id is not None:
+            return current_public_id
+
+        candidate_exists = (
+            select(AdminShowcaseModel.internal_id)
+            .where(AdminShowcaseModel.public_id == public_id_candidate)
+            .exists()
+        )
         public_id = await self.session.scalar(
             update(AdminShowcaseModel)
-            .where(AdminShowcaseModel.id == showcase_id)
-            .values(
-                public_id=func.coalesce(
-                    AdminShowcaseModel.public_id,
-                    literal(public_id_candidate),
-                )
+            .where(
+                AdminShowcaseModel.id == showcase_id,
+                AdminShowcaseModel.public_id.is_(None),
+                ~candidate_exists,
             )
+            .values(public_id=literal(public_id_candidate))
             .returning(AdminShowcaseModel.public_id)
         )
 
-        if public_id is None:
+        if public_id is not None:
+            return public_id
+
+        showcase_exists = await self.session.scalar(
+            select(AdminShowcaseModel.id).where(AdminShowcaseModel.id == showcase_id)
+        )
+        if showcase_exists is None:
             raise AdminShowcaseNotFoundError
 
-        return public_id
+        raise AdminShowcasePublicIdCollisionError
+
+    async def public_id_exists(self, *, public_id: str) -> bool:
+        existing_public_id = await self.session.scalar(
+            select(AdminShowcaseModel.public_id).where(
+                AdminShowcaseModel.public_id == public_id
+            )
+        )
+
+        return existing_public_id is not None
 
     async def activate_published_snapshot(
         self,
@@ -556,6 +583,22 @@ class DatabaseAdminShowcaseStorage(AdminShowcaseStorage, PublicShowcaseStorage):
         host: str,
         path: str,
     ) -> PublishedRouteBinding:
+        reactivated_model = await self.session.scalar(
+            update(PublishedRouteBindingModel)
+            .where(
+                PublishedRouteBindingModel.showcase_id == showcase_id,
+                PublishedRouteBindingModel.public_id == public_id,
+                PublishedRouteBindingModel.host == host,
+                PublishedRouteBindingModel.path == path,
+                PublishedRouteBindingModel.active.is_(False),
+            )
+            .values(active=True)
+            .returning(PublishedRouteBindingModel)
+        )
+
+        if reactivated_model is not None:
+            return reactivated_model.to_domain()
+
         model = await self.session.scalar(
             insert(PublishedRouteBindingModel)
             .from_select(
